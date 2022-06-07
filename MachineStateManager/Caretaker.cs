@@ -14,7 +14,7 @@
         {
         }
 
-        public Caretaker(TOriginator originator, TMemento memento)
+        protected Caretaker(TOriginator originator, TMemento memento)
         {
             Originator = originator ?? throw new ArgumentNullException(nameof(originator));
             Memento = memento ?? throw new ArgumentNullException(nameof(memento));

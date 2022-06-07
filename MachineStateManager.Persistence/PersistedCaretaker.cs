@@ -2,11 +2,13 @@
 
 namespace MachineStateManager.Persistence
 {
-    internal class PersistedCaretaker<TOriginator, TMemento> : Caretaker<TOriginator, TMemento>
-        where TOriginator : IPersistedOriginator<TMemento>
+    internal abstract class PersistedCaretaker<TOriginator, TMemento> : Caretaker<TOriginator, TMemento>
+        where TOriginator : IOriginator<TMemento>
         where TMemento : IMemento
     {
-        public string ID => Originator.ID;
+        public abstract string ID { get; }
+
+        public string CollectionName => GetType().Name;
 
         private readonly LiteDatabase database;
 
@@ -18,7 +20,7 @@ namespace MachineStateManager.Persistence
             {
                 try
                 {
-                    var col = database.GetCollection<Caretaker<TOriginator, TMemento>>();
+                    var col = database.GetCollection<Caretaker<TOriginator, TMemento>>(CollectionName);
                     col.Insert(this);
                     database.Commit();
                 }
@@ -34,7 +36,7 @@ namespace MachineStateManager.Persistence
             }
         }
 
-        public PersistedCaretaker(TOriginator originator, TMemento memento, LiteDatabase database) : base(originator, memento)
+        protected PersistedCaretaker(TOriginator originator, TMemento memento, LiteDatabase database) : base(originator, memento)
         {
             this.database = database;
         }
@@ -46,7 +48,7 @@ namespace MachineStateManager.Persistence
                 try
                 {
                     base.Dispose(disposing);
-                    var col = database.GetCollection<Caretaker<TOriginator, TMemento>>();
+                    var col = database.GetCollection<Caretaker<TOriginator, TMemento>>(CollectionName);
                     col.Delete(ID);
                     database.Commit();
                 }

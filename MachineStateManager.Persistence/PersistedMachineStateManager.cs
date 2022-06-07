@@ -1,6 +1,4 @@
 ﻿using LiteDB;
-using MachineStateManager.Environment;
-using MachineStateManager.FileSystem;
 using MachineStateManager.Persistence.Environment;
 using MachineStateManager.Persistence.FileSystem;
 using MachineStateManager.Persistence.FileSystem.Caching;
@@ -15,83 +13,44 @@ namespace MachineStateManager.Persistence
 
         private readonly LiteDatabase database;
 
-        private readonly IBlobStore blobStore;
+        private readonly LiteDBBlobStore fileCache;
 
-        private readonly string ID;
+        private static readonly string databaseFilePath = Path.Combine(
+            System.Environment.GetFolderPath(System.Environment.SpecialFolder.CommonApplicationData),
+            nameof(MachineStateManager),
+            $"{nameof(Persistence)}.db");
 
         public PersistedMachineStateManager()
         {
-            ID = Guid.NewGuid().ToString();
-
             caretakers = new List<IDisposable>();
 
-            var mapper = new BsonMapper();
-            database = new LiteDatabase(Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.CommonApplicationData), nameof(MachineStateManager), "persistence.db"));
-            mapper.RegisterType(
-                serialize: (caretaker) =>
+            database = new LiteDatabase(
+                connectionString: new ConnectionString(databaseFilePath)
                 {
-                    var dictionary = new Dictionary<string, BsonValue>
-                    {
-                        ["_id"] = caretaker.ID,
-                        [nameof(PersistedCaretaker<PersistedEnvironmentVariableOriginator, EnvironmentVariableMemento>.Originator)] = mapper.ToDocument(caretaker.Originator),
-                        [nameof(PersistedCaretaker<PersistedEnvironmentVariableOriginator, EnvironmentVariableMemento>.Memento)] = mapper.ToDocument(caretaker.Memento),
-                    };
-                    return new BsonDocument(dictionary);
+                    Connection = ConnectionType.Shared
                 },
-                deserialize: (bson) =>
-                {
-                    var originator = new PersistedEnvironmentVariableOriginator(
-                        bson[nameof(PersistedCaretaker<PersistedEnvironmentVariableOriginator, EnvironmentVariableMemento>.Originator)][nameof(EnvironmentVariableOriginator.Name)].AsString,
-                        Enum.Parse<EnvironmentVariableTarget>(bson[nameof(PersistedCaretaker<PersistedEnvironmentVariableOriginator, EnvironmentVariableMemento>.Originator)][nameof(EnvironmentVariableOriginator.Target)].AsString));
-                    var memento = new EnvironmentVariableMemento(
-                        bson[nameof(PersistedCaretaker<PersistedEnvironmentVariableOriginator, EnvironmentVariableMemento>.Memento)][nameof(EnvironmentVariableMemento.Value)].AsString);
-                    return new PersistedCaretaker<PersistedEnvironmentVariableOriginator, EnvironmentVariableMemento>(originator, memento, database);
-                }
-            );
-
-            blobStore = new LiteDBBlobStore(database);
-
-            mapper.RegisterType(
-                serialize: (caretaker) =>
-                {
-                    var dictionary = new Dictionary<string, BsonValue>
-                    {
-                        ["_id"] = caretaker.ID,
-                        [nameof(PersistedCaretaker<PersistedFileOriginator, FileMemento>.Originator)] = mapper.ToDocument(caretaker.Originator),
-                        [nameof(PersistedCaretaker<PersistedFileOriginator, FileMemento>.Memento)] = mapper.ToDocument(caretaker.Memento),
-                    };
-                    return new BsonDocument(dictionary);
-                },
-                deserialize: (bson) =>
-                {
-                    var originator = new PersistedFileOriginator(
-                        bson[nameof(PersistedCaretaker<PersistedFileOriginator, FileMemento>.Originator)][nameof(PersistedFileOriginator.Path)].AsString, blobStore);
-                    var memento = new FileMemento(
-                        bson[nameof(PersistedCaretaker<PersistedFileOriginator, FileMemento>.Memento)][nameof(FileMemento.Hash)].AsString);
-                    return new PersistedCaretaker<PersistedFileOriginator, FileMemento>(originator, memento, database);
-                }
-            );
+                mapper: new BsonMapper());
+            fileCache = new LiteDBBlobStore(database);
+            PersistedEnvironmentVariableCaretaker.RegisterType(database);
+            PersistedFileCaretaker.RegisterType(database, fileCache);
         }
 
         public IDisposable SnapshotEnvironmentVariable(string name)
         {
-            var originator = new PersistedEnvironmentVariableOriginator(name);
-            var caretaker = new PersistedCaretaker<PersistedEnvironmentVariableOriginator, EnvironmentVariableMemento>(originator, database);
+            var caretaker = new PersistedEnvironmentVariableCaretaker(name, database);
             caretakers.Add(caretaker);
             return caretaker;
         }
         public IDisposable SnapshotEnvironmentVariable(string name, EnvironmentVariableTarget target)
         {
-            var originator = new PersistedEnvironmentVariableOriginator(name, target);
-            var caretaker = new PersistedCaretaker<PersistedEnvironmentVariableOriginator, EnvironmentVariableMemento>(originator, database);
+            var caretaker = new PersistedEnvironmentVariableCaretaker(name, target, database);
             caretakers.Add(caretaker);
             return caretaker;
         }
 
         public IDisposable SnapshotFile(string path)
         {
-            var originator = new PersistedFileOriginator(path, blobStore);
-            var caretaker = new PersistedCaretaker<PersistedFileOriginator, FileMemento>(originator, database);
+            var caretaker = new PersistedFileCaretaker(path, fileCache, database);
             caretakers.Add(caretaker);
             return caretaker;
         }
@@ -131,5 +90,15 @@ namespace MachineStateManager.Persistence
             Dispose(disposing: true);
             GC.SuppressFinalize(this);
         }
+
+        //private static LiteDatabase GetDatabaseConnection()
+        //{
+
+        //}
+
+        //public static void RestoreAbandonedCaretakers()
+        //{
+        //    var caretakers = data
+        //}
     }
 }
