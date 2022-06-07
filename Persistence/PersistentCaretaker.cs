@@ -2,7 +2,7 @@
 
 namespace MachineStateManager.Persistence
 {
-    internal abstract class PersistedCaretaker<TOriginator, TMemento> : Caretaker<TOriginator, TMemento>
+    internal abstract class PersistentCaretaker<TOriginator, TMemento> : Caretaker<TOriginator, TMemento>
         where TOriginator : IOriginator<TMemento>
         where TMemento : IMemento
     {
@@ -12,7 +12,7 @@ namespace MachineStateManager.Persistence
 
         private readonly LiteDatabase database;
 
-        public PersistedCaretaker(TOriginator originator, LiteDatabase database) : base(originator)
+        public PersistentCaretaker(TOriginator originator, LiteDatabase database) : base(originator)
         {
             this.database = database;
 
@@ -36,7 +36,7 @@ namespace MachineStateManager.Persistence
             }
         }
 
-        protected PersistedCaretaker(TOriginator originator, TMemento memento, LiteDatabase database) : base(originator, memento)
+        protected PersistentCaretaker(TOriginator originator, TMemento memento, LiteDatabase database) : base(originator, memento)
         {
             this.database = database;
         }

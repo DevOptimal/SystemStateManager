@@ -3,22 +3,23 @@ using MachineStateManager.FileSystem;
 
 namespace MachineStateManager.Persistence.FileSystem
 {
-    internal class PersistedFileCaretaker : PersistedCaretaker<FileOriginator, FileMemento>
+    internal class PersistentFileCaretaker : PersistentCaretaker<FileOriginator, FileMemento>
     {
         public override string ID => Originator.Path.ToLower();
 
-        public PersistedFileCaretaker(string path, IBlobStore fileCache, LiteDatabase database)
+        public PersistentFileCaretaker(string path, IBlobStore fileCache, LiteDatabase database)
             : this(new FileOriginator(path, fileCache), database)
         {
         }
 
-        public PersistedFileCaretaker(FileOriginator originator, LiteDatabase database) : base(originator, database)
+        public PersistentFileCaretaker(FileOriginator originator, LiteDatabase database) : base(originator, database)
         {
         }
 
-        public PersistedFileCaretaker(FileOriginator originator, FileMemento memento, LiteDatabase database) : base(originator, memento, database)
+        public PersistentFileCaretaker(FileOriginator originator, FileMemento memento, LiteDatabase database) : base(originator, memento, database)
         {
         }
+
         public static void RegisterType(LiteDatabase database, IBlobStore fileCache)
         {
             database.Mapper.RegisterType(
@@ -38,7 +39,7 @@ namespace MachineStateManager.Persistence.FileSystem
                         bson[nameof(Originator)][nameof(FileOriginator.Path)].AsString, fileCache);
                     var memento = new FileMemento(
                         bson[nameof(Memento)][nameof(FileMemento.Hash)].AsString);
-                    return new PersistedFileCaretaker(originator, memento, database);
+                    return new PersistentFileCaretaker(originator, memento, database);
                 }
             );
         }

@@ -17,7 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\MachineStateManager.Persistence\MachineStateManager.Persistence.csproj" />
+    <ProjectReference Include="..\Persistence\MachineStateManager.Persistence.csproj" />
   </ItemGroup>
 
 </Project>

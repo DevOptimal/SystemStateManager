@@ -5,7 +5,7 @@ using MachineStateManager.Persistence.FileSystem.Caching;
 
 namespace MachineStateManager.Persistence
 {
-    public class PersistedMachineStateManager : IDisposable
+    public class PersistentMachineStateManager : IDisposable
     {
         private bool disposedValue;
 
@@ -20,7 +20,7 @@ namespace MachineStateManager.Persistence
             nameof(MachineStateManager),
             $"{nameof(Persistence)}.db");
 
-        public PersistedMachineStateManager()
+        public PersistentMachineStateManager()
         {
             caretakers = new List<IDisposable>();
 
@@ -31,26 +31,26 @@ namespace MachineStateManager.Persistence
                 },
                 mapper: new BsonMapper());
             fileCache = new LiteDBBlobStore(database);
-            PersistedEnvironmentVariableCaretaker.RegisterType(database);
-            PersistedFileCaretaker.RegisterType(database, fileCache);
+            PersistentEnvironmentVariableCaretaker.RegisterType(database);
+            PersistentFileCaretaker.RegisterType(database, fileCache);
         }
 
         public IDisposable SnapshotEnvironmentVariable(string name)
         {
-            var caretaker = new PersistedEnvironmentVariableCaretaker(name, database);
+            var caretaker = new PersistentEnvironmentVariableCaretaker(name, database);
             caretakers.Add(caretaker);
             return caretaker;
         }
         public IDisposable SnapshotEnvironmentVariable(string name, EnvironmentVariableTarget target)
         {
-            var caretaker = new PersistedEnvironmentVariableCaretaker(name, target, database);
+            var caretaker = new PersistentEnvironmentVariableCaretaker(name, target, database);
             caretakers.Add(caretaker);
             return caretaker;
         }
 
         public IDisposable SnapshotFile(string path)
         {
-            var caretaker = new PersistedFileCaretaker(path, fileCache, database);
+            var caretaker = new PersistentFileCaretaker(path, fileCache, database);
             caretakers.Add(caretaker);
             return caretaker;
         }

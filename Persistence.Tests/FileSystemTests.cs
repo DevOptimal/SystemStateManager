@@ -31,7 +31,7 @@ namespace MachineStateManager.Tests
         [TestMethod]
         public void RestoresChangedFile()
         {
-            using (var machineStateManager = new PersistedMachineStateManager())
+            using (var machineStateManager = new PersistentMachineStateManager())
             using (machineStateManager.SnapshotFile(testFile.FullName))
             {
                 var someOtherText = "This is some other text";
@@ -45,7 +45,7 @@ namespace MachineStateManager.Tests
         [TestMethod]
         public void RestoresDeletedFile()
         {
-            using (var machineStateManager = new PersistedMachineStateManager())
+            using (var machineStateManager = new PersistentMachineStateManager())
             using (machineStateManager.SnapshotFile(testFile.FullName))
             {
                 File.Delete(testFile.FullName);
@@ -57,7 +57,7 @@ namespace MachineStateManager.Tests
         [TestMethod]
         public void MachineStateManagerCorrectlyDisposes()
         {
-            using var machineStateManager = new PersistedMachineStateManager();
+            using var machineStateManager = new PersistentMachineStateManager();
             using var caretaker = machineStateManager.SnapshotFile(testFile.FullName);
 
             File.Delete(testFile.FullName);
@@ -70,7 +70,7 @@ namespace MachineStateManager.Tests
         [TestMethod]
         public void CaretakerCorrectlyDisposes()
         {
-            using var machineStateManager = new PersistedMachineStateManager();
+            using var machineStateManager = new PersistentMachineStateManager();
             using var caretaker = machineStateManager.SnapshotFile(testFile.FullName);
 
             File.Delete(testFile.FullName);

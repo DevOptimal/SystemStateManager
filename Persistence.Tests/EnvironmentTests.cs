@@ -6,7 +6,7 @@ namespace MachineStateManager.Persistence.Tests
         [TestMethod]
         public void TestEnvironmentVariableCaretaker()
         {
-            var machineStateManager = new PersistedMachineStateManager();
+            var machineStateManager = new PersistentMachineStateManager();
             var name = "foo";
             var previousValue = System.Environment.GetEnvironmentVariable(name);//"bar";//
             //System.Environment.SetEnvironmentVariable(name, previousValue);
@@ -24,8 +24,8 @@ namespace MachineStateManager.Persistence.Tests
         [TestMethod]
         public void TwoMachineStateManagers()
         {
-            var machineStateManager1 = new PersistedMachineStateManager();
-            var machineStateManager2 = new PersistedMachineStateManager();
+            var machineStateManager1 = new PersistentMachineStateManager();
+            var machineStateManager2 = new PersistentMachineStateManager();
             var name = "foo";
             var previousValue = System.Environment.GetEnvironmentVariable(name);
 
