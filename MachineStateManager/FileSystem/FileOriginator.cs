@@ -23,7 +23,7 @@
                 return new FileMemento(null);
             }
 
-            return new FileMemento(FileCache.PushFile(Path));
+            return new FileMemento(FileCache.UploadFile(Path));
         }
 
         public void SetState(FileMemento memento)
@@ -37,7 +37,7 @@
             }
             else
             {
-                FileCache.PullFile(memento.Hash, Path);
+                FileCache.DownloadFile(memento.Hash, Path);
             }
         }
     }

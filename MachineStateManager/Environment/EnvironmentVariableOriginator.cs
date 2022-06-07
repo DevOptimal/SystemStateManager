@@ -16,20 +16,14 @@
             Target = target;
         }
 
-        public string? Value
-        {
-            get => System.Environment.GetEnvironmentVariable(Name, Target);
-            set => System.Environment.SetEnvironmentVariable(Name, value, Target);
-        }
-
         public EnvironmentVariableMemento GetState()
         {
-            return new EnvironmentVariableMemento(Value);
+            return new EnvironmentVariableMemento(System.Environment.GetEnvironmentVariable(Name, Target));
         }
 
         public void SetState(EnvironmentVariableMemento memento)
         {
-            Value = memento.Value;
+            System.Environment.SetEnvironmentVariable(Name, memento.Value, Target);
         }
     }
 }

@@ -1,34 +1,33 @@
-﻿using System.Security.Cryptography;
+﻿using LiteDB;
+using MachineStateManager.FileSystem;
+using System;
+using System.IO;
+using System.Security.Cryptography;
 
-namespace MachineStateManager.FileSystem.Caching
+namespace MachineStateManager.Persistence.FileSystem.Caching
 {
-    internal class LocalBlobStore : IBlobStore
+    internal class LiteDBBlobStore : IBlobStore
     {
-        private readonly DirectoryInfo rootDirectory;
+        private readonly ILiteStorage<string> fileStorage;
 
-        public LocalBlobStore(string rootDirectoryPath)
+        public LiteDBBlobStore(LiteDatabase database)
         {
-            rootDirectory = new DirectoryInfo(rootDirectoryPath);
-            if (!rootDirectory.Exists)
-            {
-                rootDirectory.Create();
-            }
+            fileStorage = database.FileStorage;
         }
 
         public void DownloadFile(string hash, string destinationPath)
         {
-            var blobFile = new FileInfo(Path.Combine(rootDirectory.FullName, hash));
-            if (!blobFile.Exists)
+            var blobFile = fileStorage.FindById(hash);
+            if (blobFile == null)
             {
                 throw new FileNotFoundException();
             }
-            using var blobStream = blobFile.Open(FileMode.Open, FileAccess.Read, FileShare.Read);
-            
+
             var destinationFile = new FileInfo(destinationPath);
             using var destinationStream = destinationFile.Open(FileMode.OpenOrCreate, FileAccess.Write, FileShare.None);
             destinationStream.SetLength(0); // Delete existing file.
 
-            blobStream.CopyTo(destinationStream);
+            blobFile.CopyTo(destinationStream);
         }
 
         public string UploadFile(string sourcePath)
@@ -41,12 +40,10 @@ namespace MachineStateManager.FileSystem.Caching
             using var sourceStream = sourceFile.Open(FileMode.Open, FileAccess.Read, FileShare.Read);
 
             var hash = ComputeFileHash(sourceStream);
-            var blobFile = new FileInfo(Path.Combine(rootDirectory.FullName, hash));
-            if (!blobFile.Exists)
+            var blobFile = fileStorage.FindById(hash);
+            if (blobFile == null)
             {
-                using var blobStream = blobFile.Open(FileMode.CreateNew, FileAccess.Write, FileShare.None);
-
-                sourceStream.CopyTo(blobStream);
+                fileStorage.Upload(hash, hash, sourceStream);
             }
 
             return hash;

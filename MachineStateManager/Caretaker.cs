@@ -10,10 +10,14 @@
 
         private bool disposedValue;
 
-        public Caretaker(TOriginator originator)
+        public Caretaker(TOriginator originator) : this(originator, originator.GetState())
+        {
+        }
+
+        public Caretaker(TOriginator originator, TMemento memento)
         {
             Originator = originator ?? throw new ArgumentNullException(nameof(originator));
-            Memento = originator.GetState();
+            Memento = memento ?? throw new ArgumentNullException(nameof(memento));
         }
 
         protected virtual void Dispose(bool disposing)

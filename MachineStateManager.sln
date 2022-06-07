@@ -7,6 +7,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MachineStateManager", "Mach
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MachineStateManager.Tests", "MachineStateManager.Tests\MachineStateManager.Tests.csproj", "{3CBCCF55-89F4-43AB-898D-99814BD8390E}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MachineStateManager.Persistence", "MachineStateManager.Persistence\MachineStateManager.Persistence.csproj", "{8B86BC5A-0FCB-4CE7-8934-B995343595C3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MachineStateManager.Persistence.Tests", "MachineStateManager.Persistence.Tests\MachineStateManager.Persistence.Tests.csproj", "{C6EEBFDD-E3A2-48F8-8968-44EDF7B159BB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +25,14 @@ Global
 		{3CBCCF55-89F4-43AB-898D-99814BD8390E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3CBCCF55-89F4-43AB-898D-99814BD8390E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3CBCCF55-89F4-43AB-898D-99814BD8390E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8B86BC5A-0FCB-4CE7-8934-B995343595C3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8B86BC5A-0FCB-4CE7-8934-B995343595C3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8B86BC5A-0FCB-4CE7-8934-B995343595C3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8B86BC5A-0FCB-4CE7-8934-B995343595C3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C6EEBFDD-E3A2-48F8-8968-44EDF7B159BB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C6EEBFDD-E3A2-48F8-8968-44EDF7B159BB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C6EEBFDD-E3A2-48F8-8968-44EDF7B159BB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C6EEBFDD-E3A2-48F8-8968-44EDF7B159BB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
