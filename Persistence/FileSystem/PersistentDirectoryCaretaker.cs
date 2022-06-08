@@ -12,11 +12,13 @@ namespace MachineStateManager.Persistence.FileSystem
         {
         }
 
-        public PersistentDirectoryCaretaker(DirectoryOriginator originator, LiteDatabase database) : base(originator, database)
+        public PersistentDirectoryCaretaker(DirectoryOriginator originator, LiteDatabase database)
+            : base(originator, database)
         {
         }
 
-        public PersistentDirectoryCaretaker(DirectoryOriginator originator, DirectoryMemento memento, LiteDatabase database) : base(originator, memento, database)
+        public PersistentDirectoryCaretaker(DirectoryOriginator originator, DirectoryMemento memento, LiteDatabase database)
+            : base(originator, memento, database)
         {
         }
 

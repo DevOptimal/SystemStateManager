@@ -17,11 +17,13 @@ namespace MachineStateManager.Persistence.Environment
         {
         }
 
-        public PersistentEnvironmentVariableCaretaker(EnvironmentVariableOriginator originator, LiteDatabase database) : base(originator, database)
+        public PersistentEnvironmentVariableCaretaker(EnvironmentVariableOriginator originator, LiteDatabase database)
+            : base(originator, database)
         {
         }
 
-        public PersistentEnvironmentVariableCaretaker(EnvironmentVariableOriginator originator, EnvironmentVariableMemento memento, LiteDatabase database) : base(originator, memento, database)
+        public PersistentEnvironmentVariableCaretaker(EnvironmentVariableOriginator originator, EnvironmentVariableMemento memento, LiteDatabase database)
+            : base(originator, memento, database)
         {
         }
 

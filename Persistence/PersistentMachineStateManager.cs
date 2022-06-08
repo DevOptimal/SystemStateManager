@@ -2,6 +2,9 @@
 using MachineStateManager.Persistence.Environment;
 using MachineStateManager.Persistence.FileSystem;
 using MachineStateManager.Persistence.FileSystem.Caching;
+using MachineStateManager.Persistence.Registry;
+using Microsoft.Win32;
+using System.Runtime.Versioning;
 
 namespace MachineStateManager.Persistence
 {
@@ -32,7 +35,13 @@ namespace MachineStateManager.Persistence
                 mapper: new BsonMapper());
             fileCache = new LiteDBBlobStore(database);
             PersistentEnvironmentVariableCaretaker.RegisterType(database);
+            PersistentDirectoryCaretaker.RegisterType(database);
             PersistentFileCaretaker.RegisterType(database, fileCache);
+            if (OperatingSystem.IsWindows())
+            {
+                PersistentRegistryKeyCaretaker.RegisterType(database);
+                PersistentRegistryValueCaretaker.RegisterType(database);
+            }
         }
 
         public IDisposable SnapshotEnvironmentVariable(string name)
@@ -41,9 +50,17 @@ namespace MachineStateManager.Persistence
             caretakers.Add(caretaker);
             return caretaker;
         }
+
         public IDisposable SnapshotEnvironmentVariable(string name, EnvironmentVariableTarget target)
         {
             var caretaker = new PersistentEnvironmentVariableCaretaker(name, target, database);
+            caretakers.Add(caretaker);
+            return caretaker;
+        }
+
+        public IDisposable SnapshotDirectory(string path)
+        {
+            var caretaker = new PersistentDirectoryCaretaker(path, database);
             caretakers.Add(caretaker);
             return caretaker;
         }
@@ -55,9 +72,18 @@ namespace MachineStateManager.Persistence
             return caretaker;
         }
 
-        public IDisposable SnapshotDirectory(string path)
+        [SupportedOSPlatform("windows")]
+        public IDisposable SnapshotRegistryKey(RegistryHive hive, RegistryView view, string subKey)
         {
-            var caretaker = new PersistentDirectoryCaretaker(path, database);
+            var caretaker = new PersistentRegistryKeyCaretaker(hive, view, subKey, database);
+            caretakers.Add(caretaker);
+            return caretaker;
+        }
+
+        [SupportedOSPlatform("windows")]
+        public IDisposable SnapshotRegistryValue(RegistryHive hive, RegistryView view, string subKey, string name)
+        {
+            var caretaker = new PersistentRegistryValueCaretaker(hive, view, subKey, name, database);
             caretakers.Add(caretaker);
             return caretaker;
         }

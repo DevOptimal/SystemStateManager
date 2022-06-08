@@ -28,6 +28,12 @@
 
         public void SetState(FileMemento memento)
         {
+            var directoryPath = System.IO.Path.GetDirectoryName(Path);
+            if (!Directory.Exists(directoryPath))
+            {
+                Directory.CreateDirectory(directoryPath);
+            }
+
             if (memento.Hash == null)
             {
                 if (File.Exists(Path))

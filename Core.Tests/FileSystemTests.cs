@@ -14,7 +14,7 @@ namespace MachineStateManager.Tests
         private string expectedFileContent;
 
         [TestInitialize]
-        public void TestInitializeAttribute()
+        public void TestInitialize()
         {
             expectedFileContent = Guid.NewGuid().ToString();
             testFile = new FileInfo(Path.Combine(TestContext.ResultsDirectory, Path.GetRandomFileName()));

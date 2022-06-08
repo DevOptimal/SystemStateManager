@@ -2,6 +2,9 @@
 using MachineStateManager.Core.Environment;
 using MachineStateManager.Core.FileSystem;
 using MachineStateManager.Core.FileSystem.Caching;
+using MachineStateManager.Core.Registry;
+using Microsoft.Win32;
+using System.Runtime.Versioning;
 
 namespace MachineStateManager
 {
@@ -46,6 +49,24 @@ namespace MachineStateManager
         {
             var originator = new FileOriginator(path, blobStore);
             var caretaker = new Caretaker<FileOriginator, FileMemento>(originator);
+            caretakers.Add(caretaker);
+            return caretaker;
+        }
+
+        [SupportedOSPlatform("windows")]
+        public IDisposable SnapshotRegistryKey(RegistryHive hive, RegistryView view, string subKey)
+        {
+            var originator = new RegistryKeyOriginator(hive, view, subKey);
+            var caretaker = new Caretaker<RegistryKeyOriginator, RegistryKeyMemento>(originator);
+            caretakers.Add(caretaker);
+            return caretaker;
+        }
+
+        [SupportedOSPlatform("windows")]
+        public IDisposable SnapshotRegistryValue(RegistryHive hive, RegistryView view, string subKey, string name)
+        {
+            var originator = new RegistryValueOriginator(hive, view, subKey, name);
+            var caretaker = new Caretaker<RegistryValueOriginator, RegistryValueMemento>(originator);
             caretakers.Add(caretaker);
             return caretaker;
         }
