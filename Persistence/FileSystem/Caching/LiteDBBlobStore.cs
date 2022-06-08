@@ -1,5 +1,5 @@
 ﻿using LiteDB;
-using MachineStateManager.FileSystem;
+using MachineStateManager.Core.FileSystem;
 using System;
 using System.IO;
 using System.Security.Cryptography;

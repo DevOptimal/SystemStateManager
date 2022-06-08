@@ -1,8 +1,8 @@
-﻿namespace MachineStateManager.FileSystem
+﻿namespace MachineStateManager.Core.FileSystem
 {
     internal class FileOriginator : IOriginator<FileMemento>
     {
-        public string Path { get; set; }
+        public string Path { get; }
 
         /// <summary>
         /// Files can be big, so their contents cannot be stored in memory. Instead, persist the content to a blob

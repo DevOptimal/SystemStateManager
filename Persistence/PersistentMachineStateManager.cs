@@ -55,6 +55,13 @@ namespace MachineStateManager.Persistence
             return caretaker;
         }
 
+        public IDisposable SnapshotDirectory(string path)
+        {
+            var caretaker = new PersistentDirectoryCaretaker(path, database);
+            caretakers.Add(caretaker);
+            return caretaker;
+        }
+
         protected virtual void Dispose(bool disposing)
         {
             if (!disposedValue)

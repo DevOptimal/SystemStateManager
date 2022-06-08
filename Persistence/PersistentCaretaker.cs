@@ -1,4 +1,5 @@
 ﻿using LiteDB;
+using MachineStateManager.Core;
 
 namespace MachineStateManager.Persistence
 {

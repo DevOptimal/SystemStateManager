@@ -1,5 +1,5 @@
 ﻿using LiteDB;
-using MachineStateManager.Environment;
+using MachineStateManager.Core.Environment;
 
 namespace MachineStateManager.Persistence.Environment
 {

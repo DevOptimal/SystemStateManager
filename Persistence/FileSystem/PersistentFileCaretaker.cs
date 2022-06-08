@@ -1,5 +1,5 @@
 ﻿using LiteDB;
-using MachineStateManager.FileSystem;
+using MachineStateManager.Core.FileSystem;
 
 namespace MachineStateManager.Persistence.FileSystem
 {

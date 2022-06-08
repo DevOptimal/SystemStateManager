@@ -1,4 +1,4 @@
-﻿namespace MachineStateManager.Environment
+﻿namespace MachineStateManager.Core.Environment
 {
     internal class EnvironmentVariableMemento : IMemento
     {

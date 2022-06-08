@@ -1,4 +1,4 @@
-﻿namespace MachineStateManager.FileSystem
+﻿namespace MachineStateManager.Core.FileSystem
 {
     internal interface IBlobStore
     {

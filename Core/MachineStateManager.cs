@@ -1,6 +1,7 @@
-﻿using MachineStateManager.Environment;
-using MachineStateManager.FileSystem;
-using MachineStateManager.FileSystem.Caching;
+﻿using MachineStateManager.Core;
+using MachineStateManager.Core.Environment;
+using MachineStateManager.Core.FileSystem;
+using MachineStateManager.Core.FileSystem.Caching;
 
 namespace MachineStateManager
 {
@@ -29,6 +30,14 @@ namespace MachineStateManager
         {
             var originator = new EnvironmentVariableOriginator(name, target);
             var caretaker = new Caretaker<EnvironmentVariableOriginator, EnvironmentVariableMemento>(originator);
+            caretakers.Add(caretaker);
+            return caretaker;
+        }
+
+        public IDisposable SnapshotDirectory(string path)
+        {
+            var originator = new DirectoryOriginator(path);
+            var caretaker = new Caretaker<DirectoryOriginator, DirectoryMemento>(originator);
             caretakers.Add(caretaker);
             return caretaker;
         }

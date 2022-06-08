@@ -1,4 +1,4 @@
-﻿namespace MachineStateManager
+﻿namespace MachineStateManager.Core
 {
     internal interface IMemento
     {

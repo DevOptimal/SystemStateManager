@@ -1,6 +1,6 @@
 ﻿using System.Security.Cryptography;
 
-namespace MachineStateManager.FileSystem.Caching
+namespace MachineStateManager.Core.FileSystem.Caching
 {
     internal class LocalBlobStore : IBlobStore
     {
