@@ -1,20 +1,29 @@
 ﻿using LiteDB;
 using MachineStateManager.Core;
+using System.Diagnostics;
 
 namespace MachineStateManager.Persistence
 {
-    internal abstract class PersistentCaretaker<TOriginator, TMemento> : Caretaker<TOriginator, TMemento>
+    internal abstract class PersistentCaretaker<TOriginator, TMemento> : Caretaker<TOriginator, TMemento>, IPersistentCaretaker
         where TOriginator : IOriginator<TMemento>
         where TMemento : IMemento
     {
-        public abstract string ID { get; }
+        public string ID { get; }
+
+        public int ProcessID { get; }
+
+        public DateTime ProcessStartTime { get; }
 
         public string CollectionName => GetType().Name;
 
-        private readonly LiteDatabase database;
+        protected readonly LiteDatabase database;
 
-        public PersistentCaretaker(TOriginator originator, LiteDatabase database) : base(originator)
+        public PersistentCaretaker(string id, TOriginator originator, LiteDatabase database) : base(originator)
         {
+            ID = id;
+            ProcessID = System.Environment.ProcessId;
+            ProcessStartTime = Process.GetCurrentProcess().StartTime;
+
             this.database = database;
 
             if (database.BeginTrans())
@@ -37,8 +46,12 @@ namespace MachineStateManager.Persistence
             }
         }
 
-        protected PersistentCaretaker(TOriginator originator, TMemento memento, LiteDatabase database) : base(originator, memento)
+        protected PersistentCaretaker(string id, int processID, DateTime processStartTime, TOriginator originator, TMemento memento, LiteDatabase database) : base(originator, memento)
         {
+            ID = id;
+            ProcessID = processID;
+            ProcessStartTime = processStartTime;
+
             this.database = database;
         }
 

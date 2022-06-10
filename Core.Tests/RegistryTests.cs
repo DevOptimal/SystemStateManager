@@ -16,6 +16,18 @@ namespace MachineStateManager.Tests
 
         private const string rootSubKey = nameof(MachineStateManager);
 
+        [ClassInitialize]
+        public static void ClassInitialize(TestContext testContext)
+        {
+            RegistryKey.OpenBaseKey(hive, view).CreateSubKey(rootSubKey);
+        }
+
+        [ClassCleanup]
+        public static void ClassCleanup()
+        {
+            RecursiveDeleteRegistryKey(hive, view, rootSubKey);
+        }
+
         [TestMethod]
         public void RestoresDeletedRegKey()
         {
@@ -51,6 +63,23 @@ namespace MachineStateManager.Tests
             }
 
             Assert.AreEqual("bar", (string?)regKey.GetValue(name));
+        }
+
+        private static void RecursiveDeleteRegistryKey(RegistryHive hive, RegistryView view, string subKey)
+        {
+            var regKey = RegistryKey.OpenBaseKey(hive, view).OpenSubKey(subKey);
+
+            if (regKey != null)
+            {
+                var subRegKeyNames = regKey.GetSubKeyNames();
+
+                foreach (var subRegKeyName in subRegKeyNames)
+                {
+                    RecursiveDeleteRegistryKey(hive, view, Path.Combine(subKey, subRegKeyName));
+                }
+
+                RegistryKey.OpenBaseKey(hive, view).DeleteSubKey(subKey);
+            }
         }
     }
 }

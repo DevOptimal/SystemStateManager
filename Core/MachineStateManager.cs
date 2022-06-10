@@ -10,26 +10,36 @@ namespace MachineStateManager
 {
     public class MachineStateManager : IDisposable
     {
-        private bool disposedValue;
+        private readonly IBlobStore fileCache;
 
-        private readonly List<IDisposable> caretakers;
+        protected readonly List<IDisposable> caretakers;
 
-        private readonly IBlobStore blobStore;
+        protected bool disposedValue;
 
         public MachineStateManager()
+            : this(new LocalBlobStore(Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.CommonApplicationData), nameof(MachineStateManager), "FileCache")))
         {
-            caretakers = new List<IDisposable>();
-            blobStore = new LocalBlobStore(Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.CommonApplicationData), nameof(MachineStateManager), "FileCache"));
         }
 
-        public IDisposable SnapshotEnvironmentVariable(string name)
+        internal MachineStateManager(IBlobStore fileCache)
+            : this(fileCache, new List<IDisposable>())
+        {
+        }
+
+        internal MachineStateManager(IBlobStore fileCache, List<IDisposable> caretakers)
+        {
+            this.fileCache = fileCache;
+            this.caretakers = caretakers;
+        }
+
+        public virtual IDisposable SnapshotEnvironmentVariable(string name)
         {
             var originator = new EnvironmentVariableOriginator(name);
             var caretaker = new Caretaker<EnvironmentVariableOriginator, EnvironmentVariableMemento>(originator);
             caretakers.Add(caretaker);
             return caretaker;
         }
-        public IDisposable SnapshotEnvironmentVariable(string name, EnvironmentVariableTarget target)
+        public virtual IDisposable SnapshotEnvironmentVariable(string name, EnvironmentVariableTarget target)
         {
             var originator = new EnvironmentVariableOriginator(name, target);
             var caretaker = new Caretaker<EnvironmentVariableOriginator, EnvironmentVariableMemento>(originator);
@@ -37,7 +47,7 @@ namespace MachineStateManager
             return caretaker;
         }
 
-        public IDisposable SnapshotDirectory(string path)
+        public virtual IDisposable SnapshotDirectory(string path)
         {
             var originator = new DirectoryOriginator(path);
             var caretaker = new Caretaker<DirectoryOriginator, DirectoryMemento>(originator);
@@ -45,16 +55,16 @@ namespace MachineStateManager
             return caretaker;
         }
 
-        public IDisposable SnapshotFile(string path)
+        public virtual IDisposable SnapshotFile(string path)
         {
-            var originator = new FileOriginator(path, blobStore);
+            var originator = new FileOriginator(path, fileCache);
             var caretaker = new Caretaker<FileOriginator, FileMemento>(originator);
             caretakers.Add(caretaker);
             return caretaker;
         }
 
         [SupportedOSPlatform("windows")]
-        public IDisposable SnapshotRegistryKey(RegistryHive hive, RegistryView view, string subKey)
+        public virtual IDisposable SnapshotRegistryKey(RegistryHive hive, RegistryView view, string subKey)
         {
             var originator = new RegistryKeyOriginator(hive, view, subKey);
             var caretaker = new Caretaker<RegistryKeyOriginator, RegistryKeyMemento>(originator);
@@ -63,7 +73,7 @@ namespace MachineStateManager
         }
 
         [SupportedOSPlatform("windows")]
-        public IDisposable SnapshotRegistryValue(RegistryHive hive, RegistryView view, string subKey, string name)
+        public virtual IDisposable SnapshotRegistryValue(RegistryHive hive, RegistryView view, string subKey, string name)
         {
             var originator = new RegistryValueOriginator(hive, view, subKey, name);
             var caretaker = new Caretaker<RegistryValueOriginator, RegistryValueMemento>(originator);

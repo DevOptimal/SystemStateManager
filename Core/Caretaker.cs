@@ -1,6 +1,6 @@
 ﻿namespace MachineStateManager.Core
 {
-    internal class Caretaker<TOriginator, TMemento> : IDisposable
+    internal class Caretaker<TOriginator, TMemento> : ICaretaker
         where TOriginator : IOriginator<TMemento>
         where TMemento : IMemento
     {

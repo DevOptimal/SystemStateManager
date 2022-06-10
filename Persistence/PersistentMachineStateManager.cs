@@ -4,28 +4,29 @@ using MachineStateManager.Persistence.FileSystem;
 using MachineStateManager.Persistence.FileSystem.Caching;
 using MachineStateManager.Persistence.Registry;
 using Microsoft.Win32;
+using System.ComponentModel;
+using System.Diagnostics;
 using System.Runtime.Versioning;
 
 namespace MachineStateManager.Persistence
 {
-    public class PersistentMachineStateManager : IDisposable
+    public class PersistentMachineStateManager : MachineStateManager
     {
-        private bool disposedValue;
+        private static readonly LiteDatabase database;
 
-        private readonly List<IDisposable> caretakers;
-
-        private readonly LiteDatabase database;
-
-        private readonly LiteDBBlobStore fileCache;
+        private static readonly LiteDBBlobStore fileCache;
 
         private static readonly string databaseFilePath = Path.Combine(
             System.Environment.GetFolderPath(System.Environment.SpecialFolder.CommonApplicationData),
             nameof(MachineStateManager),
             $"{nameof(Persistence)}.db");
 
-        public PersistentMachineStateManager()
+        static PersistentMachineStateManager()
         {
-            caretakers = new List<IDisposable>();
+            var databaseFilePath = Path.Combine(
+                System.Environment.GetFolderPath(System.Environment.SpecialFolder.CommonApplicationData),
+                nameof(MachineStateManager),
+                $"{nameof(Persistence)}.db");
 
             database = new LiteDatabase(
                 connectionString: new ConnectionString(databaseFilePath)
@@ -44,28 +45,38 @@ namespace MachineStateManager.Persistence
             }
         }
 
-        public IDisposable SnapshotEnvironmentVariable(string name)
+        public PersistentMachineStateManager()
+            : base(fileCache)
+        {
+        }
+
+        private PersistentMachineStateManager(List<IDisposable> caretakers)
+            : base(fileCache, caretakers)
+        {
+        }
+
+        public override IDisposable SnapshotEnvironmentVariable(string name)
         {
             var caretaker = new PersistentEnvironmentVariableCaretaker(name, database);
             caretakers.Add(caretaker);
             return caretaker;
         }
 
-        public IDisposable SnapshotEnvironmentVariable(string name, EnvironmentVariableTarget target)
+        public override IDisposable SnapshotEnvironmentVariable(string name, EnvironmentVariableTarget target)
         {
             var caretaker = new PersistentEnvironmentVariableCaretaker(name, target, database);
             caretakers.Add(caretaker);
             return caretaker;
         }
 
-        public IDisposable SnapshotDirectory(string path)
+        public override IDisposable SnapshotDirectory(string path)
         {
             var caretaker = new PersistentDirectoryCaretaker(path, database);
             caretakers.Add(caretaker);
             return caretaker;
         }
 
-        public IDisposable SnapshotFile(string path)
+        public override IDisposable SnapshotFile(string path)
         {
             var caretaker = new PersistentFileCaretaker(path, fileCache, database);
             caretakers.Add(caretaker);
@@ -73,7 +84,7 @@ namespace MachineStateManager.Persistence
         }
 
         [SupportedOSPlatform("windows")]
-        public IDisposable SnapshotRegistryKey(RegistryHive hive, RegistryView view, string subKey)
+        public override IDisposable SnapshotRegistryKey(RegistryHive hive, RegistryView view, string subKey)
         {
             var caretaker = new PersistentRegistryKeyCaretaker(hive, view, subKey, database);
             caretakers.Add(caretaker);
@@ -81,57 +92,59 @@ namespace MachineStateManager.Persistence
         }
 
         [SupportedOSPlatform("windows")]
-        public IDisposable SnapshotRegistryValue(RegistryHive hive, RegistryView view, string subKey, string name)
+        public override IDisposable SnapshotRegistryValue(RegistryHive hive, RegistryView view, string subKey, string name)
         {
             var caretaker = new PersistentRegistryValueCaretaker(hive, view, subKey, name, database);
             caretakers.Add(caretaker);
             return caretaker;
         }
 
-        protected virtual void Dispose(bool disposing)
+        protected override void Dispose(bool disposing)
         {
-            if (!disposedValue)
+            base.Dispose(disposing);
+            database.Dispose();
+        }
+
+        public static void RestoreAbandonedCaretakers()
+        {
+            var accessibleProcessInfos = new Dictionary<int, DateTime>();
+            var inaccessibleProcessIDs = new HashSet<int>();
+            foreach (var process in Process.GetProcesses())
             {
-                if (disposing)
+                try
                 {
-                    // TODO: dispose managed state (managed objects)
+                    accessibleProcessInfos[process.Id] = process.StartTime;
                 }
-
-                foreach (var caretaker in caretakers)
+                catch (Win32Exception)
                 {
-                    caretaker.Dispose();
+                    inaccessibleProcessIDs.Add(process.Id);
                 }
-
-                database.Dispose();
-
-                // TODO: free unmanaged resources (unmanaged objects) and override finalizer
-                // TODO: set large fields to null
-                disposedValue = true;
             }
+
+            var abandonedCaretakers = new List<IDisposable>();
+
+            abandonedCaretakers.AddRange(GetAbandonedCaretakers<PersistentEnvironmentVariableCaretaker>(database, accessibleProcessInfos, inaccessibleProcessIDs));
+            abandonedCaretakers.AddRange(GetAbandonedCaretakers<PersistentDirectoryCaretaker>(database, accessibleProcessInfos, inaccessibleProcessIDs));
+            abandonedCaretakers.AddRange(GetAbandonedCaretakers<PersistentFileCaretaker>(database, accessibleProcessInfos, inaccessibleProcessIDs));
+            if (OperatingSystem.IsWindows())
+            {
+                abandonedCaretakers.AddRange(GetAbandonedCaretakers<PersistentRegistryKeyCaretaker>(database, accessibleProcessInfos, inaccessibleProcessIDs));
+                abandonedCaretakers.AddRange(GetAbandonedCaretakers<PersistentRegistryValueCaretaker>(database, accessibleProcessInfos, inaccessibleProcessIDs));
+            }
+
+            var machineStateManager = new PersistentMachineStateManager(abandonedCaretakers);
+
+            machineStateManager.Dispose();
         }
 
-        // // TODO: override finalizer only if 'Dispose(bool disposing)' has code to free unmanaged resources
-        // ~MachineStateManager()
-        // {
-        //     // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
-        //     Dispose(disposing: false);
-        // }
-
-        public void Dispose()
+        private static IEnumerable<IDisposable> GetAbandonedCaretakers<TCaretaker>(LiteDatabase database, Dictionary<int, DateTime> accessibleProcessInfos, HashSet<int> inaccessibleProcessIDs)
+            where TCaretaker : IPersistentCaretaker
         {
-            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
-            Dispose(disposing: true);
-            GC.SuppressFinalize(this);
+            return database.GetCollection<TCaretaker>().FindAll()
+                .Where(c => !(inaccessibleProcessIDs.Contains(c.ProcessID) ||
+                    (accessibleProcessInfos.ContainsKey(c.ProcessID) &&
+                    accessibleProcessInfos[c.ProcessID] == c.ProcessStartTime)))
+                .Cast<IDisposable>();
         }
-
-        //private static LiteDatabase GetDatabaseConnection()
-        //{
-
-        //}
-
-        //public static void RestoreAbandonedCaretakers()
-        //{
-        //    var caretakers = data
-        //}
     }
 }
