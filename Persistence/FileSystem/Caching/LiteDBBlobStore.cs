@@ -8,15 +8,10 @@ namespace MachineStateManager.Persistence.FileSystem.Caching
 {
     internal class LiteDBBlobStore : IBlobStore
     {
-        private readonly ILiteStorage<string> fileStorage;
-
-        public LiteDBBlobStore(LiteDatabase database)
-        {
-            fileStorage = database.FileStorage;
-        }
-
         public void DownloadFile(string hash, string destinationPath)
         {
+            using var database = PersistentFileCaretaker.GetDatabase();
+            var fileStorage = database.FileStorage;
             var blobFile = fileStorage.FindById(hash);
             if (blobFile == null)
             {
@@ -32,6 +27,8 @@ namespace MachineStateManager.Persistence.FileSystem.Caching
 
         public string UploadFile(string sourcePath)
         {
+            using var database = PersistentFileCaretaker.GetDatabase();
+            var fileStorage = database.FileStorage;
             var sourceFile = new FileInfo(sourcePath);
             if (!sourceFile.Exists)
             {

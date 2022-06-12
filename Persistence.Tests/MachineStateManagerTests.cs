@@ -38,7 +38,7 @@ namespace MachineStateManager.Persistence.Tests
         {
             var tasks = new List<Task>();
 
-            for (var i = 0; i < 10; i++)
+            for (var i = 0; i < 100; i++)
             {
                 tasks.Add(Task.Factory.StartNew(() =>
                 {
@@ -48,7 +48,9 @@ namespace MachineStateManager.Persistence.Tests
                     using (machineStateManager.SnapshotEnvironmentVariable(name))
                     {
                         System.Environment.SetEnvironmentVariable(name, "test");
+                        Assert.AreEqual("test", System.Environment.GetEnvironmentVariable(name));
                     }
+                    Assert.AreEqual(null, System.Environment.GetEnvironmentVariable(name));
                 }));
             }
 

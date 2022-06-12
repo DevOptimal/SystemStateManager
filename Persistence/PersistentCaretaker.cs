@@ -1,6 +1,9 @@
 ﻿using LiteDB;
 using MachineStateManager.Core;
+using System.ComponentModel;
 using System.Diagnostics;
+using System.Security.AccessControl;
+using System.Security.Principal;
 
 namespace MachineStateManager.Persistence
 {
@@ -8,6 +11,7 @@ namespace MachineStateManager.Persistence
         where TOriginator : IOriginator<TMemento>
         where TMemento : IMemento
     {
+        [BsonId]
         public string ID { get; }
 
         public int ProcessID { get; }
@@ -16,23 +20,24 @@ namespace MachineStateManager.Persistence
 
         public string CollectionName => GetType().Name;
 
-        protected readonly LiteDatabase database;
+        private readonly bool persisted = false;
 
-        public PersistentCaretaker(string id, TOriginator originator, LiteDatabase database) : base(originator)
+        public PersistentCaretaker(string id, TOriginator originator) : base(originator)
         {
             ID = id;
             ProcessID = System.Environment.ProcessId;
             ProcessStartTime = Process.GetCurrentProcess().StartTime;
 
-            this.database = database;
+            using var database = GetDatabase();
 
             if (database.BeginTrans())
             {
                 try
                 {
-                    var col = database.GetCollection<Caretaker<TOriginator, TMemento>>(CollectionName);
+                    var col = database.GetCollection<PersistentCaretaker<TOriginator, TMemento>>(CollectionName);
                     col.Insert(this);
                     database.Commit();
+                    persisted = true;
                 }
                 catch
                 {
@@ -46,36 +51,102 @@ namespace MachineStateManager.Persistence
             }
         }
 
-        protected PersistentCaretaker(string id, int processID, DateTime processStartTime, TOriginator originator, TMemento memento, LiteDatabase database) : base(originator, memento)
+        [BsonCtor]
+        public PersistentCaretaker(string id, int processID, DateTime processStartTime, TOriginator originator, TMemento memento) : base(originator, memento)
         {
             ID = id;
             ProcessID = processID;
             ProcessStartTime = processStartTime;
-
-            this.database = database;
+            persisted = true;
         }
 
         protected override void Dispose(bool disposing)
         {
-            if (database.BeginTrans())
+            if (persisted)
+            {
+                base.Dispose(disposing);
+
+                using var database = GetDatabase();
+
+                if (database.BeginTrans())
+                {
+                    try
+                    {
+                        var col = database.GetCollection<PersistentCaretaker<TOriginator, TMemento>>(CollectionName);
+                        col.Delete(ID);
+                        database.Commit();
+                    }
+                    catch
+                    {
+                        database.Rollback();
+                        throw;
+                    }
+                }
+                else
+                {
+                    throw new Exception();
+                }
+            }
+        }
+
+        public static LiteDatabase GetDatabase()
+        {
+            var databaseDirectory = new DirectoryInfo(Path.Combine(
+                System.Environment.GetFolderPath(System.Environment.SpecialFolder.CommonApplicationData),
+                nameof(MachineStateManager)));
+
+            if (!databaseDirectory.Exists)
+            {
+                databaseDirectory.Create();
+
+                if (OperatingSystem.IsWindows())
+                {
+                    var directorySecurity = databaseDirectory.GetAccessControl();
+                    directorySecurity.AddAccessRule(new FileSystemAccessRule(
+                        identity: new SecurityIdentifier(WellKnownSidType.WorldSid, domainSid: null),
+                        fileSystemRights: FileSystemRights.FullControl,
+                        inheritanceFlags: InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit,
+                        propagationFlags: PropagationFlags.NoPropagateInherit,
+                        type: AccessControlType.Allow));
+                    databaseDirectory.SetAccessControl(directorySecurity);
+                }
+            }
+
+            var databaseFilePath = Path.Combine(
+                databaseDirectory.FullName,
+                $"{nameof(Persistence)}.db");
+
+            return new LiteDatabase(connectionString: new ConnectionString(databaseFilePath)
+            {
+                Connection = ConnectionType.Shared
+            });
+        }
+
+        protected static IEnumerable<IDisposable> GetAbandonedCaretakers<T>()
+            where T : PersistentCaretaker<TOriginator, TMemento>
+        {
+            var accessibleProcessInfos = new Dictionary<int, DateTime>();
+            var inaccessibleProcessIDs = new HashSet<int>();
+            foreach (var process in Process.GetProcesses())
             {
                 try
                 {
-                    base.Dispose(disposing);
-                    var col = database.GetCollection<Caretaker<TOriginator, TMemento>>(CollectionName);
-                    col.Delete(ID);
-                    database.Commit();
+                    accessibleProcessInfos[process.Id] = process.StartTime;
                 }
-                catch
+                catch (Win32Exception)
                 {
-                    database.Rollback();
-                    throw;
+                    inaccessibleProcessIDs.Add(process.Id);
                 }
+                catch (InvalidOperationException) { } // The process has already exited, so don't add it to any lists.
             }
-            else
-            {
-                throw new Exception();
-            }
+
+            using var database = GetDatabase();
+
+            return database.GetCollection<T>(typeof(T).Name).FindAll()
+                .Where(c => !(inaccessibleProcessIDs.Contains(c.ProcessID) ||
+                    (accessibleProcessInfos.ContainsKey(c.ProcessID) &&
+                    accessibleProcessInfos[c.ProcessID] == c.ProcessStartTime)))
+                .Cast<IDisposable>();
         }
     }
 }
