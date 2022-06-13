@@ -3,6 +3,8 @@ using MachineStateManager.Persistence.FileSystem;
 using MachineStateManager.Persistence.FileSystem.Caching;
 using MachineStateManager.Persistence.Registry;
 using Microsoft.Win32;
+using System.ComponentModel;
+using System.Diagnostics;
 using System.Runtime.Versioning;
 
 namespace MachineStateManager.Persistence
@@ -65,15 +67,29 @@ namespace MachineStateManager.Persistence
 
         public static void RestoreAbandonedCaretakers()
         {
+            var processes = new Dictionary<int, DateTime?>();
+            foreach (var process in Process.GetProcesses())
+            {
+                try
+                {
+                    processes[process.Id] = process.StartTime;
+                }
+                catch (Win32Exception)
+                {
+                    processes[process.Id] = null;
+                }
+                catch (InvalidOperationException) { } // The process has already exited, so don't add it to any lists.
+            }
+
             var abandonedCaretakers = new List<IDisposable>();
 
-            abandonedCaretakers.AddRange(PersistentEnvironmentVariableCaretaker.GetAbandonedCaretakers());
-            abandonedCaretakers.AddRange(PersistentDirectoryCaretaker.GetAbandonedCaretakers());
-            abandonedCaretakers.AddRange(PersistentFileCaretaker.GetAbandonedCaretakers());
+            abandonedCaretakers.AddRange(PersistentEnvironmentVariableCaretaker.GetAbandonedCaretakers(processes));
+            abandonedCaretakers.AddRange(PersistentDirectoryCaretaker.GetAbandonedCaretakers(processes));
+            abandonedCaretakers.AddRange(PersistentFileCaretaker.GetAbandonedCaretakers(processes));
             if (OperatingSystem.IsWindows())
             {
-                abandonedCaretakers.AddRange(PersistentRegistryKeyCaretaker.GetAbandonedCaretakers());
-                abandonedCaretakers.AddRange(PersistentRegistryValueCaretaker.GetAbandonedCaretakers());
+                abandonedCaretakers.AddRange(PersistentRegistryKeyCaretaker.GetAbandonedCaretakers(processes));
+                abandonedCaretakers.AddRange(PersistentRegistryValueCaretaker.GetAbandonedCaretakers(processes));
             }
 
             var machineStateManager = new PersistentMachineStateManager(abandonedCaretakers);

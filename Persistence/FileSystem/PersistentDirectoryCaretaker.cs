@@ -49,7 +49,8 @@ namespace MachineStateManager.Persistence.FileSystem
         {
         }
 
-        public static IEnumerable<IDisposable> GetAbandonedCaretakers() => GetAbandonedCaretakers<PersistentDirectoryCaretaker>();
+        public static IEnumerable<IDisposable> GetAbandonedCaretakers(Dictionary<int, DateTime?> processes)
+            => GetAbandonedCaretakers<PersistentDirectoryCaretaker>(processes);
 
         private static string GetID(DirectoryOriginator originator)
         {

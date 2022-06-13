@@ -122,30 +122,17 @@ namespace MachineStateManager.Persistence
             });
         }
 
-        protected static IEnumerable<IDisposable> GetAbandonedCaretakers<T>()
+        protected static IEnumerable<IDisposable> GetAbandonedCaretakers<T>(Dictionary<int, DateTime?> processes)
             where T : PersistentCaretaker<TOriginator, TMemento>
         {
-            var accessibleProcessInfos = new Dictionary<int, DateTime>();
-            var inaccessibleProcessIDs = new HashSet<int>();
-            foreach (var process in Process.GetProcesses())
-            {
-                try
-                {
-                    accessibleProcessInfos[process.Id] = process.StartTime;
-                }
-                catch (Win32Exception)
-                {
-                    inaccessibleProcessIDs.Add(process.Id);
-                }
-                catch (InvalidOperationException) { } // The process has already exited, so don't add it to any lists.
-            }
-
             using var database = GetDatabase();
 
             return database.GetCollection<T>(typeof(T).Name).FindAll()
-                .Where(c => !(inaccessibleProcessIDs.Contains(c.ProcessID) ||
-                    (accessibleProcessInfos.ContainsKey(c.ProcessID) &&
-                    accessibleProcessInfos[c.ProcessID] == c.ProcessStartTime)))
+                .Where(c => !(processes.ContainsKey(c.ProcessID) &&
+                    (
+                        processes[c.ProcessID] == c.ProcessStartTime ||
+                        processes[c.ProcessID] == null
+                    )))
                 .Cast<IDisposable>();
         }
     }

@@ -55,7 +55,8 @@ namespace MachineStateManager.Persistence.Environment
         {
         }
 
-        public static IEnumerable<IDisposable> GetAbandonedCaretakers() => GetAbandonedCaretakers<PersistentEnvironmentVariableCaretaker>();
+        public static IEnumerable<IDisposable> GetAbandonedCaretakers(Dictionary<int, DateTime?> processes)
+            => GetAbandonedCaretakers<PersistentEnvironmentVariableCaretaker>(processes);
 
         private static string GetID(EnvironmentVariableOriginator originator)
         {

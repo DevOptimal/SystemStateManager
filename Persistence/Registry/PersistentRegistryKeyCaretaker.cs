@@ -54,7 +54,8 @@ namespace MachineStateManager.Persistence.Registry
         {
         }
 
-        public static IEnumerable<IDisposable> GetAbandonedCaretakers() => GetAbandonedCaretakers<PersistentRegistryKeyCaretaker>();
+        public static IEnumerable<IDisposable> GetAbandonedCaretakers(Dictionary<int, DateTime?> processes)
+            => GetAbandonedCaretakers<PersistentRegistryKeyCaretaker>(processes);
 
         private static string GetID(RegistryKeyOriginator originator)
         {
