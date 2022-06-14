@@ -1,7 +1,4 @@
-﻿using LiteDB;
-using MachineStateManager.Core.FileSystem;
-using System;
-using System.IO;
+﻿using MachineStateManager.Core.FileSystem;
 using System.Security.Cryptography;
 
 namespace MachineStateManager.Persistence.FileSystem.Caching

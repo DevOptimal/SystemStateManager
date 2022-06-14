@@ -1,6 +1,4 @@
-﻿using MachineStateManager.Persistence;
-
-namespace MachineStateManager.Tests
+﻿namespace MachineStateManager.Persistence.Tests
 {
     [TestClass]
     public class FileSystemTests

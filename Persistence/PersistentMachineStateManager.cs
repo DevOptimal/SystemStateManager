@@ -78,7 +78,7 @@ namespace MachineStateManager.Persistence
                 {
                     processes[process.Id] = null;
                 }
-                catch (InvalidOperationException) { } // The process has already exited, so don't add it to any lists.
+                catch (InvalidOperationException) { } // The process has already exited, so don't add it.
             }
 
             var abandonedCaretakers = new List<IDisposable>();
