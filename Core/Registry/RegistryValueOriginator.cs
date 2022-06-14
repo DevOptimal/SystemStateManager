@@ -1,9 +1,7 @@
 ﻿using Microsoft.Win32;
-using System.Runtime.Versioning;
 
 namespace MachineStateManager.Core.Registry
 {
-    [SupportedOSPlatform("windows")]
     internal class RegistryValueOriginator : IOriginator<RegistryValueMemento>
     {
         public RegistryHive Hive { get; }
@@ -12,7 +10,7 @@ namespace MachineStateManager.Core.Registry
 
         public string SubKey { get; }
 
-        public string? Name { get; }
+        public string Name { get; }
 
         public RegistryValueOriginator(RegistryHive hive, RegistryView view, string subKey, string name)
         {

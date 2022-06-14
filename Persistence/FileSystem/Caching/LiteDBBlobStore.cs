@@ -1,4 +1,6 @@
 ﻿using MachineStateManager.Core.FileSystem;
+using System;
+using System.IO;
 using System.Security.Cryptography;
 
 namespace MachineStateManager.Persistence.FileSystem.Caching
@@ -7,40 +9,48 @@ namespace MachineStateManager.Persistence.FileSystem.Caching
     {
         public void DownloadFile(string id, string destinationPath)
         {
-            using var database = PersistentFileCaretaker.GetDatabase();
-            var fileStorage = database.FileStorage;
-            var blobFile = fileStorage.FindById(id);
-            if (blobFile == null)
+            using (var database = PersistentFileCaretaker.GetDatabase())
             {
-                throw new FileNotFoundException();
+                var fileStorage = database.FileStorage;
+                var blobFile = fileStorage.FindById(id);
+                if (blobFile == null)
+                {
+                    throw new FileNotFoundException();
+                }
+
+                var destinationFile = new FileInfo(destinationPath);
+                using (var destinationStream = destinationFile.Open(FileMode.OpenOrCreate, FileAccess.Write, FileShare.None))
+                {
+                    destinationStream.SetLength(0); // Delete existing file.
+
+                    blobFile.CopyTo(destinationStream);
+                }
             }
-
-            var destinationFile = new FileInfo(destinationPath);
-            using var destinationStream = destinationFile.Open(FileMode.OpenOrCreate, FileAccess.Write, FileShare.None);
-            destinationStream.SetLength(0); // Delete existing file.
-
-            blobFile.CopyTo(destinationStream);
         }
 
         public string UploadFile(string sourcePath)
         {
-            using var database = PersistentFileCaretaker.GetDatabase();
-            var fileStorage = database.FileStorage;
-            var sourceFile = new FileInfo(sourcePath);
-            if (!sourceFile.Exists)
+            using (var database = PersistentFileCaretaker.GetDatabase())
             {
-                throw new FileNotFoundException();
-            }
-            using var sourceStream = sourceFile.Open(FileMode.Open, FileAccess.Read, FileShare.Read);
+                var fileStorage = database.FileStorage;
+                var sourceFile = new FileInfo(sourcePath);
+                if (!sourceFile.Exists)
+                {
+                    throw new FileNotFoundException();
+                }
+                using (var sourceStream = sourceFile.Open(FileMode.Open, FileAccess.Read, FileShare.Read))
+                {
 
-            var id = ComputeFileHash(sourceStream);
-            var blobFile = fileStorage.FindById(id);
-            if (blobFile == null)
-            {
-                fileStorage.Upload(id, id, sourceStream);
-            }
+                    var id = ComputeFileHash(sourceStream);
+                    var blobFile = fileStorage.FindById(id);
+                    if (blobFile == null)
+                    {
+                        fileStorage.Upload(id, id, sourceStream);
+                    }
 
-            return id;
+                    return id;
+                }
+            }
         }
 
         private static string ComputeFileHash(FileStream fileStream)
@@ -49,13 +59,15 @@ namespace MachineStateManager.Persistence.FileSystem.Caching
 
             fileStream.Position = 0;
 
-            using var md5 = MD5.Create();
+            using (var md5 = MD5.Create())
+            {
 
-            var hash = md5.ComputeHash(fileStream);
+                var hash = md5.ComputeHash(fileStream);
 
-            fileStream.Position = previousPosition;
+                fileStream.Position = previousPosition;
 
-            return Convert.ToHexString(hash);
+                return BitConverter.ToString(hash).Replace("-", string.Empty);
+            }
         }
     }
 }

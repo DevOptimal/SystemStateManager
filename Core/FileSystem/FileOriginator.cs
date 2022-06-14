@@ -1,4 +1,7 @@
-﻿namespace MachineStateManager.Core.FileSystem
+﻿using System;
+using System.IO;
+
+namespace MachineStateManager.Core.FileSystem
 {
     internal class FileOriginator : IOriginator<FileMemento>
     {

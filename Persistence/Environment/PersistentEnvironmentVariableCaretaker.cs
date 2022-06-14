@@ -1,6 +1,9 @@
 ﻿using LiteDB;
 using MachineStateManager.Core.Environment;
+using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 
 namespace MachineStateManager.Persistence.Environment
 {
@@ -27,7 +30,7 @@ namespace MachineStateManager.Persistence.Environment
                 {
                     var originator = new EnvironmentVariableOriginator(
                         bson[nameof(Originator)][nameof(EnvironmentVariableOriginator.Name)].AsString,
-                        Enum.Parse<EnvironmentVariableTarget>(bson[nameof(Originator)][nameof(EnvironmentVariableOriginator.Target)].AsString));
+                        (EnvironmentVariableTarget)Enum.Parse(typeof(EnvironmentVariableTarget), bson[nameof(Originator)][nameof(EnvironmentVariableOriginator.Target)].AsString));
                     var memento = new EnvironmentVariableMemento(
                         bson[nameof(Memento)][nameof(EnvironmentVariableMemento.Value)].AsString);
                     return new PersistentEnvironmentVariableCaretaker(bson["_id"].AsString, bson[nameof(ProcessID)].AsInt32, bson[nameof(ProcessStartTime)].AsDateTime, originator, memento);
@@ -65,9 +68,9 @@ namespace MachineStateManager.Persistence.Environment
                 throw new ArgumentNullException(nameof(originator));
             }
 
-            var id = string.Join('\\', originator.Target, originator.Name);
+            var id = string.Join("\\", originator.Target, originator.Name);
 
-            if (OperatingSystem.IsWindows())
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 id = id.ToLower();
             }

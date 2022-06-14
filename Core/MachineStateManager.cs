@@ -4,7 +4,9 @@ using MachineStateManager.Core.FileSystem;
 using MachineStateManager.Core.FileSystem.Caching;
 using MachineStateManager.Core.Registry;
 using Microsoft.Win32;
-using System.Runtime.Versioning;
+using System;
+using System.Collections.Generic;
+using System.IO;
 
 namespace MachineStateManager
 {
@@ -58,7 +60,6 @@ namespace MachineStateManager
             return caretaker;
         }
 
-        [SupportedOSPlatform("windows")]
         public virtual IDisposable SnapshotRegistryKey(RegistryHive hive, RegistryView view, string subKey)
         {
             var originator = new RegistryKeyOriginator(hive, view, subKey);
@@ -67,7 +68,6 @@ namespace MachineStateManager
             return caretaker;
         }
 
-        [SupportedOSPlatform("windows")]
         public virtual IDisposable SnapshotRegistryValue(RegistryHive hive, RegistryView view, string subKey, string name)
         {
             var originator = new RegistryValueOriginator(hive, view, subKey, name);

@@ -1,4 +1,6 @@
-﻿namespace MachineStateManager.Core.Environment
+﻿using System;
+
+namespace MachineStateManager.Core.Environment
 {
     internal class EnvironmentVariableOriginator : IOriginator<EnvironmentVariableMemento>
     {
