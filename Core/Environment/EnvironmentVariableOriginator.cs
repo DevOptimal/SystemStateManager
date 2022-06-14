@@ -6,10 +6,6 @@
 
         public EnvironmentVariableTarget Target { get; }
 
-        public EnvironmentVariableOriginator(string name)
-            : this(name, EnvironmentVariableTarget.Process)
-        { }
-
         public EnvironmentVariableOriginator(string name, EnvironmentVariableTarget target)
         {
             Name = name ?? throw new ArgumentNullException(nameof(name));

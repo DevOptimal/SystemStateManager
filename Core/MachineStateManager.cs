@@ -14,7 +14,7 @@ namespace MachineStateManager
 
         protected readonly List<IDisposable> caretakers;
 
-        protected bool disposedValue;
+        private bool disposedValue;
 
         public MachineStateManager()
             : this(new LocalBlobStore(Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.CommonApplicationData), nameof(MachineStateManager), "FileCache")))
@@ -32,13 +32,8 @@ namespace MachineStateManager
             this.caretakers = caretakers;
         }
 
-        public virtual IDisposable SnapshotEnvironmentVariable(string name)
-        {
-            var originator = new EnvironmentVariableOriginator(name);
-            var caretaker = new Caretaker<EnvironmentVariableOriginator, EnvironmentVariableMemento>(originator);
-            caretakers.Add(caretaker);
-            return caretaker;
-        }
+        public virtual IDisposable SnapshotEnvironmentVariable(string name) => SnapshotEnvironmentVariable(name, EnvironmentVariableTarget.Process);
+
         public virtual IDisposable SnapshotEnvironmentVariable(string name, EnvironmentVariableTarget target)
         {
             var originator = new EnvironmentVariableOriginator(name, target);
@@ -87,23 +82,24 @@ namespace MachineStateManager
             {
                 if (disposing)
                 {
-                    // TODO: dispose managed state (managed objects)
+                    foreach (var caretaker in caretakers)
+                    {
+                        caretaker.Dispose();
+                    }
                 }
 
-                foreach (var caretaker in caretakers)
-                {
-                    caretaker.Dispose();
-                }
-
+                // TODO: free unmanaged resources (unmanaged objects) and override finalizer
+                // TODO: set large fields to null
                 disposedValue = true;
             }
         }
 
-        ~MachineStateManager()
-        {
-            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
-            Dispose(disposing: false);
-        }
+        // // TODO: override finalizer only if 'Dispose(bool disposing)' has code to free unmanaged resources
+        // ~MachineStateManager()
+        // {
+        //     // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+        //     Dispose(disposing: false);
+        // }
 
         public void Dispose()
         {

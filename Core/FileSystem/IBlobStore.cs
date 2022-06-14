@@ -3,17 +3,17 @@
     internal interface IBlobStore
     {
         /// <summary>
-        /// Pushes a file to the file cache and returns a hash of its content.
-        /// </summary>
-        /// <param name="sourcePath">The file to push to the file cache.</param>
-        /// <returns>A hash of the file's content.</returns>
-        string UploadFile(string sourcePath);
-
-        /// <summary>
         /// Pulls a file from the file cache and saves it to a destination location.
         /// </summary>
-        /// <param name="hash">The hash of the content to pull.</param>
-        /// <param name="destinationPath">The location to save the file to.</param>
-        void DownloadFile(string hash, string destinationPath);
+        /// <param name="id">The ID of the content to download.</param>
+        /// <param name="destinationPath">The location to download the file to.</param>
+        void DownloadFile(string id, string destinationPath);
+
+        /// <summary>
+        /// Uploads a file to the blob store and returns an ID for its content.
+        /// </summary>
+        /// <param name="sourcePath">The file to upload to the blob store.</param>
+        /// <returns>A unique identifier for the file's content.</returns>
+        string UploadFile(string sourcePath);
     }
 }

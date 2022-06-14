@@ -36,7 +36,7 @@ namespace MachineStateManager.Persistence.Environment
         }
 
         public PersistentEnvironmentVariableCaretaker(string name)
-            : this(new EnvironmentVariableOriginator(name))
+            : this(name, EnvironmentVariableTarget.Process)
         {
         }
 

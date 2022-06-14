@@ -1,32 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace MachineStateManager.Persistence.Tests
+﻿namespace MachineStateManager.Persistence.Tests
 {
     [TestClass]
     public class MachineStateManagerTests
     {
-        [TestMethod]
-        public void CanGetAdminProcesses()
-        {
-            var processes = Process.GetProcesses();
-
-            foreach (var process in processes)
-            {
-                var startTime = "Unaccessible";
-                try
-                {
-                    startTime = process.StartTime.ToString();
-                }
-                catch { }
-                Console.WriteLine($"Process {process.Id} started at {startTime}");
-            }
-        }
-
         [TestMethod]
         public void RestoreAbandonedCaretakers()
         {

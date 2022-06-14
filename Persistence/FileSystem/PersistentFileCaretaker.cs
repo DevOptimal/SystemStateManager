@@ -7,6 +7,8 @@ namespace MachineStateManager.Persistence.FileSystem
 {
     internal class PersistentFileCaretaker : PersistentCaretaker<FileOriginator, FileMemento>
     {
+        private bool disposedValue;
+
         static PersistentFileCaretaker()
         {
             var currentProcess = Process.GetCurrentProcess();
@@ -52,6 +54,30 @@ namespace MachineStateManager.Persistence.FileSystem
 
         public static IEnumerable<IDisposable> GetAbandonedCaretakers(Dictionary<int, DateTime?> processes)
             => GetAbandonedCaretakers<PersistentFileCaretaker>(processes);
+
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose(disposing);
+
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    using var database = GetDatabase();
+                    var collection = database.GetCollection<PersistentFileCaretaker>();
+
+                    if (!(collection.Find(c => c.Memento.Hash == Memento.Hash).Any()))
+                    {
+                        var fileStorage = database.FileStorage;
+                        fileStorage.Delete(Memento.Hash);
+                    }
+                }
+
+                // TODO: free unmanaged resources (unmanaged objects) and override finalizer
+                // TODO: set large fields to null
+                disposedValue = true;
+            }
+        }
 
         private static string GetID(FileOriginator originator)
         {

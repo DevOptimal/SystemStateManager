@@ -1,6 +1,4 @@
-﻿using System.Security.Cryptography;
-
-namespace MachineStateManager.Core.FileSystem.Caching
+﻿namespace MachineStateManager.Core.FileSystem.Caching
 {
     internal class LocalBlobStore : IBlobStore
     {
@@ -15,20 +13,15 @@ namespace MachineStateManager.Core.FileSystem.Caching
             }
         }
 
-        public void DownloadFile(string hash, string destinationPath)
+        public void DownloadFile(string id, string destinationPath)
         {
-            var blobFile = new FileInfo(Path.Combine(rootDirectory.FullName, hash));
+            var blobFile = new FileInfo(Path.Combine(rootDirectory.FullName, id));
             if (!blobFile.Exists)
             {
                 throw new FileNotFoundException();
             }
-            using var blobStream = blobFile.Open(FileMode.Open, FileAccess.Read, FileShare.Read);
-            
-            var destinationFile = new FileInfo(destinationPath);
-            using var destinationStream = destinationFile.Open(FileMode.OpenOrCreate, FileAccess.Write, FileShare.None);
-            destinationStream.SetLength(0); // Delete existing file.
 
-            blobStream.CopyTo(destinationStream);
+            blobFile.CopyTo(destinationPath);
         }
 
         public string UploadFile(string sourcePath)
@@ -38,33 +31,14 @@ namespace MachineStateManager.Core.FileSystem.Caching
             {
                 throw new FileNotFoundException();
             }
-            using var sourceStream = sourceFile.Open(FileMode.Open, FileAccess.Read, FileShare.Read);
 
-            var hash = ComputeFileHash(sourceStream);
-            var blobFile = new FileInfo(Path.Combine(rootDirectory.FullName, hash));
-            if (!blobFile.Exists)
-            {
-                using var blobStream = blobFile.Open(FileMode.CreateNew, FileAccess.Write, FileShare.None);
+            var id = Guid.NewGuid().ToString();
 
-                sourceStream.CopyTo(blobStream);
-            }
+            var blobFile = new FileInfo(Path.Combine(rootDirectory.FullName, id));
 
-            return hash;
-        }
+            sourceFile.CopyTo(blobFile.FullName);
 
-        private static string ComputeFileHash(FileStream fileStream)
-        {
-            var previousPosition = fileStream.Position;
-
-            fileStream.Position = 0;
-
-            using var md5 = MD5.Create();
-
-            var hash = md5.ComputeHash(fileStream);
-
-            fileStream.Position = previousPosition;
-
-            return Convert.ToHexString(hash);
+            return id;
         }
     }
 }

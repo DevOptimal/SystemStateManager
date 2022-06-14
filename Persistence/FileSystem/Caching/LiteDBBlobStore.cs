@@ -8,11 +8,11 @@ namespace MachineStateManager.Persistence.FileSystem.Caching
 {
     internal class LiteDBBlobStore : IBlobStore
     {
-        public void DownloadFile(string hash, string destinationPath)
+        public void DownloadFile(string id, string destinationPath)
         {
             using var database = PersistentFileCaretaker.GetDatabase();
             var fileStorage = database.FileStorage;
-            var blobFile = fileStorage.FindById(hash);
+            var blobFile = fileStorage.FindById(id);
             if (blobFile == null)
             {
                 throw new FileNotFoundException();
@@ -36,14 +36,14 @@ namespace MachineStateManager.Persistence.FileSystem.Caching
             }
             using var sourceStream = sourceFile.Open(FileMode.Open, FileAccess.Read, FileShare.Read);
 
-            var hash = ComputeFileHash(sourceStream);
-            var blobFile = fileStorage.FindById(hash);
+            var id = ComputeFileHash(sourceStream);
+            var blobFile = fileStorage.FindById(id);
             if (blobFile == null)
             {
-                fileStorage.Upload(hash, hash, sourceStream);
+                fileStorage.Upload(id, id, sourceStream);
             }
 
-            return hash;
+            return id;
         }
 
         private static string ComputeFileHash(FileStream fileStream)

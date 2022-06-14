@@ -1,7 +1,4 @@
 ﻿using MachineStateManager.Persistence;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
-using System.IO;
 
 namespace MachineStateManager.Tests
 {
@@ -76,6 +73,31 @@ namespace MachineStateManager.Tests
             File.Delete(testFile.FullName);
 
             caretaker.Dispose();
+
+            Assert.AreEqual(expectedFileContent, File.ReadAllText(testFile.FullName));
+        }
+
+        [TestMethod]
+        public void CorrectlyRestoresTwoDifferentFilesWithSameContent()
+        {
+            var testFile2 = new FileInfo(Path.Combine(TestContext.ResultsDirectory, Path.GetRandomFileName()));
+            File.WriteAllText(testFile2.FullName, expectedFileContent);
+
+            using var machineStateManager = new PersistentMachineStateManager();
+
+            using (var caretaker = machineStateManager.SnapshotFile(testFile.FullName))
+            {
+                File.Delete(testFile.FullName);
+                Assert.IsFalse(File.Exists(testFile.FullName));
+
+                using (var caretaker2 = machineStateManager.SnapshotFile(testFile2.FullName))
+                {
+                    File.Delete(testFile2.FullName);
+                    Assert.IsFalse(File.Exists(testFile2.FullName));
+                }
+
+                Assert.AreEqual(expectedFileContent, File.ReadAllText(testFile2.FullName));
+            }
 
             Assert.AreEqual(expectedFileContent, File.ReadAllText(testFile.FullName));
         }
