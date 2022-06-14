@@ -1,9 +1,7 @@
 ﻿using Microsoft.Win32;
-using System.Runtime.Versioning;
 
 namespace MachineStateManager.Core.Registry
 {
-    [SupportedOSPlatform("windows")]
     internal class RegistryKeyOriginator : IOriginator<RegistryKeyMemento>
     {
         public RegistryHive Hive { get; }

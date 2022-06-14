@@ -1,6 +1,9 @@
 ﻿using LiteDB;
 using MachineStateManager.Core.FileSystem;
+using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 
 namespace MachineStateManager.Persistence.FileSystem
 {
@@ -61,7 +64,7 @@ namespace MachineStateManager.Persistence.FileSystem
 
             var id = originator.Path;
 
-            if (OperatingSystem.IsWindows() || OperatingSystem.IsMacOS())
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
                 id = id.ToLower();
             }

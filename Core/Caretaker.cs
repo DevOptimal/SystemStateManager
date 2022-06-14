@@ -1,4 +1,6 @@
-﻿namespace MachineStateManager.Core
+﻿using System;
+
+namespace MachineStateManager.Core
 {
     internal class Caretaker<TOriginator, TMemento> : IDisposable
         where TOriginator : IOriginator<TMemento>
@@ -16,8 +18,18 @@
 
         protected Caretaker(TOriginator originator, TMemento memento)
         {
-            Originator = originator ?? throw new ArgumentNullException(nameof(originator));
-            Memento = memento ?? throw new ArgumentNullException(nameof(memento));
+            if (originator == null)
+            {
+                throw new ArgumentNullException(nameof(originator));
+            }
+
+            if (memento == null)
+            {
+                throw new ArgumentNullException(nameof(memento));
+            }
+
+            Originator = originator;
+            Memento = memento;
         }
 
         protected virtual void Dispose(bool disposing)

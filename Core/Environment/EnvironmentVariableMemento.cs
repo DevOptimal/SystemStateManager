@@ -2,9 +2,9 @@
 {
     internal class EnvironmentVariableMemento : IMemento
     {
-        public string? Value { get; }
+        public string Value { get; }
 
-        public EnvironmentVariableMemento(string? value)
+        public EnvironmentVariableMemento(string value)
         {
             Value = value;
         }

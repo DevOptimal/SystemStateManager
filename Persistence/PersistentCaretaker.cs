@@ -1,6 +1,11 @@
 ﻿using LiteDB;
 using MachineStateManager.Core;
+using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Runtime.InteropServices;
 using System.Security.AccessControl;
 using System.Security.Principal;
 
@@ -24,29 +29,30 @@ namespace MachineStateManager.Persistence
         public PersistentCaretaker(string id, TOriginator originator) : base(originator)
         {
             ID = id;
-            ProcessID = System.Environment.ProcessId;
+            ProcessID = Process.GetCurrentProcess().Id;
             ProcessStartTime = Process.GetCurrentProcess().StartTime;
 
-            using var database = GetDatabase();
-
-            if (database.BeginTrans())
+            using (var database = GetDatabase())
             {
-                try
+                if (database.BeginTrans())
                 {
-                    var col = database.GetCollection<PersistentCaretaker<TOriginator, TMemento>>(CollectionName);
-                    col.Insert(this);
-                    database.Commit();
-                    persisted = true;
+                    try
+                    {
+                        var col = database.GetCollection<PersistentCaretaker<TOriginator, TMemento>>(CollectionName);
+                        col.Insert(this);
+                        database.Commit();
+                        persisted = true;
+                    }
+                    catch
+                    {
+                        database.Rollback();
+                        throw;
+                    }
                 }
-                catch
+                else
                 {
-                    database.Rollback();
-                    throw;
+                    throw new Exception();
                 }
-            }
-            else
-            {
-                throw new Exception();
             }
         }
 
@@ -65,25 +71,26 @@ namespace MachineStateManager.Persistence
             {
                 base.Dispose(disposing);
 
-                using var database = GetDatabase();
-
-                if (database.BeginTrans())
+                using (var database = GetDatabase())
                 {
-                    try
+                    if (database.BeginTrans())
                     {
-                        var col = database.GetCollection<PersistentCaretaker<TOriginator, TMemento>>(CollectionName);
-                        col.Delete(ID);
-                        database.Commit();
+                        try
+                        {
+                            var col = database.GetCollection<PersistentCaretaker<TOriginator, TMemento>>(CollectionName);
+                            col.Delete(ID);
+                            database.Commit();
+                        }
+                        catch
+                        {
+                            database.Rollback();
+                            throw;
+                        }
                     }
-                    catch
+                    else
                     {
-                        database.Rollback();
-                        throw;
+                        throw new Exception();
                     }
-                }
-                else
-                {
-                    throw new Exception();
                 }
             }
         }
@@ -98,7 +105,7 @@ namespace MachineStateManager.Persistence
             {
                 databaseDirectory.Create();
 
-                if (OperatingSystem.IsWindows())
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
                     var directorySecurity = databaseDirectory.GetAccessControl();
                     directorySecurity.AddAccessRule(new FileSystemAccessRule(
@@ -124,15 +131,16 @@ namespace MachineStateManager.Persistence
         protected static IEnumerable<IDisposable> GetAbandonedCaretakers<T>(Dictionary<int, DateTime?> processes)
             where T : PersistentCaretaker<TOriginator, TMemento>
         {
-            using var database = GetDatabase();
-
-            return database.GetCollection<T>(typeof(T).Name).FindAll()
-                .Where(c => !(processes.ContainsKey(c.ProcessID) &&
-                    (
-                        processes[c.ProcessID] == c.ProcessStartTime ||
-                        processes[c.ProcessID] == null
-                    )))
-                .Cast<IDisposable>();
+            using (var database = GetDatabase())
+            {
+                return database.GetCollection<T>(typeof(T).Name).FindAll()
+                    .Where(c => !(processes.ContainsKey(c.ProcessID) &&
+                        (
+                            processes[c.ProcessID] == c.ProcessStartTime ||
+                            processes[c.ProcessID] == null
+                        )))
+                    .Cast<IDisposable>();
+            }
         }
     }
 }

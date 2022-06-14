@@ -1,12 +1,12 @@
 ﻿using LiteDB;
 using MachineStateManager.Core.Registry;
 using Microsoft.Win32;
+using System;
+using System.Collections.Generic;
 using System.Diagnostics;
-using System.Runtime.Versioning;
 
 namespace MachineStateManager.Persistence.Registry
 {
-    [SupportedOSPlatform("windows")]
     internal class PersistentRegistryKeyCaretaker : PersistentCaretaker<RegistryKeyOriginator, RegistryKeyMemento>
     {
         static PersistentRegistryKeyCaretaker()
@@ -29,8 +29,8 @@ namespace MachineStateManager.Persistence.Registry
                 deserialize: (bson) =>
                 {
                     var originator = new RegistryKeyOriginator(
-                        Enum.Parse<RegistryHive>(bson[nameof(Originator)][nameof(RegistryKeyOriginator.Hive)].AsString),
-                        Enum.Parse<RegistryView>(bson[nameof(Originator)][nameof(RegistryKeyOriginator.View)].AsString),
+                        (RegistryHive)Enum.Parse(typeof(RegistryHive), bson[nameof(Originator)][nameof(RegistryKeyOriginator.Hive)].AsString),
+                        (RegistryView)Enum.Parse(typeof(RegistryView), bson[nameof(Originator)][nameof(RegistryKeyOriginator.View)].AsString),
                         bson[nameof(Originator)][nameof(RegistryKeyOriginator.SubKey)].AsString);
                     var memento = new RegistryKeyMemento(
                         bson[nameof(Memento)][nameof(RegistryKeyMemento.Exists)].AsBoolean);
@@ -64,7 +64,7 @@ namespace MachineStateManager.Persistence.Registry
                 throw new ArgumentNullException(nameof(originator));
             }
 
-            return string.Join('\\', originator.Hive, originator.View, originator.SubKey).ToLower();
+            return string.Join("\\", originator.Hive, originator.View, originator.SubKey).ToLower();
         }
     }
 }

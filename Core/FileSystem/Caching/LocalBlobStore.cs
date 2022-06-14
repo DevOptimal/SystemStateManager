@@ -1,4 +1,7 @@
-﻿namespace MachineStateManager.Core.FileSystem.Caching
+﻿using System;
+using System.IO;
+
+namespace MachineStateManager.Core.FileSystem.Caching
 {
     internal class LocalBlobStore : IBlobStore
     {

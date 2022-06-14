@@ -1,7 +1,11 @@
 ﻿using LiteDB;
 using MachineStateManager.Core.FileSystem;
 using MachineStateManager.Persistence.FileSystem.Caching;
+using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
+using System.Runtime.InteropServices;
 
 namespace MachineStateManager.Persistence.FileSystem
 {
@@ -63,13 +67,15 @@ namespace MachineStateManager.Persistence.FileSystem
             {
                 if (disposing)
                 {
-                    using var database = GetDatabase();
-                    var collection = database.GetCollection<PersistentFileCaretaker>();
-
-                    if (!(collection.Find(c => c.Memento.Hash == Memento.Hash).Any()))
+                    using (var database = GetDatabase())
                     {
-                        var fileStorage = database.FileStorage;
-                        fileStorage.Delete(Memento.Hash);
+                        var collection = database.GetCollection<PersistentFileCaretaker>();
+
+                        if (!(collection.Find(c => c.Memento.Hash == Memento.Hash).Any()))
+                        {
+                            var fileStorage = database.FileStorage;
+                            fileStorage.Delete(Memento.Hash);
+                        }
                     }
                 }
 
@@ -88,7 +94,7 @@ namespace MachineStateManager.Persistence.FileSystem
 
             var id = originator.Path;
 
-            if (OperatingSystem.IsWindows() || OperatingSystem.IsMacOS())
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
                 id = id.ToLower();
             }

@@ -2,9 +2,9 @@
 {
     internal class FileMemento : IMemento
     {
-        public string? Hash { get; }
+        public string Hash { get; }
 
-        public FileMemento(string? hash)
+        public FileMemento(string hash)
         {
             Hash = hash;
         }

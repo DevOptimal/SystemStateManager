@@ -3,8 +3,11 @@ using MachineStateManager.Persistence.FileSystem;
 using MachineStateManager.Persistence.FileSystem.Caching;
 using MachineStateManager.Persistence.Registry;
 using Microsoft.Win32;
+using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 
 namespace MachineStateManager.Persistence
@@ -49,7 +52,6 @@ namespace MachineStateManager.Persistence
             return caretaker;
         }
 
-        [SupportedOSPlatform("windows")]
         public override IDisposable SnapshotRegistryKey(RegistryHive hive, RegistryView view, string subKey)
         {
             var caretaker = new PersistentRegistryKeyCaretaker(hive, view, subKey);
@@ -57,7 +59,6 @@ namespace MachineStateManager.Persistence
             return caretaker;
         }
 
-        [SupportedOSPlatform("windows")]
         public override IDisposable SnapshotRegistryValue(RegistryHive hive, RegistryView view, string subKey, string name)
         {
             var caretaker = new PersistentRegistryValueCaretaker(hive, view, subKey, name);
@@ -86,7 +87,7 @@ namespace MachineStateManager.Persistence
             abandonedCaretakers.AddRange(PersistentEnvironmentVariableCaretaker.GetAbandonedCaretakers(processes));
             abandonedCaretakers.AddRange(PersistentDirectoryCaretaker.GetAbandonedCaretakers(processes));
             abandonedCaretakers.AddRange(PersistentFileCaretaker.GetAbandonedCaretakers(processes));
-            if (OperatingSystem.IsWindows())
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 abandonedCaretakers.AddRange(PersistentRegistryKeyCaretaker.GetAbandonedCaretakers(processes));
                 abandonedCaretakers.AddRange(PersistentRegistryValueCaretaker.GetAbandonedCaretakers(processes));
