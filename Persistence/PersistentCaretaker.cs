@@ -7,7 +7,7 @@ using System.Security.Principal;
 
 namespace MachineStateManager.Persistence
 {
-    internal abstract class PersistentCaretaker<TOriginator, TMemento> : Caretaker<TOriginator, TMemento>, IPersistentCaretaker
+    internal abstract class PersistentCaretaker<TOriginator, TMemento> : Caretaker<TOriginator, TMemento>
         where TOriginator : IOriginator<TMemento>
         where TMemento : IMemento
     {
