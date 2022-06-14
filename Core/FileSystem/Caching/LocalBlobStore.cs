@@ -1,45 +1,49 @@
-﻿using System;
+﻿using FileSystem;
+using System;
 using System.IO;
 
 namespace MachineStateManager.Core.FileSystem.Caching
 {
     internal class LocalBlobStore : IBlobStore
     {
-        private readonly DirectoryInfo rootDirectory;
+        public string RootPath { get; }
 
-        public LocalBlobStore(string rootDirectoryPath)
+        public IFileSystem FileSystem { get; }
+
+        public LocalBlobStore(string rootDirectoryPath, IFileSystem fileSystem)
         {
-            rootDirectory = new DirectoryInfo(rootDirectoryPath);
-            if (!rootDirectory.Exists)
+            FileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
+
+            RootPath = Path.GetFullPath(rootDirectoryPath);
+            if (!fileSystem.DirectoryExists(RootPath))
             {
-                rootDirectory.Create();
+                fileSystem.CreateDirectory(RootPath);
             }
         }
 
         public void DownloadFile(string id, string destinationPath)
         {
-            var blobFile = new FileInfo(Path.Combine(rootDirectory.FullName, id));
-            if (!blobFile.Exists)
+            var blobPath = Path.Combine(RootPath, id);
+            if (!FileSystem.FileExists(blobPath))
             {
                 throw new FileNotFoundException();
             }
 
-            blobFile.CopyTo(destinationPath);
+            FileSystem.CopyFile(blobPath, destinationPath, overwrite: true);
         }
 
         public string UploadFile(string sourcePath)
         {
-            var sourceFile = new FileInfo(sourcePath);
-            if (!sourceFile.Exists)
+            if (!FileSystem.FileExists(sourcePath))
             {
                 throw new FileNotFoundException();
             }
 
             var id = Guid.NewGuid().ToString();
 
-            var blobFile = new FileInfo(Path.Combine(rootDirectory.FullName, id));
+            var blobPath = Path.Combine(RootPath, id);
 
-            sourceFile.CopyTo(blobFile.FullName);
+            FileSystem.CopyFile(sourcePath, blobPath, overwrite: false);
 
             return id;
         }

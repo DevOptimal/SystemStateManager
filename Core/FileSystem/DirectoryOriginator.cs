@@ -1,5 +1,5 @@
-﻿using System;
-using System.IO;
+﻿using FileSystem;
+using System;
 
 namespace MachineStateManager.Core.FileSystem
 {
@@ -7,30 +7,33 @@ namespace MachineStateManager.Core.FileSystem
     {
         public string Path { get; }
 
-        public DirectoryOriginator(string path)
+        public IFileSystem FileSystem { get; }
+
+        public DirectoryOriginator(string path, IFileSystem fileSystem)
         {
             Path = path ?? throw new ArgumentNullException(nameof(path));
+            FileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
         }
 
         public DirectoryMemento GetState()
         {
-            return new DirectoryMemento(Directory.Exists(Path));
+            return new DirectoryMemento(FileSystem.DirectoryExists(Path));
         }
 
         public void SetState(DirectoryMemento memento)
         {
-            if (Directory.Exists(Path))
+            if (FileSystem.DirectoryExists(Path))
             {
                 if (!memento.Exists)
                 {
-                    Directory.Delete(Path, recursive: true);
+                    FileSystem.DeleteDirectory(Path, recursive: true);
                 }
             }
             else // Path does not exist
             {
                 if (memento.Exists)
                 {
-                    Directory.CreateDirectory(Path);
+                    FileSystem.CreateDirectory(Path);
                 }
             }
         }

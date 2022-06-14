@@ -1,4 +1,5 @@
-﻿using System;
+﻿using FileSystem;
+using System;
 using System.IO;
 
 namespace MachineStateManager.Core.FileSystem
@@ -11,17 +12,20 @@ namespace MachineStateManager.Core.FileSystem
         /// Files can be big, so their contents cannot be stored in memory. Instead, persist the content to a blob
         /// store, indexed by its hash. The hash will be stored in the FileMemento.
         /// </summary>
-        public IBlobStore FileCache { get; set; }
+        public IBlobStore FileCache { get; }
 
-        public FileOriginator(string path, IBlobStore fileCache)
+        public IFileSystem FileSystem { get; }
+
+        public FileOriginator(string path, IBlobStore fileCache, IFileSystem fileSystem)
         {
             Path = path ?? throw new ArgumentNullException(nameof(path));
             FileCache = fileCache ?? throw new ArgumentNullException(nameof(fileCache));
+            FileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
         }
 
         public FileMemento GetState()
         {
-            if (!File.Exists(Path))
+            if (!FileSystem.FileExists(Path))
             {
                 return new FileMemento(null);
             }
@@ -32,16 +36,16 @@ namespace MachineStateManager.Core.FileSystem
         public void SetState(FileMemento memento)
         {
             var directoryPath = System.IO.Path.GetDirectoryName(Path);
-            if (!Directory.Exists(directoryPath))
+            if (!FileSystem.DirectoryExists(directoryPath))
             {
-                Directory.CreateDirectory(directoryPath);
+                FileSystem.CreateDirectory(directoryPath);
             }
 
             if (memento.Hash == null)
             {
-                if (File.Exists(Path))
+                if (FileSystem.FileExists(Path))
                 {
-                    File.Delete(Path);
+                    FileSystem.DeleteFile(Path);
                 }
             }
             else

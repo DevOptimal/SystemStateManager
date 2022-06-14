@@ -11,6 +11,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MachineStateManager.Persist
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MachineStateManager.Persistence.Tests", "Persistence.Tests\MachineStateManager.Persistence.Tests.csproj", "{C6EEBFDD-E3A2-48F8-8968-44EDF7B159BB}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FileSystem", "FileSystem\FileSystem.csproj", "{99208391-46B6-4C39-A705-15838481C573}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,10 @@ Global
 		{C6EEBFDD-E3A2-48F8-8968-44EDF7B159BB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C6EEBFDD-E3A2-48F8-8968-44EDF7B159BB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C6EEBFDD-E3A2-48F8-8968-44EDF7B159BB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{99208391-46B6-4C39-A705-15838481C573}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{99208391-46B6-4C39-A705-15838481C573}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{99208391-46B6-4C39-A705-15838481C573}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{99208391-46B6-4C39-A705-15838481C573}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

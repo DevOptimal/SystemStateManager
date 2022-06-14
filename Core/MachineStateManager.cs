@@ -1,4 +1,5 @@
-﻿using MachineStateManager.Core;
+﻿using FileSystem;
+using MachineStateManager.Core;
 using MachineStateManager.Core.Environment;
 using MachineStateManager.Core.FileSystem;
 using MachineStateManager.Core.FileSystem.Caching;
@@ -12,26 +13,34 @@ namespace MachineStateManager
 {
     public class MachineStateManager : IDisposable
     {
+        protected readonly List<IDisposable> caretakers;
+
         private readonly IBlobStore fileCache;
 
-        protected readonly List<IDisposable> caretakers;
+        private readonly IFileSystem fileSystem;
 
         private bool disposedValue;
 
         public MachineStateManager()
-            : this(new LocalBlobStore(Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.CommonApplicationData), nameof(MachineStateManager), "FileCache")))
+            : this(new DefaultFileSystem())
         {
         }
 
-        internal MachineStateManager(IBlobStore fileCache)
-            : this(fileCache, new List<IDisposable>())
+        public MachineStateManager(IFileSystem fileSystem)
+            : this(new LocalBlobStore(Path.Combine(Environment.GetFolderPath(System.Environment.SpecialFolder.CommonApplicationData), nameof(MachineStateManager), "FileCache"), fileSystem), fileSystem)
         {
         }
 
-        internal MachineStateManager(IBlobStore fileCache, List<IDisposable> caretakers)
+        internal MachineStateManager(IBlobStore fileCache, IFileSystem fileSystem)
+            : this(fileCache, new List<IDisposable>(), fileSystem)
         {
-            this.fileCache = fileCache;
+        }
+
+        internal MachineStateManager(IBlobStore fileCache, List<IDisposable> caretakers, IFileSystem fileSystem)
+        {
             this.caretakers = caretakers;
+            this.fileCache = fileCache;
+            this.fileSystem = fileSystem;
         }
 
         public virtual IDisposable SnapshotEnvironmentVariable(string name) => SnapshotEnvironmentVariable(name, EnvironmentVariableTarget.Process);
@@ -46,7 +55,7 @@ namespace MachineStateManager
 
         public virtual IDisposable SnapshotDirectory(string path)
         {
-            var originator = new DirectoryOriginator(path);
+            var originator = new DirectoryOriginator(path, fileSystem);
             var caretaker = new Caretaker<DirectoryOriginator, DirectoryMemento>(originator);
             caretakers.Add(caretaker);
             return caretaker;
@@ -54,7 +63,7 @@ namespace MachineStateManager
 
         public virtual IDisposable SnapshotFile(string path)
         {
-            var originator = new FileOriginator(path, fileCache);
+            var originator = new FileOriginator(path, fileCache, fileSystem);
             var caretaker = new Caretaker<FileOriginator, FileMemento>(originator);
             caretakers.Add(caretaker);
             return caretaker;
