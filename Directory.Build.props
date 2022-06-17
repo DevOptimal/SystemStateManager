@@ -1,0 +1,10 @@
+<Project>
+  <PropertyGroup>
+    <Authors>bradselw</Authors>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/bradselw/MachineStateManager</PackageProjectUrl>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/bradselw/MachineStateManager</RepositoryUrl>
+    <PackageTags>automate;machine;state;checkpoint;snapshot</PackageTags>
+  </PropertyGroup>
+</Project>

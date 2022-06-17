@@ -1,6 +1,5 @@
 ﻿using FileSystem;
 using System;
-using System.IO;
 
 namespace MachineStateManager.Core.FileSystem
 {

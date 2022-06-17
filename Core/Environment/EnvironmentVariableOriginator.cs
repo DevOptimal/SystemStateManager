@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Environment;
+using System;
 
 namespace MachineStateManager.Core.Environment
 {
@@ -8,20 +9,23 @@ namespace MachineStateManager.Core.Environment
 
         public EnvironmentVariableTarget Target { get; }
 
-        public EnvironmentVariableOriginator(string name, EnvironmentVariableTarget target)
+        public IEnvironment Environment { get; }
+
+        public EnvironmentVariableOriginator(string name, EnvironmentVariableTarget target, IEnvironment environment)
         {
             Name = name ?? throw new ArgumentNullException(nameof(name));
             Target = target;
+            Environment = environment;
         }
 
         public EnvironmentVariableMemento GetState()
         {
-            return new EnvironmentVariableMemento(System.Environment.GetEnvironmentVariable(Name, Target));
+            return new EnvironmentVariableMemento(Environment.GetEnvironmentVariable(Name, Target));
         }
 
         public void SetState(EnvironmentVariableMemento memento)
         {
-            System.Environment.SetEnvironmentVariable(Name, memento.Value, Target);
+            Environment.SetEnvironmentVariable(Name, memento.Value, Target);
         }
     }
 }

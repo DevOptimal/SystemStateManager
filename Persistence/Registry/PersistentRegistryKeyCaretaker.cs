@@ -1,9 +1,9 @@
 ﻿using LiteDB;
 using MachineStateManager.Core.Registry;
 using Microsoft.Win32;
+using Registry;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 
 namespace MachineStateManager.Persistence.Registry
 {
@@ -11,36 +11,11 @@ namespace MachineStateManager.Persistence.Registry
     {
         static PersistentRegistryKeyCaretaker()
         {
-            var currentProcess = Process.GetCurrentProcess();
-
-            BsonMapper.Global.RegisterType(
-                serialize: (caretaker) =>
-                {
-                    var dictionary = new Dictionary<string, BsonValue>
-                    {
-                        ["_id"] = caretaker.ID,
-                        [nameof(Process) + nameof(Process.Id)] = currentProcess.Id,
-                        [nameof(Process) + nameof(Process.StartTime)] = currentProcess.StartTime,
-                        [nameof(Originator)] = BsonMapper.Global.ToDocument(caretaker.Originator),
-                        [nameof(Memento)] = BsonMapper.Global.ToDocument(caretaker.Memento),
-                    };
-                    return new BsonDocument(dictionary);
-                },
-                deserialize: (bson) =>
-                {
-                    var originator = new RegistryKeyOriginator(
-                        (RegistryHive)Enum.Parse(typeof(RegistryHive), bson[nameof(Originator)][nameof(RegistryKeyOriginator.Hive)].AsString),
-                        (RegistryView)Enum.Parse(typeof(RegistryView), bson[nameof(Originator)][nameof(RegistryKeyOriginator.View)].AsString),
-                        bson[nameof(Originator)][nameof(RegistryKeyOriginator.SubKey)].AsString);
-                    var memento = new RegistryKeyMemento(
-                        bson[nameof(Memento)][nameof(RegistryKeyMemento.Exists)].AsBoolean);
-                    return new PersistentRegistryKeyCaretaker(bson["_id"].AsString, bson[nameof(ProcessID)].AsInt32, bson[nameof(ProcessStartTime)].AsDateTime, originator, memento);
-                }
-            );
+            BsonMapper.Global.RegisterType(SerializeOriginator, DeserializeOriginator);
         }
 
-        public PersistentRegistryKeyCaretaker(RegistryHive hive, RegistryView view, string subKey)
-            : this(new RegistryKeyOriginator(hive, view, subKey))
+        public PersistentRegistryKeyCaretaker(RegistryHive hive, RegistryView view, string subKey, IRegistry registry)
+            : this(new RegistryKeyOriginator(hive, view, subKey, registry))
         {
         }
 
@@ -49,8 +24,9 @@ namespace MachineStateManager.Persistence.Registry
         {
         }
 
-        public PersistentRegistryKeyCaretaker(string id, int processID, DateTime processStartTime, RegistryKeyOriginator originator, RegistryKeyMemento memento)
-            : base(id, processID, processStartTime, originator, memento)
+        [BsonCtor]
+        public PersistentRegistryKeyCaretaker(string _id, int processID, DateTime processStartTime, BsonDocument originator, BsonDocument memento)
+            : base(_id, processID, processStartTime, BsonMapper.Global.ToObject<RegistryKeyOriginator>(originator), BsonMapper.Global.ToObject<RegistryKeyMemento>(memento))
         {
         }
 
@@ -65,6 +41,26 @@ namespace MachineStateManager.Persistence.Registry
             }
 
             return string.Join("\\", originator.Hive, originator.View, originator.SubKey).ToLower();
+        }
+
+        private static BsonValue SerializeOriginator(RegistryKeyOriginator originator)
+        {
+            return new BsonDocument
+            {
+                [nameof(RegistryKeyOriginator.Hive)] = originator.Hive.ToString(),
+                [nameof(RegistryKeyOriginator.View)] = originator.View.ToString(),
+                [nameof(RegistryKeyOriginator.SubKey)] = originator.SubKey,
+                [nameof(RegistryKeyOriginator.Registry)] = BsonMapper.Global.ToDocument(originator.Registry),
+            };
+        }
+
+        private static RegistryKeyOriginator DeserializeOriginator(BsonValue bson)
+        {
+            return new RegistryKeyOriginator(
+                hive: (RegistryHive)Enum.Parse(typeof(RegistryHive), bson[nameof(RegistryKeyOriginator.Hive)]),
+                view: (RegistryView)Enum.Parse(typeof(RegistryView), bson[nameof(RegistryKeyOriginator.View)]),
+                subKey: bson[nameof(RegistryKeyOriginator.SubKey)],
+                registry: BsonMapper.Global.ToObject<IRegistry>(bson[nameof(RegistryKeyOriginator.Registry)].AsDocument));
         }
     }
 }

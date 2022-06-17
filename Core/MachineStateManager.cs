@@ -1,88 +1,143 @@
-﻿using FileSystem;
+﻿using Environment;
+using FileSystem;
 using MachineStateManager.Core;
 using MachineStateManager.Core.Environment;
 using MachineStateManager.Core.FileSystem;
 using MachineStateManager.Core.FileSystem.Caching;
 using MachineStateManager.Core.Registry;
 using Microsoft.Win32;
+using Registry;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace MachineStateManager
 {
     public class MachineStateManager : IDisposable
     {
-        protected readonly List<IDisposable> caretakers;
+        private readonly List<IDisposable> caretakers;
 
         private readonly IBlobStore fileCache;
 
-        private readonly IFileSystem fileSystem;
+        private readonly IEnvironment defaultEnvironment;
+
+        private readonly IFileSystem defaultFileSystem;
+
+        private readonly IRegistry defaultRegistry;
 
         private bool disposedValue;
 
         public MachineStateManager()
-            : this(new DefaultFileSystem())
+            : this(new DefaultEnvironment(), new DefaultFileSystem(), new DefaultRegistry())
         {
         }
 
-        public MachineStateManager(IFileSystem fileSystem)
-            : this(new LocalBlobStore(Path.Combine(Environment.GetFolderPath(System.Environment.SpecialFolder.CommonApplicationData), nameof(MachineStateManager), "FileCache"), fileSystem), fileSystem)
+        public MachineStateManager(IEnvironment environment, IFileSystem fileSystem, IRegistry registry)
+            : this(new LocalBlobStore(Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.CommonApplicationData), nameof(MachineStateManager), "FileCache"), fileSystem), environment, fileSystem, registry)
         {
         }
 
-        internal MachineStateManager(IBlobStore fileCache, IFileSystem fileSystem)
-            : this(fileCache, new List<IDisposable>(), fileSystem)
+        internal MachineStateManager(IBlobStore fileCache, IEnvironment environment, IFileSystem fileSystem, IRegistry registry)
+            : this(new List<IDisposable>(), fileCache, environment, fileSystem, registry)
         {
         }
 
-        internal MachineStateManager(IBlobStore fileCache, List<IDisposable> caretakers, IFileSystem fileSystem)
+        internal MachineStateManager(List<IDisposable> caretakers, IBlobStore fileCache)
+            : this(caretakers, fileCache, new DefaultEnvironment(), new DefaultFileSystem(), new DefaultRegistry())
+        {
+        }
+
+        internal MachineStateManager(List<IDisposable> caretakers, IBlobStore fileCache, IEnvironment environment, IFileSystem fileSystem, IRegistry registry)
         {
             this.caretakers = caretakers;
             this.fileCache = fileCache;
-            this.fileSystem = fileSystem;
+
+            defaultEnvironment = environment;
+            defaultFileSystem = fileSystem;
+            defaultRegistry = registry;
         }
 
-        public virtual IDisposable SnapshotEnvironmentVariable(string name) => SnapshotEnvironmentVariable(name, EnvironmentVariableTarget.Process);
+        public IDisposable SnapshotEnvironmentVariable(string name) => SnapshotEnvironmentVariable(name, EnvironmentVariableTarget.Process);
 
         public virtual IDisposable SnapshotEnvironmentVariable(string name, EnvironmentVariableTarget target)
+            => SnapshotEnvironmentVariable(name, target, defaultEnvironment);
+
+        public IDisposable SnapshotEnvironmentVariable(string name, EnvironmentVariableTarget target, IEnvironment environment)
         {
-            var originator = new EnvironmentVariableOriginator(name, target);
-            var caretaker = new Caretaker<EnvironmentVariableOriginator, EnvironmentVariableMemento>(originator);
+            var caretaker = GetEnvironmentVariableCaretaker(name, target, environment);
             caretakers.Add(caretaker);
             return caretaker;
         }
 
-        public virtual IDisposable SnapshotDirectory(string path)
+        protected virtual IDisposable GetEnvironmentVariableCaretaker(string name, EnvironmentVariableTarget target, IEnvironment environment)
+        {
+            var originator = new EnvironmentVariableOriginator(name, target, defaultEnvironment);
+            return new Caretaker<EnvironmentVariableOriginator, EnvironmentVariableMemento>(originator);
+        }
+
+        public IDisposable SnapshotDirectory(string path)
+            => SnapshotDirectory(path, defaultFileSystem);
+
+        public IDisposable SnapshotDirectory(string path, IFileSystem fileSystem)
+        {
+            var caretaker = GetDirectoryCaretaker(path, fileSystem);
+            caretakers.Add(caretaker);
+            return caretaker;
+        }
+
+        protected virtual IDisposable GetDirectoryCaretaker(string path, IFileSystem fileSystem)
         {
             var originator = new DirectoryOriginator(path, fileSystem);
-            var caretaker = new Caretaker<DirectoryOriginator, DirectoryMemento>(originator);
+            return new Caretaker<DirectoryOriginator, DirectoryMemento>(originator);
+        }
+
+        public IDisposable SnapshotFile(string path)
+            => SnapshotFile(path, defaultFileSystem);
+
+        public IDisposable SnapshotFile(string path, IFileSystem fileSystem)
+        {
+            var caretaker = GetFileCaretaker(path, fileSystem);
             caretakers.Add(caretaker);
             return caretaker;
         }
 
-        public virtual IDisposable SnapshotFile(string path)
+        protected virtual IDisposable GetFileCaretaker(string path, IFileSystem fileSystem)
         {
             var originator = new FileOriginator(path, fileCache, fileSystem);
-            var caretaker = new Caretaker<FileOriginator, FileMemento>(originator);
+            return new Caretaker<FileOriginator, FileMemento>(originator);
+        }
+
+        public IDisposable SnapshotRegistryKey(RegistryHive hive, RegistryView view, string subKey)
+            => SnapshotRegistryKey(hive, view, subKey, defaultRegistry);
+
+        public IDisposable SnapshotRegistryKey(RegistryHive hive, RegistryView view, string subKey, IRegistry registry)
+        {
+            var caretaker = GetRegistryKeyCaretaker(hive, view, subKey, registry);
             caretakers.Add(caretaker);
             return caretaker;
         }
 
-        public virtual IDisposable SnapshotRegistryKey(RegistryHive hive, RegistryView view, string subKey)
+        protected virtual IDisposable GetRegistryKeyCaretaker(RegistryHive hive, RegistryView view, string subKey, IRegistry registry)
         {
-            var originator = new RegistryKeyOriginator(hive, view, subKey);
-            var caretaker = new Caretaker<RegistryKeyOriginator, RegistryKeyMemento>(originator);
+            var originator = new RegistryKeyOriginator(hive, view, subKey, registry);
+            return new Caretaker<RegistryKeyOriginator, RegistryKeyMemento>(originator);
+        }
+
+        public IDisposable SnapshotRegistryValue(RegistryHive hive, RegistryView view, string subKey, string name)
+            => SnapshotRegistryValue(hive, view, subKey, name, defaultRegistry);
+
+        public IDisposable SnapshotRegistryValue(RegistryHive hive, RegistryView view, string subKey, string name, IRegistry registry)
+        {
+            var caretaker = GetRegistryValueCaretaker(hive, view, subKey, name, registry);
             caretakers.Add(caretaker);
             return caretaker;
         }
 
-        public virtual IDisposable SnapshotRegistryValue(RegistryHive hive, RegistryView view, string subKey, string name)
+        protected virtual IDisposable GetRegistryValueCaretaker(RegistryHive hive, RegistryView view, string subKey, string name, IRegistry registry)
         {
-            var originator = new RegistryValueOriginator(hive, view, subKey, name);
-            var caretaker = new Caretaker<RegistryValueOriginator, RegistryValueMemento>(originator);
-            caretakers.Add(caretaker);
-            return caretaker;
+            var originator = new RegistryValueOriginator(hive, view, subKey, name, registry);
+            return new Caretaker<RegistryValueOriginator, RegistryValueMemento>(originator);
         }
 
         protected virtual void Dispose(bool disposing)
@@ -91,9 +146,21 @@ namespace MachineStateManager
             {
                 if (disposing)
                 {
+                    var exceptions = new List<Exception>();
                     foreach (var caretaker in caretakers)
                     {
-                        caretaker.Dispose();
+                        try
+                        {
+                            caretaker.Dispose();
+                        }
+                        catch (Exception ex)
+                        {
+                            exceptions.Add(ex);
+                        }
+                    }
+                    if (exceptions.Any())
+                    {
+                        throw new AggregateException(exceptions);
                     }
                 }
 

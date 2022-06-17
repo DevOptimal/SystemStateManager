@@ -22,9 +22,9 @@ namespace MachineStateManager.Persistence
 
         public DateTime ProcessStartTime { get; }
 
-        public string CollectionName => GetType().Name;
-
         private readonly bool persisted = false;
+
+        private bool disposedValue;
 
         public PersistentCaretaker(string id, TOriginator originator) : base(originator)
         {
@@ -38,7 +38,7 @@ namespace MachineStateManager.Persistence
                 {
                     try
                     {
-                        var col = database.GetCollection<PersistentCaretaker<TOriginator, TMemento>>(CollectionName);
+                        var col = database.GetCollection<PersistentCaretaker<TOriginator, TMemento>>(GetType().Name);
                         col.Insert(this);
                         database.Commit();
                         persisted = true;
@@ -56,7 +56,6 @@ namespace MachineStateManager.Persistence
             }
         }
 
-        [BsonCtor]
         public PersistentCaretaker(string id, int processID, DateTime processStartTime, TOriginator originator, TMemento memento) : base(originator, memento)
         {
             ID = id;
@@ -71,26 +70,36 @@ namespace MachineStateManager.Persistence
             {
                 base.Dispose(disposing);
 
-                using (var database = GetDatabase())
+                if (!disposedValue)
                 {
-                    if (database.BeginTrans())
+                    if (disposing)
                     {
-                        try
+                        using (var database = GetDatabase())
                         {
-                            var col = database.GetCollection<PersistentCaretaker<TOriginator, TMemento>>(CollectionName);
-                            col.Delete(ID);
-                            database.Commit();
-                        }
-                        catch
-                        {
-                            database.Rollback();
-                            throw;
+                            if (database.BeginTrans())
+                            {
+                                try
+                                {
+                                    var col = database.GetCollection<PersistentCaretaker<TOriginator, TMemento>>(GetType().Name);
+                                    col.Delete(ID);
+                                    database.Commit();
+                                }
+                                catch
+                                {
+                                    database.Rollback();
+                                    throw;
+                                }
+                            }
+                            else
+                            {
+                                throw new Exception();
+                            }
                         }
                     }
-                    else
-                    {
-                        throw new Exception();
-                    }
+
+                    // TODO: free unmanaged resources (unmanaged objects) and override finalizer
+                    // TODO: set large fields to null
+                    disposedValue = true;
                 }
             }
         }
@@ -120,7 +129,7 @@ namespace MachineStateManager.Persistence
 
             var databaseFilePath = Path.Combine(
                 databaseDirectory.FullName,
-                $"{nameof(Persistence)}.db");
+                $"{nameof(Persistence)}.litedb");
 
             return new LiteDatabase(connectionString: new ConnectionString(databaseFilePath)
             {
@@ -141,6 +150,24 @@ namespace MachineStateManager.Persistence
                         )))
                     .Cast<IDisposable>();
             }
+        }
+        private static BsonValue SerializeEnvironment<T>(T obj)
+        {
+            var type = obj.GetType();
+            var bsonValue = BsonMapper.Global.ToDocument(type, obj);
+            bsonValue["_type"] = obj.GetType().AssemblyQualifiedName;
+            return bsonValue;
+        }
+
+        private static T DeserializeEnvironment<T>(BsonValue bsonValue)
+        {
+            var assemblyQualifiedName = bsonValue["_type"];
+            var type = Type.GetType(assemblyQualifiedName);
+            if (type == null) // Means the type was not found in this app domain.
+            {
+                throw new TypeLoadException($"Unable to find the type '{assemblyQualifiedName}'. You may be missing an assembly reference.");
+            }
+            return (T)BsonMapper.Global.ToObject(type, bsonValue.AsDocument);
         }
     }
 }

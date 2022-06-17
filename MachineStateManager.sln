@@ -11,7 +11,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MachineStateManager.Persist
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MachineStateManager.Persistence.Tests", "Persistence.Tests\MachineStateManager.Persistence.Tests.csproj", "{C6EEBFDD-E3A2-48F8-8968-44EDF7B159BB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FileSystem", "FileSystem\FileSystem.csproj", "{99208391-46B6-4C39-A705-15838481C573}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FileSystem", "FileSystem\FileSystem.csproj", "{99208391-46B6-4C39-A705-15838481C573}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Environment", "Environment\Environment.csproj", "{B9A3EBB2-A213-4E09-9A53-966D4441D0D9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Registry", "Registry\Registry.csproj", "{6EF3D693-A769-45DD-866C-759A16E4C700}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -39,6 +43,14 @@ Global
 		{99208391-46B6-4C39-A705-15838481C573}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{99208391-46B6-4C39-A705-15838481C573}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{99208391-46B6-4C39-A705-15838481C573}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B9A3EBB2-A213-4E09-9A53-966D4441D0D9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B9A3EBB2-A213-4E09-9A53-966D4441D0D9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B9A3EBB2-A213-4E09-9A53-966D4441D0D9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B9A3EBB2-A213-4E09-9A53-966D4441D0D9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6EF3D693-A769-45DD-866C-759A16E4C700}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6EF3D693-A769-45DD-866C-759A16E4C700}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6EF3D693-A769-45DD-866C-759A16E4C700}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6EF3D693-A769-45DD-866C-759A16E4C700}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

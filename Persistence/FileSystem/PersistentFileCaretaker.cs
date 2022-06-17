@@ -1,9 +1,8 @@
-﻿using LiteDB;
+﻿using FileSystem;
+using LiteDB;
 using MachineStateManager.Core.FileSystem;
-using MachineStateManager.Persistence.FileSystem.Caching;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
 
@@ -15,34 +14,11 @@ namespace MachineStateManager.Persistence.FileSystem
 
         static PersistentFileCaretaker()
         {
-            var currentProcess = Process.GetCurrentProcess();
-
-            BsonMapper.Global.RegisterType(
-                serialize: (caretaker) =>
-                {
-                    var dictionary = new Dictionary<string, BsonValue>
-                    {
-                        ["_id"] = caretaker.ID,
-                        [nameof(Process) + nameof(Process.Id)] = currentProcess.Id,
-                        [nameof(Process) + nameof(Process.StartTime)] = currentProcess.StartTime,
-                        [nameof(Originator)] = BsonMapper.Global.ToDocument(caretaker.Originator),
-                        [nameof(Memento)] = BsonMapper.Global.ToDocument(caretaker.Memento),
-                    };
-                    return new BsonDocument(dictionary);
-                },
-                deserialize: (bson) =>
-                {
-                    var originator = new FileOriginator(
-                        bson[nameof(Originator)][nameof(FileOriginator.Path)].AsString, new LiteDBBlobStore());
-                    var memento = new FileMemento(
-                        bson[nameof(Memento)][nameof(FileMemento.Hash)].AsString);
-                    return new PersistentFileCaretaker(bson["_id"].AsString, bson[nameof(ProcessID)].AsInt32, bson[nameof(ProcessStartTime)].AsDateTime, originator, memento);
-                }
-            );
+            BsonMapper.Global.RegisterType(SerializeOriginator, DeserializeOriginator);
         }
 
-        public PersistentFileCaretaker(string path, IBlobStore fileCache)
-            : this(new FileOriginator(path, fileCache))
+        public PersistentFileCaretaker(string path, IBlobStore fileCache, IFileSystem fileSystem)
+            : this(new FileOriginator(path, fileCache, fileSystem))
         {
         }
 
@@ -51,8 +27,9 @@ namespace MachineStateManager.Persistence.FileSystem
         {
         }
 
-        public PersistentFileCaretaker(string id, int processID, DateTime processStartTime, FileOriginator originator, FileMemento memento)
-            : base(id, processID, processStartTime, originator, memento)
+        [BsonCtor]
+        public PersistentFileCaretaker(string _id, int processID, DateTime processStartTime, BsonDocument originator, BsonDocument memento)
+            : base(_id, processID, processStartTime, BsonMapper.Global.ToObject<FileOriginator>(originator), BsonMapper.Global.ToObject<FileMemento>(memento))
         {
         }
 
@@ -100,6 +77,24 @@ namespace MachineStateManager.Persistence.FileSystem
             }
 
             return id;
+        }
+
+        private static BsonValue SerializeOriginator(FileOriginator originator)
+        {
+            return new BsonDocument
+            {
+                [nameof(FileOriginator.Path)] = originator.Path,
+                [nameof(FileOriginator.FileCache)] = BsonMapper.Global.ToDocument(originator.FileCache),
+                [nameof(FileOriginator.FileSystem)] = BsonMapper.Global.ToDocument(originator.FileSystem),
+            };
+        }
+
+        private static FileOriginator DeserializeOriginator(BsonValue bson)
+        {
+            return new FileOriginator(
+                path: bson[nameof(FileOriginator.Path)],
+                fileCache: BsonMapper.Global.ToObject<IBlobStore>(bson[nameof(FileOriginator.FileCache)].AsDocument),
+                fileSystem: BsonMapper.Global.ToObject<IFileSystem>(bson[nameof(FileOriginator.FileSystem)].AsDocument));
         }
     }
 }

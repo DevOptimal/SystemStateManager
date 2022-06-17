@@ -1,4 +1,5 @@
 ﻿using Microsoft.Win32;
+using Registry;
 
 namespace MachineStateManager.Core.Registry
 {
@@ -12,40 +13,41 @@ namespace MachineStateManager.Core.Registry
 
         public string Name { get; }
 
-        public RegistryValueOriginator(RegistryHive hive, RegistryView view, string subKey, string name)
+        public IRegistry Registry { get; }
+
+        public RegistryValueOriginator(RegistryHive hive, RegistryView view, string subKey, string name, IRegistry registry)
         {
             Hive = hive;
             View = view;
             SubKey = subKey;
             Name = name;
+            Registry = registry;
         }
 
         public RegistryValueMemento GetState()
         {
-            var regKey = RegistryKey.OpenBaseKey(Hive, View).OpenSubKey(SubKey);
+            var (value, kind) = Registry.GetRegistryValue(Hive, View, SubKey, Name);
 
-            return new RegistryValueMemento(regKey?.GetValue(Name), regKey?.GetValueKind(Name) ?? RegistryValueKind.None);
+            return new RegistryValueMemento(value, kind);
         }
 
         public void SetState(RegistryValueMemento memento)
         {
-            var regKey = RegistryKey.OpenBaseKey(Hive, View).OpenSubKey(SubKey, writable: true);
-
-            if (regKey == null)
+            if (!Registry.RegistryKeyExists(Hive, View, SubKey))
             {
-                regKey = RegistryKey.OpenBaseKey(Hive, View).CreateSubKey(SubKey);
+                Registry.CreateRegistryKey(Hive, View, SubKey);
             }
 
             if (memento.Value == null)
             {
-                if (regKey.GetValue(Name) != null)
+                if (Registry.RegistryValueExists(Hive, View, SubKey, Name))
                 {
-                    regKey.DeleteValue(Name, throwOnMissingValue: false);
+                    Registry.DeleteRegistryValue(Hive, View, SubKey, Name);
                 }
             }
             else
             {
-                regKey.SetValue(Name, memento.Value, memento.Kind);
+                Registry.SetRegistryValue(Hive, View, SubKey, Name, memento.Value, memento.Kind);
             }
         }
     }

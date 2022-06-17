@@ -1,4 +1,5 @@
 ﻿using Microsoft.Win32;
+using Registry;
 
 namespace MachineStateManager.Core.Registry
 {
@@ -10,32 +11,35 @@ namespace MachineStateManager.Core.Registry
 
         public string SubKey { get; }
 
-        public RegistryKeyOriginator(RegistryHive hive, RegistryView view, string subKey)
+        public IRegistry Registry { get; }
+
+        public RegistryKeyOriginator(RegistryHive hive, RegistryView view, string subKey, IRegistry registry)
         {
             Hive = hive;
             View = view;
             SubKey = subKey;
+            Registry = registry;
         }
 
         public RegistryKeyMemento GetState()
         {
-            return new RegistryKeyMemento(RegistryKey.OpenBaseKey(Hive, View).OpenSubKey(SubKey) != null);
+            return new RegistryKeyMemento(Registry.RegistryKeyExists(Hive, View, SubKey));
         }
 
         public void SetState(RegistryKeyMemento memento)
         {
-            if (RegistryKey.OpenBaseKey(Hive, View).OpenSubKey(SubKey) == null)
+            if (Registry.RegistryKeyExists(Hive, View, SubKey))
             {
-                if (memento.Exists)
+                if (!memento.Exists)
                 {
-                    RegistryKey.OpenBaseKey(Hive, View).CreateSubKey(SubKey);
+                    Registry.DeleteRegistryKey(Hive, View, SubKey);
                 }
             }
             else
             {
-                if (!memento.Exists)
+                if (memento.Exists)
                 {
-                    RegistryKey.OpenBaseKey(Hive, View).DeleteSubKey(SubKey);
+                    Registry.CreateRegistryKey(Hive, View, SubKey);
                 }
             }
         }

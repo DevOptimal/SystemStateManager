@@ -1,8 +1,8 @@
-﻿using LiteDB;
+﻿using Environment;
+using LiteDB;
 using MachineStateManager.Core.Environment;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Runtime.InteropServices;
 
 namespace MachineStateManager.Persistence.Environment
@@ -11,40 +11,16 @@ namespace MachineStateManager.Persistence.Environment
     {
         static PersistentEnvironmentVariableCaretaker()
         {
-            var currentProcess = Process.GetCurrentProcess();
-
-            BsonMapper.Global.RegisterType(
-                serialize: (caretaker) =>
-                {
-                    var dictionary = new Dictionary<string, BsonValue>
-                    {
-                        ["_id"] = caretaker.ID,
-                        [nameof(Process) + nameof(Process.Id)] = currentProcess.Id,
-                        [nameof(Process) + nameof(Process.StartTime)] = currentProcess.StartTime,
-                        [nameof(Originator)] = BsonMapper.Global.ToDocument(caretaker.Originator),
-                        [nameof(Memento)] = BsonMapper.Global.ToDocument(caretaker.Memento),
-                    };
-                    return new BsonDocument(dictionary);
-                },
-                deserialize: (bson) =>
-                {
-                    var originator = new EnvironmentVariableOriginator(
-                        bson[nameof(Originator)][nameof(EnvironmentVariableOriginator.Name)].AsString,
-                        (EnvironmentVariableTarget)Enum.Parse(typeof(EnvironmentVariableTarget), bson[nameof(Originator)][nameof(EnvironmentVariableOriginator.Target)].AsString));
-                    var memento = new EnvironmentVariableMemento(
-                        bson[nameof(Memento)][nameof(EnvironmentVariableMemento.Value)].AsString);
-                    return new PersistentEnvironmentVariableCaretaker(bson["_id"].AsString, bson[nameof(ProcessID)].AsInt32, bson[nameof(ProcessStartTime)].AsDateTime, originator, memento);
-                }
-            );
+            BsonMapper.Global.RegisterType(SerializeOriginator, DeserializeOriginator);
         }
 
-        public PersistentEnvironmentVariableCaretaker(string name)
-            : this(name, EnvironmentVariableTarget.Process)
+        public PersistentEnvironmentVariableCaretaker(string name, IEnvironment environment)
+            : this(name, EnvironmentVariableTarget.Process, environment)
         {
         }
 
-        public PersistentEnvironmentVariableCaretaker(string name, EnvironmentVariableTarget target)
-            : this(new EnvironmentVariableOriginator(name, target))
+        public PersistentEnvironmentVariableCaretaker(string name, EnvironmentVariableTarget target, IEnvironment environment)
+            : this(new EnvironmentVariableOriginator(name, target, environment))
         {
         }
 
@@ -53,8 +29,9 @@ namespace MachineStateManager.Persistence.Environment
         {
         }
 
-        public PersistentEnvironmentVariableCaretaker(string id, int processID, DateTime processStartTime, EnvironmentVariableOriginator originator, EnvironmentVariableMemento memento)
-            : base(id, processID, processStartTime, originator, memento)
+        [BsonCtor]
+        public PersistentEnvironmentVariableCaretaker(string _id, int processID, DateTime processStartTime, BsonDocument originator, BsonDocument memento)
+            : base(_id, processID, processStartTime, BsonMapper.Global.ToObject<EnvironmentVariableOriginator>(originator), BsonMapper.Global.ToObject<EnvironmentVariableMemento>(memento))
         {
         }
 
@@ -76,6 +53,24 @@ namespace MachineStateManager.Persistence.Environment
             }
 
             return id;
+        }
+
+        private static BsonValue SerializeOriginator(EnvironmentVariableOriginator originator)
+        {
+            return new BsonDocument
+            {
+                [nameof(EnvironmentVariableOriginator.Name)] = originator.Name,
+                [nameof(EnvironmentVariableOriginator.Target)] = originator.Target.ToString(),
+                [nameof(EnvironmentVariableOriginator.Environment)] = BsonMapper.Global.ToDocument(originator.Environment),
+            };
+        }
+
+        private static EnvironmentVariableOriginator DeserializeOriginator(BsonValue bson)
+        {
+            return new EnvironmentVariableOriginator(
+                name: bson[nameof(EnvironmentVariableOriginator.Name)],
+                target: (EnvironmentVariableTarget)Enum.Parse(typeof(EnvironmentVariableTarget), bson[nameof(EnvironmentVariableOriginator.Target)]),
+                environment: BsonMapper.Global.ToObject<IEnvironment>(bson[nameof(EnvironmentVariableOriginator.Environment)].AsDocument));
         }
     }
 }

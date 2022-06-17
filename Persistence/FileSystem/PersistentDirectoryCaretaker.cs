@@ -1,8 +1,8 @@
-﻿using LiteDB;
+﻿using FileSystem;
+using LiteDB;
 using MachineStateManager.Core.FileSystem;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Runtime.InteropServices;
 
 namespace MachineStateManager.Persistence.FileSystem
@@ -11,34 +11,11 @@ namespace MachineStateManager.Persistence.FileSystem
     {
         static PersistentDirectoryCaretaker()
         {
-            var currentProcess = Process.GetCurrentProcess();
-
-            BsonMapper.Global.RegisterType(
-                serialize: (caretaker) =>
-                {
-                    var dictionary = new Dictionary<string, BsonValue>
-                    {
-                        ["_id"] = caretaker.ID,
-                        [nameof(ProcessID)] = caretaker.ProcessID,
-                        [nameof(ProcessStartTime)] = caretaker.ProcessStartTime,
-                        [nameof(Originator)] = BsonMapper.Global.ToDocument(caretaker.Originator),
-                        [nameof(Memento)] = BsonMapper.Global.ToDocument(caretaker.Memento),
-                    };
-                    return new BsonDocument(dictionary);
-                },
-                deserialize: (bson) =>
-                {
-                    var originator = new DirectoryOriginator(
-                        bson[nameof(Originator)][nameof(DirectoryOriginator.Path)].AsString);
-                    var memento = new DirectoryMemento(
-                        bson[nameof(Memento)][nameof(DirectoryMemento.Exists)].AsBoolean);
-                    return new PersistentDirectoryCaretaker(bson["_id"].AsString, bson[nameof(ProcessID)].AsInt32, bson[nameof(ProcessStartTime)].AsDateTime, originator, memento);
-                }
-            );
+            BsonMapper.Global.RegisterType(SerializeOriginator, DeserializeOriginator);
         }
 
-        public PersistentDirectoryCaretaker(string path)
-            : this(new DirectoryOriginator(path))
+        public PersistentDirectoryCaretaker(string path, IFileSystem fileSystem)
+            : this(new DirectoryOriginator(path, fileSystem))
         {
         }
 
@@ -47,8 +24,9 @@ namespace MachineStateManager.Persistence.FileSystem
         {
         }
 
-        public PersistentDirectoryCaretaker(string id, int processID, DateTime processStartTime, DirectoryOriginator originator, DirectoryMemento memento)
-            : base(id, processID, processStartTime, originator, memento)
+        [BsonCtor]
+        public PersistentDirectoryCaretaker(string _id, int processID, DateTime processStartTime, BsonDocument originator, BsonDocument memento)
+            : base(_id, processID, processStartTime, BsonMapper.Global.ToObject<DirectoryOriginator>(originator), BsonMapper.Global.ToObject<DirectoryMemento>(memento))
         {
         }
 
@@ -70,6 +48,22 @@ namespace MachineStateManager.Persistence.FileSystem
             }
 
             return id;
+        }
+
+        private static BsonValue SerializeOriginator(DirectoryOriginator originator)
+        {
+            return new BsonDocument
+            {
+                [nameof(DirectoryOriginator.Path)] = originator.Path,
+                [nameof(DirectoryOriginator.FileSystem)] = BsonMapper.Global.ToDocument(originator.FileSystem),
+            };
+        }
+
+        private static DirectoryOriginator DeserializeOriginator(BsonValue bson)
+        {
+            return new DirectoryOriginator(
+                path: bson[nameof(DirectoryOriginator.Path)],
+                fileSystem: BsonMapper.Global.ToObject<IFileSystem>(bson[nameof(DirectoryOriginator.FileSystem)].AsDocument));
         }
     }
 }

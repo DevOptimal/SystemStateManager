@@ -1,69 +1,60 @@
-﻿using MachineStateManager.Persistence.Environment;
+﻿using Environment;
+using FileSystem;
+using MachineStateManager.Core.FileSystem;
+using MachineStateManager.Persistence.Environment;
 using MachineStateManager.Persistence.FileSystem;
 using MachineStateManager.Persistence.FileSystem.Caching;
 using MachineStateManager.Persistence.Registry;
 using Microsoft.Win32;
+using Registry;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
-using System.Runtime.Versioning;
 
 namespace MachineStateManager.Persistence
 {
     public class PersistentMachineStateManager : MachineStateManager
     {
         public PersistentMachineStateManager()
-            : base(new LiteDBBlobStore())
+            : base()
         {
         }
 
-        private PersistentMachineStateManager(List<IDisposable> caretakers)
-            : base(new LiteDBBlobStore(), caretakers)
+        internal PersistentMachineStateManager(IEnvironment environment, IFileSystem fileSystem, IRegistry registry)
+            : base(new LiteDBBlobStore(), environment, fileSystem, registry)
         {
         }
 
-        public override IDisposable SnapshotEnvironmentVariable(string name)
+        internal PersistentMachineStateManager(List<IDisposable> caretakers)
+            : base(caretakers, new LiteDBBlobStore())
         {
-            var caretaker = new PersistentEnvironmentVariableCaretaker(name);
-            caretakers.Add(caretaker);
-            return caretaker;
         }
 
-        public override IDisposable SnapshotEnvironmentVariable(string name, EnvironmentVariableTarget target)
+        protected override IDisposable GetEnvironmentVariableCaretaker(string name, EnvironmentVariableTarget target, IEnvironment environment)
         {
-            var caretaker = new PersistentEnvironmentVariableCaretaker(name, target);
-            caretakers.Add(caretaker);
-            return caretaker;
+            return new PersistentEnvironmentVariableCaretaker(name, environment);
         }
 
-        public override IDisposable SnapshotDirectory(string path)
+        protected override IDisposable GetDirectoryCaretaker(string path, IFileSystem fileSystem)
         {
-            var caretaker = new PersistentDirectoryCaretaker(path);
-            caretakers.Add(caretaker);
-            return caretaker;
+            return new PersistentDirectoryCaretaker(path, fileSystem);
         }
 
-        public override IDisposable SnapshotFile(string path)
+        protected override IDisposable GetFileCaretaker(string path, IFileSystem fileSystem)
         {
-            var caretaker = new PersistentFileCaretaker(path, new LiteDBBlobStore());
-            caretakers.Add(caretaker);
-            return caretaker;
+            return new PersistentFileCaretaker(path, new LiteDBBlobStore(), fileSystem);
         }
 
-        public override IDisposable SnapshotRegistryKey(RegistryHive hive, RegistryView view, string subKey)
+        protected override IDisposable GetRegistryKeyCaretaker(RegistryHive hive, RegistryView view, string subKey, IRegistry registry)
         {
-            var caretaker = new PersistentRegistryKeyCaretaker(hive, view, subKey);
-            caretakers.Add(caretaker);
-            return caretaker;
+            return new PersistentRegistryKeyCaretaker(hive, view, subKey, registry);
         }
 
-        public override IDisposable SnapshotRegistryValue(RegistryHive hive, RegistryView view, string subKey, string name)
+        protected override IDisposable GetRegistryValueCaretaker(RegistryHive hive, RegistryView view, string subKey, string name, IRegistry registry)
         {
-            var caretaker = new PersistentRegistryValueCaretaker(hive, view, subKey, name);
-            caretakers.Add(caretaker);
-            return caretaker;
+            return new PersistentRegistryValueCaretaker(hive, view, subKey, name, registry);
         }
 
         public static void RestoreAbandonedCaretakers()
