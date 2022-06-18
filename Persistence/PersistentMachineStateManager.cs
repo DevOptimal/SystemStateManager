@@ -18,7 +18,7 @@ namespace MachineStateManager.Persistence
     public class PersistentMachineStateManager : MachineStateManager
     {
         public PersistentMachineStateManager()
-            : base()
+            : this(new DefaultEnvironment(), new DefaultFileSystem(), new DefaultRegistry())
         {
         }
 

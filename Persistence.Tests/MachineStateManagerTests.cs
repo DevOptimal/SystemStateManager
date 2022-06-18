@@ -10,6 +10,25 @@
         }
 
         [TestMethod]
+        public void RestoreAbandonedCaretakersDoesNotRestoreCaretakersFromCurrentProcess()
+        {
+            var machineStateManager = new PersistentMachineStateManager();
+            var name = "foo";
+            var previousValue = System.Environment.GetEnvironmentVariable(name);//"bar";//
+            //System.Environment.SetEnvironmentVariable(name, previousValue);
+
+            using (machineStateManager.SnapshotEnvironmentVariable(name))
+            {
+                var newValue = Guid.NewGuid().ToString();
+                System.Environment.SetEnvironmentVariable(name, newValue);
+                PersistentMachineStateManager.RestoreAbandonedCaretakers();
+                Assert.AreEqual(newValue, System.Environment.GetEnvironmentVariable(name));
+            }
+
+            Assert.AreEqual(previousValue, System.Environment.GetEnvironmentVariable(name));
+        }
+
+        [TestMethod]
         public void Concurrency()
         {
             var tasks = new List<Task>();

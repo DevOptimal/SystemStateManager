@@ -7,26 +7,21 @@ using System.Runtime.InteropServices;
 
 namespace MachineStateManager.Persistence.FileSystem
 {
-    internal class PersistentDirectoryCaretaker : PersistentCaretaker<DirectoryOriginator, DirectoryMemento>
+    internal class PersistentDirectoryCaretaker : PersistentCaretaker<PersistentDirectoryOriginator, DirectoryMemento>
     {
-        static PersistentDirectoryCaretaker()
-        {
-            BsonMapper.Global.RegisterType(SerializeOriginator, DeserializeOriginator);
-        }
-
         public PersistentDirectoryCaretaker(string path, IFileSystem fileSystem)
-            : this(new DirectoryOriginator(path, fileSystem))
+            : this(new PersistentDirectoryOriginator(path, fileSystem))
         {
         }
 
-        public PersistentDirectoryCaretaker(DirectoryOriginator originator)
+        public PersistentDirectoryCaretaker(PersistentDirectoryOriginator originator)
             : base(GetID(originator), originator)
         {
         }
 
         [BsonCtor]
         public PersistentDirectoryCaretaker(string _id, int processID, DateTime processStartTime, BsonDocument originator, BsonDocument memento)
-            : base(_id, processID, processStartTime, BsonMapper.Global.ToObject<DirectoryOriginator>(originator), BsonMapper.Global.ToObject<DirectoryMemento>(memento))
+            : base(_id, processID, processStartTime, BsonMapper.Global.ToObject<PersistentDirectoryOriginator>(originator), BsonMapper.Global.ToObject<DirectoryMemento>(memento))
         {
         }
 
@@ -48,22 +43,6 @@ namespace MachineStateManager.Persistence.FileSystem
             }
 
             return id;
-        }
-
-        private static BsonValue SerializeOriginator(DirectoryOriginator originator)
-        {
-            return new BsonDocument
-            {
-                [nameof(DirectoryOriginator.Path)] = originator.Path,
-                [nameof(DirectoryOriginator.FileSystem)] = BsonMapper.Global.ToDocument(originator.FileSystem),
-            };
-        }
-
-        private static DirectoryOriginator DeserializeOriginator(BsonValue bson)
-        {
-            return new DirectoryOriginator(
-                path: bson[nameof(DirectoryOriginator.Path)],
-                fileSystem: BsonMapper.Global.ToObject<IFileSystem>(bson[nameof(DirectoryOriginator.FileSystem)].AsDocument));
         }
     }
 }

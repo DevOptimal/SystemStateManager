@@ -7,26 +7,21 @@ using System.Collections.Generic;
 
 namespace MachineStateManager.Persistence.Registry
 {
-    internal class PersistentRegistryValueCaretaker : PersistentCaretaker<RegistryValueOriginator, RegistryValueMemento>
+    internal class PersistentRegistryValueCaretaker : PersistentCaretaker<PersistentRegistryValueOriginator, RegistryValueMemento>
     {
-        static PersistentRegistryValueCaretaker()
-        {
-            BsonMapper.Global.RegisterType(SerializeOriginator, DeserializeOriginator);
-        }
-
         public PersistentRegistryValueCaretaker(RegistryHive hive, RegistryView view, string subKey, string name, IRegistry registry)
-            : this(new RegistryValueOriginator(hive, view, subKey, name, registry))
+            : this(new PersistentRegistryValueOriginator(hive, view, subKey, name, registry))
         {
         }
 
-        public PersistentRegistryValueCaretaker(RegistryValueOriginator originator)
+        public PersistentRegistryValueCaretaker(PersistentRegistryValueOriginator originator)
             : base(GetID(originator), originator)
         {
         }
 
         [BsonCtor]
         public PersistentRegistryValueCaretaker(string _id, int processID, DateTime processStartTime, BsonDocument originator, BsonDocument memento)
-            : base(_id, processID, processStartTime, BsonMapper.Global.ToObject<RegistryValueOriginator>(originator), BsonMapper.Global.ToObject<RegistryValueMemento>(memento))
+            : base(_id, processID, processStartTime, BsonMapper.Global.ToObject<PersistentRegistryValueOriginator>(originator), BsonMapper.Global.ToObject<RegistryValueMemento>(memento))
         {
         }
 
@@ -41,28 +36,6 @@ namespace MachineStateManager.Persistence.Registry
             }
 
             return string.Join("\\", originator.Hive, originator.View, originator.SubKey, originator.Name ?? "(Default)").ToLower();
-        }
-
-        private static BsonValue SerializeOriginator(RegistryValueOriginator originator)
-        {
-            return new BsonDocument
-            {
-                [nameof(RegistryValueOriginator.Hive)] = originator.Hive.ToString(),
-                [nameof(RegistryValueOriginator.View)] = originator.View.ToString(),
-                [nameof(RegistryValueOriginator.SubKey)] = originator.SubKey,
-                [nameof(RegistryValueOriginator.Name)] = originator.Name,
-                [nameof(RegistryValueOriginator.Registry)] = BsonMapper.Global.ToDocument(originator.Registry),
-            };
-        }
-
-        private static RegistryValueOriginator DeserializeOriginator(BsonValue bson)
-        {
-            return new RegistryValueOriginator(
-                hive: (RegistryHive)Enum.Parse(typeof(RegistryHive), bson[nameof(RegistryValueOriginator.Hive)]),
-                view: (RegistryView)Enum.Parse(typeof(RegistryView), bson[nameof(RegistryValueOriginator.View)]),
-                subKey: bson[nameof(RegistryValueOriginator.SubKey)],
-                name: bson[nameof(RegistryValueOriginator.Name)],
-                registry: BsonMapper.Global.ToObject<IRegistry>(bson[nameof(RegistryValueOriginator.Registry)].AsDocument));
         }
     }
 }
