@@ -22,12 +22,12 @@ namespace bradselw.MachineStateManager.Persistence
         }
 
         internal PersistentMachineStateManager(IEnvironmentProxy environment, IFileSystemProxy fileSystem, IRegistryProxy registry)
-            : base(new LiteDBBlobStore(), environment, fileSystem, registry)
+            : base(new LiteDBBlobStore(fileSystem), environment, fileSystem, registry)
         {
         }
 
         internal PersistentMachineStateManager(List<IDisposable> caretakers)
-            : base(caretakers, new LiteDBBlobStore())
+            : base(caretakers, new LiteDBBlobStore(new DefaultFileSystemProxy()))
         {
         }
 
@@ -43,7 +43,7 @@ namespace bradselw.MachineStateManager.Persistence
 
         protected override IDisposable GetFileCaretaker(string path, IFileSystemProxy fileSystem)
         {
-            return new PersistentFileCaretaker(path, new LiteDBBlobStore(), fileSystem);
+            return new PersistentFileCaretaker(path, new LiteDBBlobStore(fileSystem), fileSystem);
         }
 
         protected override IDisposable GetRegistryKeyCaretaker(RegistryHive hive, RegistryView view, string subKey, IRegistryProxy registry)

@@ -1,6 +1,6 @@
-﻿using bradselw.SystemResources.Environment.Proxy;
+﻿using bradselw.MachineStateManager.Environment;
+using bradselw.SystemResources.Environment.Proxy;
 using LiteDB;
-using bradselw.MachineStateManager.Environment;
 using System;
 
 namespace bradselw.MachineStateManager.Persistence.Environment

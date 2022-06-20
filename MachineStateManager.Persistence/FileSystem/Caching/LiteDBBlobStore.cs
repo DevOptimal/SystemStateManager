@@ -1,4 +1,6 @@
 ﻿using bradselw.MachineStateManager.FileSystem;
+using bradselw.SystemResources.FileSystem.Proxy;
+using LiteDB;
 using System;
 using System.IO;
 using System.Security.Cryptography;
@@ -7,6 +9,19 @@ namespace bradselw.MachineStateManager.Persistence.FileSystem.Caching
 {
     internal class LiteDBBlobStore : IBlobStore
     {
+        public IFileSystemProxy FileSystem { get; }
+
+        public LiteDBBlobStore(IFileSystemProxy fileSystem)
+        {
+            FileSystem = fileSystem;
+        }
+
+        [BsonCtor]
+        public LiteDBBlobStore(BsonDocument fileSystem)
+        {
+            FileSystem = BsonMapper.Global.ToObject<IFileSystemProxy>(fileSystem);
+        }
+
         public void DownloadFile(string id, string destinationPath)
         {
             using (var database = PersistentFileCaretaker.GetDatabase())
@@ -19,7 +34,7 @@ namespace bradselw.MachineStateManager.Persistence.FileSystem.Caching
                 }
 
                 var destinationFile = new FileInfo(destinationPath);
-                using (var destinationStream = destinationFile.Open(FileMode.OpenOrCreate, FileAccess.Write, FileShare.None))
+                using (var destinationStream = FileSystem.OpenFile(destinationFile.FullName, FileMode.OpenOrCreate, FileAccess.Write, FileShare.None))
                 {
                     destinationStream.SetLength(0); // Delete existing file.
 
@@ -38,7 +53,7 @@ namespace bradselw.MachineStateManager.Persistence.FileSystem.Caching
                 {
                     throw new FileNotFoundException();
                 }
-                using (var sourceStream = sourceFile.Open(FileMode.Open, FileAccess.Read, FileShare.Read))
+                using (var sourceStream = FileSystem.OpenFile(sourceFile.FullName, FileMode.Open, FileAccess.Read, FileShare.Read))
                 {
 
                     var id = ComputeFileHash(sourceStream);

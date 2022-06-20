@@ -1,7 +1,11 @@
-﻿namespace bradselw.MachineStateManager.FileSystem
+﻿using bradselw.SystemResources.FileSystem.Proxy;
+
+namespace bradselw.MachineStateManager.FileSystem
 {
     internal interface IBlobStore
     {
+        IFileSystemProxy FileSystem { get; }
+
         /// <summary>
         /// Pulls a file from the file cache and saves it to a destination location.
         /// </summary>
