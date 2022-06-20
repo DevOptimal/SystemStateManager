@@ -1,0 +1,21 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <Description>Library for snapshotting and restoring the state of system resources.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+      <_Parameter1>bradselw.MachineStateManager.Persistence</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="bradselw.SystemResources.Environment" Version="1.0.2" />
+    <PackageReference Include="bradselw.SystemResources.FileSystem" Version="1.0.2" />
+    <PackageReference Include="bradselw.SystemResources.Registry" Version="1.0.2" />
+    <PackageReference Include="Microsoft.Win32.Registry" Version="5.0.0" />
+  </ItemGroup>
+
+</Project>
