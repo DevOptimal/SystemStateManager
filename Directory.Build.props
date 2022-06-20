@@ -1,4 +1,10 @@
 <Project>
+
+  <PropertyGroup>
+    <AssemblyName>bradselw.$(MSBuildProjectName)</AssemblyName>
+    <RootNamespace>bradselw.$(MSBuildProjectName.Replace(" ", "_"))</RootNamespace>
+  </PropertyGroup>
+
   <PropertyGroup>
     <Authors>bradselw</Authors>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
@@ -7,4 +13,12 @@
     <RepositoryUrl>https://github.com/bradselw/MachineStateManager</RepositoryUrl>
     <PackageTags>automate;machine;state;checkpoint;snapshot</PackageTags>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Nerdbank.GitVersioning" Version="3.5.107">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+  
 </Project>
