@@ -28,7 +28,7 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore
       env:
-        GITHUB_PACKAGE_PAT: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_PACKAGE_PAT: ${{ secrets.PACKAGE_READ_PAT }}
     - name: Build
       run: dotnet build --configuration Release --no-restore
 #     - name: Test
