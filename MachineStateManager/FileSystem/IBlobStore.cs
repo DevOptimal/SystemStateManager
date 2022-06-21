@@ -4,6 +4,9 @@ namespace bradselw.MachineStateManager.FileSystem
 {
     internal interface IBlobStore
     {
+        /// <summary>
+        /// The proxy used to access the file system.
+        /// </summary>
         IFileSystemProxy FileSystem { get; }
 
         /// <summary>
