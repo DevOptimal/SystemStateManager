@@ -12,9 +12,9 @@ jobs:
   build:
 
     runs-on: windows-latest
-#     permissions:
-#       packages: write
-#       contents: read
+    permissions:
+      packages: write
+      contents: read
 
     steps:
     - name: Clone repository
@@ -36,6 +36,8 @@ jobs:
     - name: Pack
       run: dotnet pack --configuration Release --no-build
     - name: Publish package
-      run: dotnet nuget push **/*.nupkg --source github --skip-duplicate
-      env:
-        GITHUB_PACKAGE_PAT: ${{ secrets.PACKAGE_READ_PAT }}
+      run: |
+        dotnet nuget push "*.nupkg" \
+          --api-key ${{ secrets.GITHUB_TOKEN }} \
+          --source https://nuget.pkg.github.com/${{ github.repository_owner }} \
+          --skip-duplicate
