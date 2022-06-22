@@ -65,16 +65,19 @@ namespace bradselw.MachineStateManager
 
         public ICaretaker SnapshotEnvironmentVariable(string name, EnvironmentVariableTarget target, IEnvironmentProxy environment)
         {
-            var id = string.Join("\\", "EnvironmentVariable", target, name);
+            if (name == null)
+            {
+                throw new ArgumentNullException(nameof(name));
+            }
+
+            var id = $"[EnvironmentVariable]{target}\\{name}";
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 id = id.ToLower();
             }
 
-            var caretaker = caretakers.SingleOrDefault(c => c.ID.Equals(id));
-
-            if (caretaker == null)
+            if (!TryGetCaretaker(id, out var caretaker))
             {
                 caretaker = GetEnvironmentVariableCaretaker(id, name, target, environment);
                 caretakers.Add(caretaker);
@@ -88,8 +91,26 @@ namespace bradselw.MachineStateManager
 
         public ICaretaker SnapshotDirectory(string path, IFileSystemProxy fileSystem)
         {
-            var caretaker = GetDirectoryCaretaker(path, fileSystem);
-            caretakers.Add(caretaker);
+            if (path == null)
+            {
+                throw new ArgumentNullException(nameof(path));
+            }
+
+            path = Path.GetFullPath(path);
+
+            var id = $"[FileSystem]{path}";
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                id = id.ToLower();
+            }
+
+            if (!TryGetCaretaker(id, out var caretaker))
+            {
+                caretaker = GetDirectoryCaretaker(id, path, fileSystem);
+                caretakers.Add(caretaker);
+            }
+
             return caretaker;
         }
 
@@ -98,8 +119,26 @@ namespace bradselw.MachineStateManager
 
         public ICaretaker SnapshotFile(string path, IFileSystemProxy fileSystem)
         {
-            var caretaker = GetFileCaretaker(path, fileCache, fileSystem);
-            caretakers.Add(caretaker);
+            if (path == null)
+            {
+                throw new ArgumentNullException(nameof(path));
+            }
+
+            path = Path.GetFullPath(path);
+
+            var id = $"[FileSystem]{path}";
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                id = id.ToLower();
+            }
+
+            if (!TryGetCaretaker(id, out var caretaker))
+            {
+                caretaker = GetFileCaretaker(id, path, fileCache, fileSystem);
+                caretakers.Add(caretaker);
+            }
+
             return caretaker;
         }
 
@@ -108,8 +147,16 @@ namespace bradselw.MachineStateManager
 
         public ICaretaker SnapshotRegistryKey(RegistryHive hive, RegistryView view, string subKey, IRegistryProxy registry)
         {
-            var caretaker = GetRegistryKeyCaretaker(hive, view, subKey, registry);
-            caretakers.Add(caretaker);
+            // TODO: Add some logic here that "resolves" the subKey.
+
+            var id = $"[Registry]{hive}\\{view}\\{subKey}".ToLower();
+
+            if (!TryGetCaretaker(id, out var caretaker))
+            {
+                caretaker = GetRegistryKeyCaretaker(id, hive, view, subKey, registry);
+                caretakers.Add(caretaker);
+            }
+
             return caretaker;
         }
 
@@ -118,16 +165,22 @@ namespace bradselw.MachineStateManager
 
         public ICaretaker SnapshotRegistryValue(RegistryHive hive, RegistryView view, string subKey, string name, IRegistryProxy registry)
         {
-            var caretaker = GetRegistryValueCaretaker(hive, view, subKey, name, registry);
-            caretakers.Add(caretaker);
+            // TODO: Add some logic here that "resolves" the subKey.
+
+            var id = $"[Registry]{hive}\\{view}\\{subKey}\\\\{name ?? "(Default)"}".ToLower();
+
+            if (!TryGetCaretaker(id, out var caretaker))
+            {
+                caretaker = GetRegistryValueCaretaker(id, hive, view, subKey, name, registry);
+                caretakers.Add(caretaker);
+            }
+
             return caretaker;
         }
 
-        protected bool TryGetCaretaker<TCaretaker>(string id, out TCaretaker caretaker)
-            where TCaretaker : ICaretaker
+        private bool TryGetCaretaker(string id, out ICaretaker caretaker)
         {
-            caretaker = caretakers.OfType<TCaretaker>().SingleOrDefault(c => c.ID.Equals(id));
-
+            caretaker = caretakers.SingleOrDefault(c => c.ID.Equals(id));
             return caretaker != null;
         }
 
@@ -137,52 +190,28 @@ namespace bradselw.MachineStateManager
             return new Caretaker<EnvironmentVariableOriginator, EnvironmentVariableMemento>(id, originator);
         }
 
-        protected virtual ICaretaker GetDirectoryCaretaker(string path, IFileSystemProxy fileSystem)
+        protected virtual ICaretaker GetDirectoryCaretaker(string id, string path, IFileSystemProxy fileSystem)
         {
             var originator = new DirectoryOriginator(path, fileSystem);
-
-            if (!TryGetCaretaker<Caretaker<DirectoryOriginator, DirectoryMemento>>(originator.ID, out var caretaker))
-            {
-                caretaker = new Caretaker<DirectoryOriginator, DirectoryMemento>(originator);
-            }
-
-            return caretaker;
+            return new Caretaker<DirectoryOriginator, DirectoryMemento>(id, originator);
         }
 
-        protected virtual ICaretaker GetFileCaretaker(string path, IBlobStore fileCache, IFileSystemProxy fileSystem)
+        protected virtual ICaretaker GetFileCaretaker(string id, string path, IBlobStore fileCache, IFileSystemProxy fileSystem)
         {
             var originator = new FileOriginator(path, fileCache, fileSystem);
-
-            if (!TryGetCaretaker<Caretaker<FileOriginator, FileMemento>>(originator.ID, out var caretaker))
-            {
-                caretaker = new Caretaker<FileOriginator, FileMemento>(originator);
-            }
-
-            return caretaker;
+            return new Caretaker<FileOriginator, FileMemento>(id, originator);
         }
 
-        protected virtual ICaretaker GetRegistryKeyCaretaker(RegistryHive hive, RegistryView view, string subKey, IRegistryProxy registry)
+        protected virtual ICaretaker GetRegistryKeyCaretaker(string id, RegistryHive hive, RegistryView view, string subKey, IRegistryProxy registry)
         {
             var originator = new RegistryKeyOriginator(hive, view, subKey, registry);
-
-            if (!TryGetCaretaker<Caretaker<RegistryKeyOriginator, RegistryKeyMemento>>(originator.ID, out var caretaker))
-            {
-                caretaker = new Caretaker<RegistryKeyOriginator, RegistryKeyMemento>(originator);
-            }
-
-            return caretaker;
+            return new Caretaker<RegistryKeyOriginator, RegistryKeyMemento>(id, originator);
         }
 
-        protected virtual ICaretaker GetRegistryValueCaretaker(RegistryHive hive, RegistryView view, string subKey, string name, IRegistryProxy registry)
+        protected virtual ICaretaker GetRegistryValueCaretaker(string id, RegistryHive hive, RegistryView view, string subKey, string name, IRegistryProxy registry)
         {
             var originator = new RegistryValueOriginator(hive, view, subKey, name, registry);
-
-            if (!TryGetCaretaker<Caretaker<RegistryValueOriginator, RegistryValueMemento>>(originator.ID, out var caretaker))
-            {
-                caretaker = new Caretaker<RegistryValueOriginator, RegistryValueMemento>(originator);
-            }
-
-            return caretaker;
+            return new Caretaker<RegistryValueOriginator, RegistryValueMemento>(id, originator);
         }
 
         protected virtual void Dispose(bool disposing)

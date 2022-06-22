@@ -24,7 +24,7 @@ namespace bradselw.MachineStateManager.Persistence.FileSystem.Caching
 
         public void DownloadFile(string id, string destinationPath)
         {
-            using (var database = PersistentFileCaretaker.GetDatabase())
+            using (var database = LiteDatabaseFactory.GetDatabase())
             {
                 var fileStorage = database.FileStorage;
                 var blobFile = fileStorage.FindById(id);
@@ -45,7 +45,7 @@ namespace bradselw.MachineStateManager.Persistence.FileSystem.Caching
 
         public string UploadFile(string sourcePath)
         {
-            using (var database = PersistentFileCaretaker.GetDatabase())
+            using (var database = LiteDatabaseFactory.GetDatabase())
             {
                 var fileStorage = database.FileStorage;
                 var sourceFile = new FileInfo(sourcePath);

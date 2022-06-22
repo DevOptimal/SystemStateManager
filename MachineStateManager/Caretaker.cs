@@ -14,10 +14,6 @@ namespace bradselw.MachineStateManager
 
         private bool disposedValue;
 
-        public Caretaker(TOriginator originator) : this(originator.ID, originator)
-        {
-        }
-
         public Caretaker(string id, TOriginator originator) : this(id, originator, originator.GetState())
         {
         }

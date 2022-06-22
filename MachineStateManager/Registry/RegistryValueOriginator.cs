@@ -1,18 +1,11 @@
 ﻿using bradselw.SystemResources.Registry.Proxy;
 using Microsoft.Win32;
+using System;
 
 namespace bradselw.MachineStateManager.Registry
 {
     internal class RegistryValueOriginator : IOriginator<RegistryValueMemento>
     {
-        public string ID
-        {
-            get
-            {
-                return string.Join("\\", Hive, View, SubKey, Name ?? "(Default)").ToLower();
-            }
-        }
-
         public RegistryHive Hive { get; }
 
         public RegistryView View { get; }
@@ -29,7 +22,7 @@ namespace bradselw.MachineStateManager.Registry
             View = view;
             SubKey = subKey;
             Name = name;
-            Registry = registry;
+            Registry = registry ?? throw new ArgumentNullException(nameof(registry));
         }
 
         public RegistryValueMemento GetState()

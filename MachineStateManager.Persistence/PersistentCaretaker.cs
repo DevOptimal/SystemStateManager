@@ -1,17 +1,9 @@
-﻿using LiteDB;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.Diagnostics;
-using System.Globalization;
-using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Security.AccessControl;
-using System.Security.Principal;
 
 namespace bradselw.MachineStateManager.Persistence
 {
-    internal abstract class PersistentCaretaker<TOriginator, TMemento> : Caretaker<TOriginator, TMemento>
+    internal abstract class PersistentCaretaker<TOriginator, TMemento> : Caretaker<TOriginator, TMemento>, IPersistentCaretaker
         where TOriginator : IOriginator<TMemento>
         where TMemento : IMemento
     {
@@ -22,11 +14,6 @@ namespace bradselw.MachineStateManager.Persistence
         private readonly bool persisted;
 
         private bool disposedValue;
-
-        protected PersistentCaretaker(TOriginator originator)
-            : this(originator.ID, originator)
-        {
-        }
 
         /// <summary>
         /// Creates a new caretaker.
@@ -40,13 +27,13 @@ namespace bradselw.MachineStateManager.Persistence
             ProcessID = currentProcess.Id;
             ProcessStartTime = currentProcess.StartTime;
 
-            using (var database = GetDatabase())
+            using (var database = LiteDatabaseFactory.GetDatabase())
             {
                 if (database.BeginTrans())
                 {
                     try
                     {
-                        var col = database.GetCollection<PersistentCaretaker<TOriginator, TMemento>>(GetType().Name);
+                        var col = database.GetCollection<IPersistentCaretaker>();
                         col.Insert(this);
                         database.Commit();
                         persisted = true;
@@ -89,13 +76,13 @@ namespace bradselw.MachineStateManager.Persistence
                 {
                     if (disposing)
                     {
-                        using (var database = GetDatabase())
+                        using (var database = LiteDatabaseFactory.GetDatabase())
                         {
                             if (database.BeginTrans())
                             {
                                 try
                                 {
-                                    var col = database.GetCollection<PersistentCaretaker<TOriginator, TMemento>>(GetType().Name);
+                                    var col = database.GetCollection<IPersistentCaretaker>();
                                     col.Delete(ID);
                                     database.Commit();
                                 }
@@ -116,89 +103,6 @@ namespace bradselw.MachineStateManager.Persistence
                     // TODO: set large fields to null
                     disposedValue = true;
                 }
-            }
-        }
-
-        public static LiteDatabase GetDatabase()
-        {
-            var databaseDirectory = new DirectoryInfo(Path.Combine(
-                System.Environment.GetFolderPath(System.Environment.SpecialFolder.CommonApplicationData),
-                nameof(MachineStateManager)));
-
-            if (!databaseDirectory.Exists)
-            {
-                databaseDirectory.Create();
-
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                {
-                    var directorySecurity = databaseDirectory.GetAccessControl();
-                    directorySecurity.AddAccessRule(new FileSystemAccessRule(
-                        identity: new SecurityIdentifier(WellKnownSidType.WorldSid, domainSid: null),
-                        fileSystemRights: FileSystemRights.FullControl,
-                        inheritanceFlags: InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit,
-                        propagationFlags: PropagationFlags.NoPropagateInherit,
-                        type: AccessControlType.Allow));
-                    databaseDirectory.SetAccessControl(directorySecurity);
-                }
-            }
-
-            var databaseFilePath = Path.Combine(
-                databaseDirectory.FullName,
-                $"{nameof(Persistence)}.litedb");
-
-            // LiteDB adheres to the BSON specification, and only stores DateTime values up to the milliseconds.
-            // The following overrides the default behavior to store the exact DateTime, down to the tick.
-            // For more information, see https://github.com/mbdavid/LiteDB/issues/1765.
-            var mapper = new BsonMapper();
-            mapper.RegisterType(
-                serialize: value => value.ToString("o", CultureInfo.InvariantCulture),
-                deserialize: bson => DateTime.ParseExact(bson, "o", CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind));
-
-            return new LiteDatabase(
-                connectionString: new ConnectionString(databaseFilePath)
-                {
-                    Connection = ConnectionType.Shared
-                },
-                mapper: mapper);
-        }
-
-        /// <summary>
-        /// Gets abandoned caretakers on the current machine. An "abandoned caretaker" is a caretaker that was created by a process that no longer exists.
-        /// </summary>
-        /// <typeparam name="T">The type of abandoned caretakers to get.</typeparam>
-        /// <param name="processes">A dictionary of process ID to process start time key value pairs that each uniquely identify a currently running process.
-        /// A null value indicates that the current process does not have permission to the process - try rerunning in an elevated process. Pass this data in
-        /// instead of calling Process.GetProcesses() because it is an expensive call.</param>
-        /// <returns>An enumeration of all caretakers on this machine that have been abandoned.</returns>
-        protected static IEnumerable<ICaretaker> GetAbandonedCaretakers<T>(Dictionary<int, DateTime?> processes)
-            where T : PersistentCaretaker<TOriginator, TMemento>
-        {
-            using (var database = GetDatabase())
-            {
-                var allCaretakers = database.GetCollection<T>(typeof(T).Name).FindAll().ToList();
-
-                var result = new List<ICaretaker>();
-                foreach (var caretaker in allCaretakers)
-                {
-                    if (!(processes.ContainsKey(caretaker.ProcessID) &&
-                        (
-                            processes[caretaker.ProcessID] == caretaker.ProcessStartTime ||
-                            processes[caretaker.ProcessID] == null
-                        )))
-                    {
-                        result.Add(caretaker);
-                    }
-                }
-
-                return result;
-
-                //return database.GetCollection<T>(typeof(T).Name).FindAll()
-                //    .Where(c => !(processes.ContainsKey(c.ProcessID) &&
-                //        (
-                //            processes[c.ProcessID] == c.ProcessStartTime ||
-                //            processes[c.ProcessID] == null
-                //        )))
-                //    .Cast<IDisposable>();
             }
         }
     }

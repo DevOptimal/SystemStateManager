@@ -1,21 +1,13 @@
-﻿using bradselw.SystemResources.Registry.Proxy;
+﻿using bradselw.MachineStateManager.Registry;
 using LiteDB;
-using bradselw.MachineStateManager.Registry;
-using Microsoft.Win32;
 using System;
-using System.Collections.Generic;
 
 namespace bradselw.MachineStateManager.Persistence.Registry
 {
     internal class PersistentRegistryValueCaretaker : PersistentCaretaker<PersistentRegistryValueOriginator, RegistryValueMemento>
     {
-        public PersistentRegistryValueCaretaker(RegistryHive hive, RegistryView view, string subKey, string name, IRegistryProxy registry)
-            : this(new PersistentRegistryValueOriginator(hive, view, subKey, name, registry))
-        {
-        }
-
-        public PersistentRegistryValueCaretaker(PersistentRegistryValueOriginator originator)
-            : base(originator)
+        public PersistentRegistryValueCaretaker(string id, PersistentRegistryValueOriginator originator)
+            : base(id, originator)
         {
         }
 
@@ -24,8 +16,5 @@ namespace bradselw.MachineStateManager.Persistence.Registry
             : base(_id, processID, processStartTime, BsonMapper.Global.ToObject<PersistentRegistryValueOriginator>(originator), BsonMapper.Global.ToObject<RegistryValueMemento>(memento))
         {
         }
-
-        public static IEnumerable<ICaretaker> GetAbandonedCaretakers(Dictionary<int, DateTime?> processes)
-            => GetAbandonedCaretakers<PersistentRegistryValueCaretaker>(processes);
     }
 }

@@ -1,6 +1,6 @@
-﻿using bradselw.SystemResources.Registry.Proxy;
+﻿using bradselw.MachineStateManager.Registry;
+using bradselw.SystemResources.Registry.Proxy;
 using LiteDB;
-using bradselw.MachineStateManager.Registry;
 using Microsoft.Win32;
 
 namespace bradselw.MachineStateManager.Persistence.Registry

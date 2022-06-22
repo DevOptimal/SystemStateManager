@@ -1,26 +1,10 @@
 ﻿using bradselw.SystemResources.FileSystem.Proxy;
 using System;
-using System.Runtime.InteropServices;
 
 namespace bradselw.MachineStateManager.FileSystem
 {
     internal class FileOriginator : IOriginator<FileMemento>
     {
-        public string ID
-        {
-            get
-            {
-                var id = Path;
-
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-                {
-                    id = id.ToLower();
-                }
-
-                return id;
-            }
-        }
-
         public string Path { get; }
 
         /// <summary>
@@ -33,7 +17,12 @@ namespace bradselw.MachineStateManager.FileSystem
 
         public FileOriginator(string path, IBlobStore fileCache, IFileSystemProxy fileSystem)
         {
-            Path = path ?? throw new ArgumentNullException(nameof(path));
+            if (path == null)
+            {
+                throw new ArgumentNullException(nameof(path));
+            }
+
+            Path = System.IO.Path.GetFullPath(path);
             FileCache = fileCache ?? throw new ArgumentNullException(nameof(fileCache));
             FileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
         }
