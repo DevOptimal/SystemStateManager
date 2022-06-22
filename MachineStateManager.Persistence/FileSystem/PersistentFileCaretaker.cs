@@ -1,10 +1,7 @@
-﻿using bradselw.SystemResources.FileSystem.Proxy;
+﻿using bradselw.MachineStateManager.FileSystem;
 using LiteDB;
-using bradselw.MachineStateManager.FileSystem;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.InteropServices;
 
 namespace bradselw.MachineStateManager.Persistence.FileSystem
 {
@@ -12,13 +9,8 @@ namespace bradselw.MachineStateManager.Persistence.FileSystem
     {
         private bool disposedValue;
 
-        public PersistentFileCaretaker(string path, IBlobStore fileCache, IFileSystemProxy fileSystem)
-            : this(new PersistentFileOriginator(path, fileCache, fileSystem))
-        {
-        }
-
-        public PersistentFileCaretaker(PersistentFileOriginator originator)
-            : base(GetID(originator), originator)
+        public PersistentFileCaretaker(string id, PersistentFileOriginator originator)
+            : base(id, originator)
         {
         }
 
@@ -28,9 +20,6 @@ namespace bradselw.MachineStateManager.Persistence.FileSystem
         {
         }
 
-        public static IEnumerable<IDisposable> GetAbandonedCaretakers(Dictionary<int, DateTime?> processes)
-            => GetAbandonedCaretakers<PersistentFileCaretaker>(processes);
-
         protected override void Dispose(bool disposing)
         {
             base.Dispose(disposing);
@@ -39,11 +28,11 @@ namespace bradselw.MachineStateManager.Persistence.FileSystem
             {
                 if (disposing)
                 {
-                    using (var database = GetDatabase())
+                    using (var database = LiteDatabaseFactory.GetDatabase())
                     {
-                        var collection = database.GetCollection<PersistentFileCaretaker>();
+                        var collection = database.GetCollection<IPersistentCaretaker>();
 
-                        if (!(collection.Find(c => c.Memento.Hash == Memento.Hash).Any()))
+                        if (!collection.FindAll().OfType<PersistentFileCaretaker>().Any(c => c.Memento.Hash == Memento.Hash))
                         {
                             var fileStorage = database.FileStorage;
                             fileStorage.Delete(Memento.Hash);
@@ -55,23 +44,6 @@ namespace bradselw.MachineStateManager.Persistence.FileSystem
                 // TODO: set large fields to null
                 disposedValue = true;
             }
-        }
-
-        private static string GetID(FileOriginator originator)
-        {
-            if (originator == null)
-            {
-                throw new ArgumentNullException(nameof(originator));
-            }
-
-            var id = originator.Path;
-
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-            {
-                id = id.ToLower();
-            }
-
-            return id;
         }
     }
 }

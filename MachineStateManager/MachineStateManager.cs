@@ -10,20 +10,21 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 
 namespace bradselw.MachineStateManager
 {
     public class MachineStateManager : IDisposable
     {
-        private readonly List<IDisposable> caretakers;
+        private readonly List<ICaretaker> caretakers;
 
         private readonly IBlobStore fileCache;
 
-        private readonly IEnvironmentProxy defaultEnvironment;
+        protected readonly IEnvironmentProxy defaultEnvironment;
 
-        private readonly IFileSystemProxy defaultFileSystem;
+        protected readonly IFileSystemProxy defaultFileSystem;
 
-        private readonly IRegistryProxy defaultRegistry;
+        protected readonly IRegistryProxy defaultRegistry;
 
         private bool disposedValue;
 
@@ -38,16 +39,16 @@ namespace bradselw.MachineStateManager
         }
 
         internal MachineStateManager(IBlobStore fileCache, IEnvironmentProxy environment, IFileSystemProxy fileSystem, IRegistryProxy registry)
-            : this(new List<IDisposable>(), fileCache, environment, fileSystem, registry)
+            : this(new List<ICaretaker>(), fileCache, environment, fileSystem, registry)
         {
         }
 
-        internal MachineStateManager(List<IDisposable> caretakers, IBlobStore fileCache)
+        internal MachineStateManager(List<ICaretaker> caretakers, IBlobStore fileCache)
             : this(caretakers, fileCache, new DefaultEnvironmentProxy(), new DefaultFileSystemProxy(), new DefaultRegistryProxy())
         {
         }
 
-        internal MachineStateManager(List<IDisposable> caretakers, IBlobStore fileCache, IEnvironmentProxy environment, IFileSystemProxy fileSystem, IRegistryProxy registry)
+        internal MachineStateManager(List<ICaretaker> caretakers, IBlobStore fileCache, IEnvironmentProxy environment, IFileSystemProxy fileSystem, IRegistryProxy registry)
         {
             this.caretakers = caretakers;
             this.fileCache = fileCache;
@@ -57,86 +58,160 @@ namespace bradselw.MachineStateManager
             defaultRegistry = registry;
         }
 
-        public IDisposable SnapshotEnvironmentVariable(string name) => SnapshotEnvironmentVariable(name, EnvironmentVariableTarget.Process);
+        public ICaretaker SnapshotEnvironmentVariable(string name) => SnapshotEnvironmentVariable(name, EnvironmentVariableTarget.Process);
 
-        public virtual IDisposable SnapshotEnvironmentVariable(string name, EnvironmentVariableTarget target)
+        public virtual ICaretaker SnapshotEnvironmentVariable(string name, EnvironmentVariableTarget target)
             => SnapshotEnvironmentVariable(name, target, defaultEnvironment);
 
-        public IDisposable SnapshotEnvironmentVariable(string name, EnvironmentVariableTarget target, IEnvironmentProxy environment)
+        public ICaretaker SnapshotEnvironmentVariable(string name, EnvironmentVariableTarget target, IEnvironmentProxy environment)
         {
-            var caretaker = GetEnvironmentVariableCaretaker(name, target, environment);
-            caretakers.Add(caretaker);
+            if (name == null)
+            {
+                throw new ArgumentNullException(nameof(name));
+            }
+
+            var id = $"[EnvironmentVariable]{target}\\{name}";
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                id = id.ToLower();
+            }
+
+            if (!TryGetCaretaker(id, out var caretaker))
+            {
+                caretaker = GetEnvironmentVariableCaretaker(id, name, target, environment);
+                caretakers.Add(caretaker);
+            }
+
             return caretaker;
         }
 
-        protected virtual IDisposable GetEnvironmentVariableCaretaker(string name, EnvironmentVariableTarget target, IEnvironmentProxy environment)
-        {
-            var originator = new EnvironmentVariableOriginator(name, target, defaultEnvironment);
-            return new Caretaker<EnvironmentVariableOriginator, EnvironmentVariableMemento>(originator);
-        }
-
-        public IDisposable SnapshotDirectory(string path)
+        public ICaretaker SnapshotDirectory(string path)
             => SnapshotDirectory(path, defaultFileSystem);
 
-        public IDisposable SnapshotDirectory(string path, IFileSystemProxy fileSystem)
+        public ICaretaker SnapshotDirectory(string path, IFileSystemProxy fileSystem)
         {
-            var caretaker = GetDirectoryCaretaker(path, fileSystem);
-            caretakers.Add(caretaker);
+            if (path == null)
+            {
+                throw new ArgumentNullException(nameof(path));
+            }
+
+            path = Path.GetFullPath(path);
+
+            var id = $"[FileSystem]{path}";
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                id = id.ToLower();
+            }
+
+            if (!TryGetCaretaker(id, out var caretaker))
+            {
+                caretaker = GetDirectoryCaretaker(id, path, fileSystem);
+                caretakers.Add(caretaker);
+            }
+
             return caretaker;
         }
 
-        protected virtual IDisposable GetDirectoryCaretaker(string path, IFileSystemProxy fileSystem)
-        {
-            var originator = new DirectoryOriginator(path, fileSystem);
-            return new Caretaker<DirectoryOriginator, DirectoryMemento>(originator);
-        }
-
-        public IDisposable SnapshotFile(string path)
+        public ICaretaker SnapshotFile(string path)
             => SnapshotFile(path, defaultFileSystem);
 
-        public IDisposable SnapshotFile(string path, IFileSystemProxy fileSystem)
+        public ICaretaker SnapshotFile(string path, IFileSystemProxy fileSystem)
         {
-            var caretaker = GetFileCaretaker(path, fileSystem);
-            caretakers.Add(caretaker);
+            if (path == null)
+            {
+                throw new ArgumentNullException(nameof(path));
+            }
+
+            path = Path.GetFullPath(path);
+
+            var id = $"[FileSystem]{path}";
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                id = id.ToLower();
+            }
+
+            if (!TryGetCaretaker(id, out var caretaker))
+            {
+                caretaker = GetFileCaretaker(id, path, fileCache, fileSystem);
+                caretakers.Add(caretaker);
+            }
+
             return caretaker;
         }
 
-        protected virtual IDisposable GetFileCaretaker(string path, IFileSystemProxy fileSystem)
-        {
-            var originator = new FileOriginator(path, fileCache, fileSystem);
-            return new Caretaker<FileOriginator, FileMemento>(originator);
-        }
-
-        public IDisposable SnapshotRegistryKey(RegistryHive hive, RegistryView view, string subKey)
+        public ICaretaker SnapshotRegistryKey(RegistryHive hive, RegistryView view, string subKey)
             => SnapshotRegistryKey(hive, view, subKey, defaultRegistry);
 
-        public IDisposable SnapshotRegistryKey(RegistryHive hive, RegistryView view, string subKey, IRegistryProxy registry)
+        public ICaretaker SnapshotRegistryKey(RegistryHive hive, RegistryView view, string subKey, IRegistryProxy registry)
         {
-            var caretaker = GetRegistryKeyCaretaker(hive, view, subKey, registry);
-            caretakers.Add(caretaker);
+            // TODO: Add some logic here that "resolves" the subKey.
+
+            var id = $"[Registry]{hive}\\{view}\\{subKey}".ToLower();
+
+            if (!TryGetCaretaker(id, out var caretaker))
+            {
+                caretaker = GetRegistryKeyCaretaker(id, hive, view, subKey, registry);
+                caretakers.Add(caretaker);
+            }
+
             return caretaker;
         }
 
-        protected virtual IDisposable GetRegistryKeyCaretaker(RegistryHive hive, RegistryView view, string subKey, IRegistryProxy registry)
-        {
-            var originator = new RegistryKeyOriginator(hive, view, subKey, registry);
-            return new Caretaker<RegistryKeyOriginator, RegistryKeyMemento>(originator);
-        }
-
-        public IDisposable SnapshotRegistryValue(RegistryHive hive, RegistryView view, string subKey, string name)
+        public ICaretaker SnapshotRegistryValue(RegistryHive hive, RegistryView view, string subKey, string name)
             => SnapshotRegistryValue(hive, view, subKey, name, defaultRegistry);
 
-        public IDisposable SnapshotRegistryValue(RegistryHive hive, RegistryView view, string subKey, string name, IRegistryProxy registry)
+        public ICaretaker SnapshotRegistryValue(RegistryHive hive, RegistryView view, string subKey, string name, IRegistryProxy registry)
         {
-            var caretaker = GetRegistryValueCaretaker(hive, view, subKey, name, registry);
-            caretakers.Add(caretaker);
+            // TODO: Add some logic here that "resolves" the subKey.
+
+            var id = $"[Registry]{hive}\\{view}\\{subKey}\\\\{name ?? "(Default)"}".ToLower();
+
+            if (!TryGetCaretaker(id, out var caretaker))
+            {
+                caretaker = GetRegistryValueCaretaker(id, hive, view, subKey, name, registry);
+                caretakers.Add(caretaker);
+            }
+
             return caretaker;
         }
 
-        protected virtual IDisposable GetRegistryValueCaretaker(RegistryHive hive, RegistryView view, string subKey, string name, IRegistryProxy registry)
+        private bool TryGetCaretaker(string id, out ICaretaker caretaker)
+        {
+            caretaker = caretakers.SingleOrDefault(c => c.ID.Equals(id));
+            return caretaker != null;
+        }
+
+        protected virtual ICaretaker GetEnvironmentVariableCaretaker(string id, string name, EnvironmentVariableTarget target, IEnvironmentProxy environment)
+        {
+            var originator = new EnvironmentVariableOriginator(name, target, environment);
+            return new Caretaker<EnvironmentVariableOriginator, EnvironmentVariableMemento>(id, originator);
+        }
+
+        protected virtual ICaretaker GetDirectoryCaretaker(string id, string path, IFileSystemProxy fileSystem)
+        {
+            var originator = new DirectoryOriginator(path, fileSystem);
+            return new Caretaker<DirectoryOriginator, DirectoryMemento>(id, originator);
+        }
+
+        protected virtual ICaretaker GetFileCaretaker(string id, string path, IBlobStore fileCache, IFileSystemProxy fileSystem)
+        {
+            var originator = new FileOriginator(path, fileCache, fileSystem);
+            return new Caretaker<FileOriginator, FileMemento>(id, originator);
+        }
+
+        protected virtual ICaretaker GetRegistryKeyCaretaker(string id, RegistryHive hive, RegistryView view, string subKey, IRegistryProxy registry)
+        {
+            var originator = new RegistryKeyOriginator(hive, view, subKey, registry);
+            return new Caretaker<RegistryKeyOriginator, RegistryKeyMemento>(id, originator);
+        }
+
+        protected virtual ICaretaker GetRegistryValueCaretaker(string id, RegistryHive hive, RegistryView view, string subKey, string name, IRegistryProxy registry)
         {
             var originator = new RegistryValueOriginator(hive, view, subKey, name, registry);
-            return new Caretaker<RegistryValueOriginator, RegistryValueMemento>(originator);
+            return new Caretaker<RegistryValueOriginator, RegistryValueMemento>(id, originator);
         }
 
         protected virtual void Dispose(bool disposing)

@@ -15,7 +15,7 @@ namespace bradselw.MachineStateManager.Environment
         {
             Name = name ?? throw new ArgumentNullException(nameof(name));
             Target = target;
-            Environment = environment;
+            Environment = environment ?? throw new ArgumentNullException(nameof(environment));
         }
 
         public EnvironmentVariableMemento GetState()

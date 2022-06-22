@@ -20,6 +20,8 @@ jobs:
         dotnet-version: 6.0.x
     - name: Restore dependencies
       run: dotnet restore
+      env:
+        GITHUB_PACKAGE_PAT: ${{ secrets.PACKAGE_READ_PAT }}
     - name: Build
       run: dotnet build --no-restore
 #     - name: Test

@@ -11,7 +11,12 @@ namespace bradselw.MachineStateManager.FileSystem
 
         public DirectoryOriginator(string path, IFileSystemProxy fileSystem)
         {
-            Path = path ?? throw new ArgumentNullException(nameof(path));
+            if (path == null)
+            {
+                throw new ArgumentNullException(nameof(path));
+            }
+
+            Path = System.IO.Path.GetFullPath(path);
             FileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
         }
 

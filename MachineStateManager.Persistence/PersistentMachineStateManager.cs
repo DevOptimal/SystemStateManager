@@ -1,4 +1,5 @@
-﻿using bradselw.MachineStateManager.Persistence.Environment;
+﻿using bradselw.MachineStateManager.FileSystem;
+using bradselw.MachineStateManager.Persistence.Environment;
 using bradselw.MachineStateManager.Persistence.FileSystem;
 using bradselw.MachineStateManager.Persistence.FileSystem.Caching;
 using bradselw.MachineStateManager.Persistence.Registry;
@@ -10,7 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Runtime.InteropServices;
+using System.Linq;
 
 namespace bradselw.MachineStateManager.Persistence
 {
@@ -21,43 +22,55 @@ namespace bradselw.MachineStateManager.Persistence
         {
         }
 
-        internal PersistentMachineStateManager(IEnvironmentProxy environment, IFileSystemProxy fileSystem, IRegistryProxy registry)
+        protected PersistentMachineStateManager(IEnvironmentProxy environment, IFileSystemProxy fileSystem, IRegistryProxy registry)
             : base(new LiteDBBlobStore(fileSystem), environment, fileSystem, registry)
         {
         }
 
-        internal PersistentMachineStateManager(List<IDisposable> caretakers)
+        internal PersistentMachineStateManager(List<ICaretaker> caretakers)
             : base(caretakers, new LiteDBBlobStore(new DefaultFileSystemProxy()))
         {
         }
 
-        protected override IDisposable GetEnvironmentVariableCaretaker(string name, EnvironmentVariableTarget target, IEnvironmentProxy environment)
+        protected override ICaretaker GetEnvironmentVariableCaretaker(string id, string name, EnvironmentVariableTarget target, IEnvironmentProxy environment)
         {
-            return new PersistentEnvironmentVariableCaretaker(name, environment);
+            var originator = new PersistentEnvironmentVariableOriginator(name, target, environment);
+            return new PersistentEnvironmentVariableCaretaker(id, originator);
         }
 
-        protected override IDisposable GetDirectoryCaretaker(string path, IFileSystemProxy fileSystem)
+        protected override ICaretaker GetDirectoryCaretaker(string id, string path, IFileSystemProxy fileSystem)
         {
-            return new PersistentDirectoryCaretaker(path, fileSystem);
+            var originator = new PersistentDirectoryOriginator(path, fileSystem);
+            return new PersistentDirectoryCaretaker(id, originator);
         }
 
-        protected override IDisposable GetFileCaretaker(string path, IFileSystemProxy fileSystem)
+        protected override ICaretaker GetFileCaretaker(string id, string path, IBlobStore fileCache, IFileSystemProxy fileSystem)
         {
-            return new PersistentFileCaretaker(path, new LiteDBBlobStore(fileSystem), fileSystem);
+            var originator = new PersistentFileOriginator(path, fileCache, fileSystem);
+            return new PersistentFileCaretaker(id, originator);
         }
 
-        protected override IDisposable GetRegistryKeyCaretaker(RegistryHive hive, RegistryView view, string subKey, IRegistryProxy registry)
+        protected override ICaretaker GetRegistryKeyCaretaker(string id, RegistryHive hive, RegistryView view, string subKey, IRegistryProxy registry)
         {
-            return new PersistentRegistryKeyCaretaker(hive, view, subKey, registry);
+            var originator = new PersistentRegistryKeyOriginator(hive, view, subKey, registry);
+            return new PersistentRegistryKeyCaretaker(id, originator);
         }
 
-        protected override IDisposable GetRegistryValueCaretaker(RegistryHive hive, RegistryView view, string subKey, string name, IRegistryProxy registry)
+        protected override ICaretaker GetRegistryValueCaretaker(string id, RegistryHive hive, RegistryView view, string subKey, string name, IRegistryProxy registry)
         {
-            return new PersistentRegistryValueCaretaker(hive, view, subKey, name, registry);
+            var originator = new PersistentRegistryValueOriginator(hive, view, subKey, name, registry);
+            return new PersistentRegistryValueCaretaker(id, originator);
         }
 
+        /// <summary>
+        /// Gets abandoned caretakers on the current machine. An "abandoned caretaker" is a caretaker that was created by a process that no longer exists.
+        /// </summary>
+        /// <returns>An enumeration of all caretakers on this machine that have been abandoned.</returns>
         public static void RestoreAbandonedCaretakers()
         {
+            // Create a dictionary that maps process IDs to process start times, which will be used to uniquely identify a currently running process.
+            // A null value indicates that this process does not have permission to the other process - try rerunning in an elevated process.
+            // Pass this data in instead of calling Process.GetProcesses() because it is an expensive call.
             var processes = new Dictionary<int, DateTime?>();
             foreach (var process in Process.GetProcesses())
             {
@@ -72,20 +85,24 @@ namespace bradselw.MachineStateManager.Persistence
                 catch (InvalidOperationException) { } // The process has already exited, so don't add it.
             }
 
-            var abandonedCaretakers = new List<IDisposable>();
+            var abandonedCaretakers = new List<ICaretaker>();
 
-            abandonedCaretakers.AddRange(PersistentEnvironmentVariableCaretaker.GetAbandonedCaretakers(processes));
-            abandonedCaretakers.AddRange(PersistentDirectoryCaretaker.GetAbandonedCaretakers(processes));
-            abandonedCaretakers.AddRange(PersistentFileCaretaker.GetAbandonedCaretakers(processes));
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            using (var database = LiteDatabaseFactory.GetDatabase())
             {
-                abandonedCaretakers.AddRange(PersistentRegistryKeyCaretaker.GetAbandonedCaretakers(processes));
-                abandonedCaretakers.AddRange(PersistentRegistryValueCaretaker.GetAbandonedCaretakers(processes));
+                abandonedCaretakers.AddRange(database.GetCollection<IPersistentCaretaker>().FindAll()
+                    .Where(c => !(processes.ContainsKey(c.ProcessID) &&
+                        (
+                            processes[c.ProcessID] == c.ProcessStartTime ||
+                            processes[c.ProcessID] == null
+                        )))
+                    .Cast<ICaretaker>());
             }
 
-            var machineStateManager = new PersistentMachineStateManager(abandonedCaretakers);
-
-            machineStateManager.Dispose();
+            if (abandonedCaretakers.Any())
+            {
+                var machineStateManager = new PersistentMachineStateManager(abandonedCaretakers);
+                machineStateManager.Dispose();
+            }
         }
     }
 }

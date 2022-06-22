@@ -17,7 +17,12 @@ namespace bradselw.MachineStateManager.FileSystem
 
         public FileOriginator(string path, IBlobStore fileCache, IFileSystemProxy fileSystem)
         {
-            Path = path ?? throw new ArgumentNullException(nameof(path));
+            if (path == null)
+            {
+                throw new ArgumentNullException(nameof(path));
+            }
+
+            Path = System.IO.Path.GetFullPath(path);
             FileCache = fileCache ?? throw new ArgumentNullException(nameof(fileCache));
             FileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
         }

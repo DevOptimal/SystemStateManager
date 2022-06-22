@@ -1,5 +1,6 @@
 ﻿using bradselw.SystemResources.Registry.Proxy;
 using Microsoft.Win32;
+using System;
 
 namespace bradselw.MachineStateManager.Registry
 {
@@ -18,7 +19,7 @@ namespace bradselw.MachineStateManager.Registry
             Hive = hive;
             View = view;
             SubKey = subKey;
-            Registry = registry;
+            Registry = registry ?? throw new ArgumentNullException(nameof(registry));
         }
 
         public RegistryKeyMemento GetState()
