@@ -15,7 +15,7 @@ namespace bradselw.MachineStateManager.Persistence.FileSystem
         }
 
         public PersistentDirectoryCaretaker(PersistentDirectoryOriginator originator)
-            : base(GetID(originator), originator)
+            : base(originator)
         {
         }
 
@@ -25,24 +25,7 @@ namespace bradselw.MachineStateManager.Persistence.FileSystem
         {
         }
 
-        public static IEnumerable<IDisposable> GetAbandonedCaretakers(Dictionary<int, DateTime?> processes)
+        public static IEnumerable<ICaretaker> GetAbandonedCaretakers(Dictionary<int, DateTime?> processes)
             => GetAbandonedCaretakers<PersistentDirectoryCaretaker>(processes);
-
-        private static string GetID(DirectoryOriginator originator)
-        {
-            if (originator == null)
-            {
-                throw new ArgumentNullException(nameof(originator));
-            }
-
-            var id = originator.Path;
-
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-            {
-                id = id.ToLower();
-            }
-
-            return id;
-        }
     }
 }

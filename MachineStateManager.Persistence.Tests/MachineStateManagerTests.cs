@@ -51,5 +51,23 @@
 
             Task.WaitAll(tasks.ToArray());
         }
+
+        [TestMethod]
+        public void ReuseExistingCaretaker()
+        {
+            var machineStateManager = new PersistentMachineStateManager();
+            var name = "foo";
+            var previousValue = System.Environment.GetEnvironmentVariable(name);
+
+            using (machineStateManager.SnapshotEnvironmentVariable(name))
+            using (machineStateManager.SnapshotEnvironmentVariable(name))
+            {
+                var newValue = Guid.NewGuid().ToString();
+                System.Environment.SetEnvironmentVariable(name, newValue);
+                Assert.AreEqual(newValue, System.Environment.GetEnvironmentVariable(name));
+            }
+
+            Assert.AreEqual(previousValue, System.Environment.GetEnvironmentVariable(name));
+        }
     }
 }

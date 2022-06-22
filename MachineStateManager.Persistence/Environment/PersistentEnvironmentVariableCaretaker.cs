@@ -3,7 +3,6 @@ using bradselw.SystemResources.Environment.Proxy;
 using LiteDB;
 using System;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
 
 namespace bradselw.MachineStateManager.Persistence.Environment
 {
@@ -20,7 +19,12 @@ namespace bradselw.MachineStateManager.Persistence.Environment
         }
 
         public PersistentEnvironmentVariableCaretaker(PersistentEnvironmentVariableOriginator originator)
-            : base(GetID(originator), originator)
+            : base(originator)
+        {
+        }
+
+        public PersistentEnvironmentVariableCaretaker(string id, PersistentEnvironmentVariableOriginator originator)
+            : base(id, originator)
         {
         }
 
@@ -30,24 +34,7 @@ namespace bradselw.MachineStateManager.Persistence.Environment
         {
         }
 
-        public static IEnumerable<IDisposable> GetAbandonedCaretakers(Dictionary<int, DateTime?> processes)
+        public static IEnumerable<ICaretaker> GetAbandonedCaretakers(Dictionary<int, DateTime?> processes)
             => GetAbandonedCaretakers<PersistentEnvironmentVariableCaretaker>(processes);
-
-        private static string GetID(EnvironmentVariableOriginator originator)
-        {
-            if (originator == null)
-            {
-                throw new ArgumentNullException(nameof(originator));
-            }
-
-            var id = string.Join("\\", originator.Target, originator.Name);
-
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                id = id.ToLower();
-            }
-
-            return id;
-        }
     }
 }

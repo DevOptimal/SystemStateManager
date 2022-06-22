@@ -2,7 +2,7 @@
 
 namespace bradselw.MachineStateManager.FileSystem
 {
-    internal interface IBlobStore
+    public interface IBlobStore
     {
         /// <summary>
         /// The proxy used to access the file system.

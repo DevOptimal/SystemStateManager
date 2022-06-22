@@ -1,10 +1,26 @@
 ﻿using bradselw.SystemResources.FileSystem.Proxy;
 using System;
+using System.Runtime.InteropServices;
 
 namespace bradselw.MachineStateManager.FileSystem
 {
     internal class DirectoryOriginator : IOriginator<DirectoryMemento>
     {
+        public string ID
+        {
+            get
+            {
+                var id = Path;
+
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                {
+                    id = id.ToLower();
+                }
+
+                return id;
+            }
+        }
+
         public string Path { get; }
 
         public IFileSystemProxy FileSystem { get; }

@@ -15,7 +15,7 @@ namespace bradselw.MachineStateManager.Persistence.Registry
         }
 
         public PersistentRegistryValueCaretaker(PersistentRegistryValueOriginator originator)
-            : base(GetID(originator), originator)
+            : base(originator)
         {
         }
 
@@ -25,17 +25,7 @@ namespace bradselw.MachineStateManager.Persistence.Registry
         {
         }
 
-        public static IEnumerable<IDisposable> GetAbandonedCaretakers(Dictionary<int, DateTime?> processes)
+        public static IEnumerable<ICaretaker> GetAbandonedCaretakers(Dictionary<int, DateTime?> processes)
             => GetAbandonedCaretakers<PersistentRegistryValueCaretaker>(processes);
-
-        private static string GetID(RegistryValueOriginator originator)
-        {
-            if (originator == null)
-            {
-                throw new ArgumentNullException(nameof(originator));
-            }
-
-            return string.Join("\\", originator.Hive, originator.View, originator.SubKey, originator.Name ?? "(Default)").ToLower();
-        }
     }
 }

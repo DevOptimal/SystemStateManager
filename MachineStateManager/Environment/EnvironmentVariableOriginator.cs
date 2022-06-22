@@ -1,10 +1,26 @@
 ﻿using bradselw.SystemResources.Environment.Proxy;
 using System;
+using System.Runtime.InteropServices;
 
 namespace bradselw.MachineStateManager.Environment
 {
     internal class EnvironmentVariableOriginator : IOriginator<EnvironmentVariableMemento>
     {
+        public string ID
+        {
+            get
+            {
+                var id = string.Join("\\", Target, Name);
+
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    id = id.ToLower();
+                }
+
+                return id;
+            }
+        }
+
         public string Name { get; }
 
         public EnvironmentVariableTarget Target { get; }

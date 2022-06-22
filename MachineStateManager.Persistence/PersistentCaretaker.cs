@@ -1,5 +1,4 @@
 ﻿using LiteDB;
-using bradselw.MachineStateManager;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -16,9 +15,6 @@ namespace bradselw.MachineStateManager.Persistence
         where TOriginator : IOriginator<TMemento>
         where TMemento : IMemento
     {
-        [BsonId]
-        public string ID { get; }
-
         public int ProcessID { get; }
 
         public DateTime ProcessStartTime { get; }
@@ -27,16 +23,19 @@ namespace bradselw.MachineStateManager.Persistence
 
         private bool disposedValue;
 
+        protected PersistentCaretaker(TOriginator originator)
+            : this(originator.ID, originator)
+        {
+        }
+
         /// <summary>
         /// Creates a new caretaker.
         /// </summary>
         /// <param name="id">A string that uniquely identifies the resource represented by the caretaker.</param>
         /// <param name="originator">The caretaker's originator, used for getting and setting a memento from the resource.</param>
         /// <exception cref="Exception"></exception>
-        protected PersistentCaretaker(string id, TOriginator originator) : base(originator)
+        protected PersistentCaretaker(string id, TOriginator originator) : base(id, originator)
         {
-            ID = id;
-
             var currentProcess = Process.GetProcessById(Process.GetCurrentProcess().Id);
             ProcessID = currentProcess.Id;
             ProcessStartTime = currentProcess.StartTime;
@@ -73,9 +72,8 @@ namespace bradselw.MachineStateManager.Persistence
         /// <param name="processStartTime">The start time of the process that created the caretaker. Process IDs are reused, so start time is required to identify a unique process.</param>
         /// <param name="originator">The caretaker's originator, used for getting and setting a memento from the resource.</param>
         /// <param name="memento">The caretaker's memento, which stores the current state of the resource.</param>
-        protected PersistentCaretaker(string id, int processID, DateTime processStartTime, TOriginator originator, TMemento memento) : base(originator, memento)
+        protected PersistentCaretaker(string id, int processID, DateTime processStartTime, TOriginator originator, TMemento memento) : base(id, originator, memento)
         {
-            ID = id;
             ProcessID = processID;
             ProcessStartTime = processStartTime;
             persisted = true;
@@ -172,14 +170,14 @@ namespace bradselw.MachineStateManager.Persistence
         /// A null value indicates that the current process does not have permission to the process - try rerunning in an elevated process. Pass this data in
         /// instead of calling Process.GetProcesses() because it is an expensive call.</param>
         /// <returns>An enumeration of all caretakers on this machine that have been abandoned.</returns>
-        protected static IEnumerable<IDisposable> GetAbandonedCaretakers<T>(Dictionary<int, DateTime?> processes)
+        protected static IEnumerable<ICaretaker> GetAbandonedCaretakers<T>(Dictionary<int, DateTime?> processes)
             where T : PersistentCaretaker<TOriginator, TMemento>
         {
             using (var database = GetDatabase())
             {
                 var allCaretakers = database.GetCollection<T>(typeof(T).Name).FindAll().ToList();
 
-                var result = new List<IDisposable>();
+                var result = new List<ICaretaker>();
                 foreach (var caretaker in allCaretakers)
                 {
                     if (!(processes.ContainsKey(caretaker.ProcessID) &&

@@ -2,21 +2,27 @@
 
 namespace bradselw.MachineStateManager
 {
-    internal class Caretaker<TOriginator, TMemento> : IDisposable
+    internal class Caretaker<TOriginator, TMemento> : ICaretaker
         where TOriginator : IOriginator<TMemento>
         where TMemento : IMemento
     {
+        public string ID { get; }
+
         public TOriginator Originator { get; }
 
         public TMemento Memento { get; }
 
         private bool disposedValue;
 
-        public Caretaker(TOriginator originator) : this(originator, originator.GetState())
+        public Caretaker(TOriginator originator) : this(originator.ID, originator)
         {
         }
 
-        protected Caretaker(TOriginator originator, TMemento memento)
+        public Caretaker(string id, TOriginator originator) : this(id, originator, originator.GetState())
+        {
+        }
+
+        protected Caretaker(string id, TOriginator originator, TMemento memento)
         {
             if (originator == null)
             {
@@ -28,6 +34,7 @@ namespace bradselw.MachineStateManager
                 throw new ArgumentNullException(nameof(memento));
             }
 
+            ID = id ?? throw new ArgumentNullException(nameof(id));
             Originator = originator;
             Memento = memento;
         }

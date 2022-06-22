@@ -18,7 +18,7 @@ namespace bradselw.MachineStateManager.Persistence.FileSystem
         }
 
         public PersistentFileCaretaker(PersistentFileOriginator originator)
-            : base(GetID(originator), originator)
+            : base(originator)
         {
         }
 
@@ -28,7 +28,7 @@ namespace bradselw.MachineStateManager.Persistence.FileSystem
         {
         }
 
-        public static IEnumerable<IDisposable> GetAbandonedCaretakers(Dictionary<int, DateTime?> processes)
+        public static IEnumerable<ICaretaker> GetAbandonedCaretakers(Dictionary<int, DateTime?> processes)
             => GetAbandonedCaretakers<PersistentFileCaretaker>(processes);
 
         protected override void Dispose(bool disposing)
@@ -55,23 +55,6 @@ namespace bradselw.MachineStateManager.Persistence.FileSystem
                 // TODO: set large fields to null
                 disposedValue = true;
             }
-        }
-
-        private static string GetID(FileOriginator originator)
-        {
-            if (originator == null)
-            {
-                throw new ArgumentNullException(nameof(originator));
-            }
-
-            var id = originator.Path;
-
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-            {
-                id = id.ToLower();
-            }
-
-            return id;
         }
     }
 }

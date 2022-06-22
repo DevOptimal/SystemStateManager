@@ -5,6 +5,14 @@ namespace bradselw.MachineStateManager.Registry
 {
     internal class RegistryValueOriginator : IOriginator<RegistryValueMemento>
     {
+        public string ID
+        {
+            get
+            {
+                return string.Join("\\", Hive, View, SubKey, Name ?? "(Default)").ToLower();
+            }
+        }
+
         public RegistryHive Hive { get; }
 
         public RegistryView View { get; }
