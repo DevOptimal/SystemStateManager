@@ -1,4 +1,7 @@
-﻿namespace bradselw.MachineStateManager.Persistence.Tests
+﻿using System;
+using System.IO;
+
+namespace bradselw.MachineStateManager.Persistence.Tests
 {
     [TestClass]
     public class FileSystemTests

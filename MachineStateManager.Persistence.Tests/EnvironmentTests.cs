@@ -1,3 +1,5 @@
+using System;
+
 namespace bradselw.MachineStateManager.Persistence.Tests
 {
     [TestClass]

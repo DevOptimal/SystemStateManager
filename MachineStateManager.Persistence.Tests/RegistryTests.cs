@@ -1,4 +1,6 @@
 ﻿using Microsoft.Win32;
+using System;
+using System.IO;
 using System.Runtime.Versioning;
 
 namespace bradselw.MachineStateManager.Persistence.Tests
@@ -59,7 +61,7 @@ namespace bradselw.MachineStateManager.Persistence.Tests
                 Assert.AreEqual(null, regKey.GetValue(name));
             }
 
-            Assert.AreEqual("bar", (string?)regKey.GetValue(name));
+            Assert.AreEqual("bar", (string)regKey.GetValue(name));
         }
 
         private static void RecursiveDeleteRegistryKey(RegistryHive hive, RegistryView view, string subKey)
