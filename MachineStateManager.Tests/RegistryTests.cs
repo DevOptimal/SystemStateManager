@@ -61,7 +61,7 @@ namespace bradselw.MachineStateManager.Tests
                 Assert.AreEqual(null, regKey.GetValue(name));
             }
 
-            Assert.AreEqual("bar", (string?)regKey.GetValue(name));
+            Assert.AreEqual("bar", (string)regKey.GetValue(name));
         }
 
         private static void RecursiveDeleteRegistryKey(RegistryHive hive, RegistryView view, string subKey)

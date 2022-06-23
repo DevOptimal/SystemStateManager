@@ -1,4 +1,8 @@
-﻿namespace bradselw.MachineStateManager.Persistence.Tests
+﻿using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+
+namespace bradselw.MachineStateManager.Persistence.Tests
 {
     [TestClass]
     public class MachineStateManagerTests

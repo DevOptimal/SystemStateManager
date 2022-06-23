@@ -33,7 +33,7 @@ namespace bradselw.MachineStateManager.Registry
             {
                 if (!memento.Exists)
                 {
-                    Registry.DeleteRegistryKey(Hive, View, SubKey);
+                    Registry.DeleteRegistryKey(Hive, View, SubKey, recursive: true);
                 }
             }
             else
