@@ -1,4 +1,5 @@
-﻿using System;
+﻿using LiteDB;
+using System;
 using System.Diagnostics;
 
 namespace bradselw.MachineStateManager.Persistence
@@ -38,9 +39,15 @@ namespace bradselw.MachineStateManager.Persistence
                         database.Commit();
                         persisted = true;
                     }
-                    catch
+                    catch (Exception ex)
                     {
                         database.Rollback();
+
+                        if (ex is LiteException liteEx && liteEx.ErrorCode == LiteException.INDEX_DUPLICATE_KEY)
+                        {
+                            throw new ResourceLockedException($"The resource '{ID}' is locked by another instance.", liteEx);
+                        }
+
                         throw;
                     }
                 }
