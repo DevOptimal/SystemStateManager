@@ -2,9 +2,9 @@
 using bradselw.MachineStateManager.FileSystem;
 using bradselw.MachineStateManager.FileSystem.Caching;
 using bradselw.MachineStateManager.Registry;
-using bradselw.SystemResources.Environment.Proxy;
-using bradselw.SystemResources.FileSystem.Proxy;
-using bradselw.SystemResources.Registry.Proxy;
+using bradselw.System.Resources.Environment;
+using bradselw.System.Resources.FileSystem;
+using bradselw.System.Resources.Registry;
 using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
@@ -34,7 +34,7 @@ namespace bradselw.MachineStateManager
         }
 
         public MachineStateManager(IEnvironmentProxy environment, IFileSystemProxy fileSystem, IRegistryProxy registry)
-            : this(new LocalBlobStore(Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.CommonApplicationData), nameof(MachineStateManager), "FileCache"), fileSystem), environment, fileSystem, registry)
+            : this(new LocalBlobStore(Path.Combine(global::System.Environment.GetFolderPath(global::System.Environment.SpecialFolder.CommonApplicationData), nameof(MachineStateManager), "FileCache"), fileSystem), environment, fileSystem, registry)
         {
         }
 

@@ -1,5 +1,5 @@
 ﻿using bradselw.MachineStateManager.Registry;
-using bradselw.SystemResources.Registry.Proxy;
+using bradselw.System.Resources.Registry;
 using LiteDB;
 using Microsoft.Win32;
 

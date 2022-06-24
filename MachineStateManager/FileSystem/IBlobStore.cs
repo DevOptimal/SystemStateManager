@@ -1,4 +1,4 @@
-﻿using bradselw.SystemResources.FileSystem.Proxy;
+﻿using bradselw.System.Resources.FileSystem;
 
 namespace bradselw.MachineStateManager.FileSystem
 {

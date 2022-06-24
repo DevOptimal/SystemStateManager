@@ -1,5 +1,5 @@
 ﻿using bradselw.MachineStateManager.FileSystem;
-using bradselw.SystemResources.FileSystem.Proxy;
+using bradselw.System.Resources.FileSystem;
 using LiteDB;
 
 namespace bradselw.MachineStateManager.Persistence.FileSystem

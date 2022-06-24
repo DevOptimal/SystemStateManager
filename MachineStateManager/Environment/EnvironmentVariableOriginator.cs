@@ -1,4 +1,4 @@
-﻿using bradselw.SystemResources.Environment.Proxy;
+﻿using bradselw.System.Resources.Environment;
 using System;
 
 namespace bradselw.MachineStateManager.Environment
