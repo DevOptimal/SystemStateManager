@@ -1,4 +1,4 @@
-﻿using bradselw.SystemResources.FileSystem.Proxy;
+﻿using bradselw.System.Resources.FileSystem;
 using System;
 
 namespace bradselw.MachineStateManager.FileSystem
@@ -16,7 +16,7 @@ namespace bradselw.MachineStateManager.FileSystem
                 throw new ArgumentNullException(nameof(path));
             }
 
-            Path = System.IO.Path.GetFullPath(path);
+            Path = global::System.IO.Path.GetFullPath(path);
             FileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
         }
 

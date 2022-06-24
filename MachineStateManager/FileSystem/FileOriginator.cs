@@ -1,4 +1,4 @@
-﻿using bradselw.SystemResources.FileSystem.Proxy;
+﻿using bradselw.System.Resources.FileSystem;
 using System;
 
 namespace bradselw.MachineStateManager.FileSystem
@@ -22,7 +22,7 @@ namespace bradselw.MachineStateManager.FileSystem
                 throw new ArgumentNullException(nameof(path));
             }
 
-            Path = System.IO.Path.GetFullPath(path);
+            Path = global::System.IO.Path.GetFullPath(path);
             FileCache = fileCache ?? throw new ArgumentNullException(nameof(fileCache));
             FileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
         }
@@ -39,7 +39,7 @@ namespace bradselw.MachineStateManager.FileSystem
 
         public void SetState(FileMemento memento)
         {
-            var directoryPath = System.IO.Path.GetDirectoryName(Path);
+            var directoryPath = global::System.IO.Path.GetDirectoryName(Path);
             if (!FileSystem.DirectoryExists(directoryPath))
             {
                 FileSystem.CreateDirectory(directoryPath);

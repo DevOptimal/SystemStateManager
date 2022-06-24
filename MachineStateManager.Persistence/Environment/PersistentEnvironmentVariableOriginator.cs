@@ -1,5 +1,5 @@
 ﻿using bradselw.MachineStateManager.Environment;
-using bradselw.SystemResources.Environment.Proxy;
+using bradselw.System.Resources.Environment;
 using LiteDB;
 using System;
 

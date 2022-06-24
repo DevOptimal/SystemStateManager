@@ -12,9 +12,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="bradselw.SystemResources.Environment" Version="1.0.2" />
-    <PackageReference Include="bradselw.SystemResources.FileSystem" Version="1.0.4" />
-    <PackageReference Include="bradselw.SystemResources.Registry" Version="1.0.5" />
+    <PackageReference Include="bradselw.System.Resources.Environment" Version="1.0.4" />
+    <PackageReference Include="bradselw.System.Resources.FileSystem" Version="1.0.6" />
+    <PackageReference Include="bradselw.System.Resources.Registry" Version="1.0.7" />
     <PackageReference Include="Microsoft.Win32.Registry" Version="5.0.0" />
   </ItemGroup>
 

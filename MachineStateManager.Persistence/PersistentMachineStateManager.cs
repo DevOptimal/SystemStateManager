@@ -3,20 +3,27 @@ using bradselw.MachineStateManager.Persistence.Environment;
 using bradselw.MachineStateManager.Persistence.FileSystem;
 using bradselw.MachineStateManager.Persistence.FileSystem.Caching;
 using bradselw.MachineStateManager.Persistence.Registry;
-using bradselw.SystemResources.Environment.Proxy;
-using bradselw.SystemResources.FileSystem.Proxy;
-using bradselw.SystemResources.Registry.Proxy;
+using bradselw.System.Resources.Environment;
+using bradselw.System.Resources.FileSystem;
+using bradselw.System.Resources.Registry;
 using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 
 namespace bradselw.MachineStateManager.Persistence
 {
     public class PersistentMachineStateManager : MachineStateManager
     {
+        public static Uri PersistenceURI { get; set; } = new Uri(
+            Path.Combine(
+                global::System.Environment.GetFolderPath(global::System.Environment.SpecialFolder.CommonApplicationData),
+                nameof(MachineStateManager),
+                $"{nameof(Persistence)}.litedb"));
+
         public PersistentMachineStateManager()
             : this(new DefaultEnvironmentProxy(), new DefaultFileSystemProxy(), new DefaultRegistryProxy())
         {
@@ -63,10 +70,9 @@ namespace bradselw.MachineStateManager.Persistence
         }
 
         /// <summary>
-        /// Gets abandoned caretakers on the current machine. An "abandoned caretaker" is a caretaker that was created by a process that no longer exists.
+        /// Restores abandoned snapshots on the current machine. An "abandoned snapshot" is a snapshot that was created by a process that no longer exists.
         /// </summary>
-        /// <returns>An enumeration of all caretakers on this machine that have been abandoned.</returns>
-        public static void RestoreAbandonedCaretakers()
+        public static void RestoreAbandonedSnapshots()
         {
             // Create a dictionary that maps process IDs to process start times, which will be used to uniquely identify a currently running process.
             // A null value indicates that this process does not have permission to the other process - try rerunning in an elevated process.

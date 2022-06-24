@@ -10,7 +10,7 @@ namespace bradselw.MachineStateManager.Persistence.Tests
         [TestMethod]
         public void RestoreAbandonedCaretakers()
         {
-            PersistentMachineStateManager.RestoreAbandonedCaretakers();
+            PersistentMachineStateManager.RestoreAbandonedSnapshots();
         }
 
         [TestMethod]
@@ -18,18 +18,18 @@ namespace bradselw.MachineStateManager.Persistence.Tests
         {
             var machineStateManager = new PersistentMachineStateManager();
             var name = "foo";
-            var previousValue = System.Environment.GetEnvironmentVariable(name);//"bar";//
+            var previousValue = global::System.Environment.GetEnvironmentVariable(name);//"bar";//
             //System.Environment.SetEnvironmentVariable(name, previousValue);
 
             using (machineStateManager.SnapshotEnvironmentVariable(name))
             {
                 var newValue = Guid.NewGuid().ToString();
-                System.Environment.SetEnvironmentVariable(name, newValue);
-                PersistentMachineStateManager.RestoreAbandonedCaretakers();
-                Assert.AreEqual(newValue, System.Environment.GetEnvironmentVariable(name));
+                global::System.Environment.SetEnvironmentVariable(name, newValue);
+                PersistentMachineStateManager.RestoreAbandonedSnapshots();
+                Assert.AreEqual(newValue, global::System.Environment.GetEnvironmentVariable(name));
             }
 
-            Assert.AreEqual(previousValue, System.Environment.GetEnvironmentVariable(name));
+            Assert.AreEqual(previousValue, global::System.Environment.GetEnvironmentVariable(name));
         }
 
         [TestMethod]
@@ -46,10 +46,10 @@ namespace bradselw.MachineStateManager.Persistence.Tests
                     var name = Guid.NewGuid().ToString();
                     using (machineStateManager.SnapshotEnvironmentVariable(name))
                     {
-                        System.Environment.SetEnvironmentVariable(name, "test");
-                        Assert.AreEqual("test", System.Environment.GetEnvironmentVariable(name));
+                        global::System.Environment.SetEnvironmentVariable(name, "test");
+                        Assert.AreEqual("test", global::System.Environment.GetEnvironmentVariable(name));
                     }
-                    Assert.AreEqual(null, System.Environment.GetEnvironmentVariable(name));
+                    Assert.AreEqual(null, global::System.Environment.GetEnvironmentVariable(name));
                 }));
             }
 
@@ -61,17 +61,17 @@ namespace bradselw.MachineStateManager.Persistence.Tests
         {
             var machineStateManager = new PersistentMachineStateManager();
             var name = "foo";
-            var previousValue = System.Environment.GetEnvironmentVariable(name);
+            var previousValue = global::System.Environment.GetEnvironmentVariable(name);
 
             using (machineStateManager.SnapshotEnvironmentVariable(name))
             using (machineStateManager.SnapshotEnvironmentVariable(name))
             {
                 var newValue = Guid.NewGuid().ToString();
-                System.Environment.SetEnvironmentVariable(name, newValue);
-                Assert.AreEqual(newValue, System.Environment.GetEnvironmentVariable(name));
+                global::System.Environment.SetEnvironmentVariable(name, newValue);
+                Assert.AreEqual(newValue, global::System.Environment.GetEnvironmentVariable(name));
             }
 
-            Assert.AreEqual(previousValue, System.Environment.GetEnvironmentVariable(name));
+            Assert.AreEqual(previousValue, global::System.Environment.GetEnvironmentVariable(name));
         }
     }
 }

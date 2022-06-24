@@ -1,4 +1,4 @@
-﻿using bradselw.SystemResources.Registry.Proxy;
+﻿using bradselw.System.Resources.Registry;
 using Microsoft.Win32;
 using System;
 

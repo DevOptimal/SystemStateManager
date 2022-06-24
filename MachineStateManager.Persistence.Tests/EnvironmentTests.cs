@@ -10,17 +10,17 @@ namespace bradselw.MachineStateManager.Persistence.Tests
         {
             var machineStateManager = new PersistentMachineStateManager();
             var name = "foo";
-            var previousValue = System.Environment.GetEnvironmentVariable(name);//"bar";//
+            var previousValue = global::System.Environment.GetEnvironmentVariable(name);//"bar";//
             //System.Environment.SetEnvironmentVariable(name, previousValue);
 
             using (machineStateManager.SnapshotEnvironmentVariable(name))
             {
                 var newValue = Guid.NewGuid().ToString();
-                System.Environment.SetEnvironmentVariable(name, newValue);
-                Assert.AreEqual(newValue, System.Environment.GetEnvironmentVariable(name));
+                global::System.Environment.SetEnvironmentVariable(name, newValue);
+                Assert.AreEqual(newValue, global::System.Environment.GetEnvironmentVariable(name));
             }
 
-            Assert.AreEqual(previousValue, System.Environment.GetEnvironmentVariable(name));
+            Assert.AreEqual(previousValue, global::System.Environment.GetEnvironmentVariable(name));
         }
 
         [TestMethod]
@@ -29,16 +29,16 @@ namespace bradselw.MachineStateManager.Persistence.Tests
             var machineStateManager1 = new PersistentMachineStateManager();
             var machineStateManager2 = new PersistentMachineStateManager();
             var name = "foo";
-            var previousValue = System.Environment.GetEnvironmentVariable(name);
+            var previousValue = global::System.Environment.GetEnvironmentVariable(name);
 
             using (machineStateManager1.SnapshotEnvironmentVariable(name))
             {
                 var newValue = Guid.NewGuid().ToString();
-                System.Environment.SetEnvironmentVariable(name, newValue);
-                Assert.AreEqual(newValue, System.Environment.GetEnvironmentVariable(name));
+                global::System.Environment.SetEnvironmentVariable(name, newValue);
+                Assert.AreEqual(newValue, global::System.Environment.GetEnvironmentVariable(name));
             }
 
-            Assert.AreEqual(previousValue, System.Environment.GetEnvironmentVariable(name));
+            Assert.AreEqual(previousValue, global::System.Environment.GetEnvironmentVariable(name));
         }
     }
 }

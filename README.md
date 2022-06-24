@@ -1,2 +1,3 @@
 # MachineStateManager
-Snapshot and restore the state of local machine resources.
+
+Snapshot and restore the state of local system resources.

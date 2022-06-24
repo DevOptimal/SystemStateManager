@@ -10,16 +10,16 @@ namespace bradselw.MachineStateManager.Tests
         {
             var machineStateManager = new MachineStateManager();
             var name = "foo";
-            var previousValue = System.Environment.GetEnvironmentVariable(name);
+            var previousValue = global::System.Environment.GetEnvironmentVariable(name);
 
             using (machineStateManager.SnapshotEnvironmentVariable(name))
             {
                 var newValue = Guid.NewGuid().ToString();
-                System.Environment.SetEnvironmentVariable(name, newValue);
-                Assert.AreEqual(newValue, System.Environment.GetEnvironmentVariable(name));
+                global::System.Environment.SetEnvironmentVariable(name, newValue);
+                Assert.AreEqual(newValue, global::System.Environment.GetEnvironmentVariable(name));
             }
 
-            Assert.AreEqual(previousValue, System.Environment.GetEnvironmentVariable(name));
+            Assert.AreEqual(previousValue, global::System.Environment.GetEnvironmentVariable(name));
         }
     }
 }
