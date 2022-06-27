@@ -48,12 +48,12 @@ namespace bradselw.MachineStateManager.Persistence.FileSystem.Caching
             using (var database = LiteDatabaseFactory.GetDatabase())
             {
                 var fileStorage = database.FileStorage;
-                var sourceFile = new FileInfo(sourcePath);
-                if (!sourceFile.Exists)
+                sourcePath = Path.GetFullPath(sourcePath);
+                if (!FileSystem.FileExists(sourcePath))
                 {
                     throw new FileNotFoundException();
                 }
-                using (var sourceStream = FileSystem.OpenFile(sourceFile.FullName, FileMode.Open, FileAccess.Read, FileShare.Read))
+                using (var sourceStream = FileSystem.OpenFile(sourcePath, FileMode.Open, FileAccess.Read, FileShare.Read))
                 {
 
                     var id = ComputeFileHash(sourceStream);

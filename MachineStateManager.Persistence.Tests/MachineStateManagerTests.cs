@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading.Tasks;
 
 namespace bradselw.MachineStateManager.Persistence.Tests
@@ -7,6 +8,12 @@ namespace bradselw.MachineStateManager.Persistence.Tests
     [TestClass]
     public class MachineStateManagerTests
     {
+        [AssemblyInitialize]
+        public static void AssemblyInitialize(TestContext testContext)
+        {
+            PersistentMachineStateManager.PersistenceURI = new Uri(Path.Combine(testContext.DeploymentDirectory, "persistence.litedb"));
+        }
+
         [TestMethod]
         public void RestoreAbandonedCaretakers()
         {

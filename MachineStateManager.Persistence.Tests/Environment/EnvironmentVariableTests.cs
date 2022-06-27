@@ -1,6 +1,6 @@
 using System;
 
-namespace bradselw.MachineStateManager.Persistence.Tests
+namespace bradselw.MachineStateManager.Persistence.Tests.Environment
 {
     [TestClass]
     public class EnvironmentTests
