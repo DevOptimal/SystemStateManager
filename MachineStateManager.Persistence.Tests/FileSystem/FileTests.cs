@@ -5,11 +5,13 @@ using System.IO;
 namespace bradselw.MachineStateManager.Persistence.Tests.FileSystem
 {
     [TestClass]
-    public class FileSystemTests
+    public class FileTests
     {
         private MockFileSystemProxy proxy;
 
         private const string path = @"C:\temp\foo.bar";
+
+        private MockMachineStateManager machineStateManager;
 
         private byte[] expectedFileBytes;
 
@@ -21,12 +23,19 @@ namespace bradselw.MachineStateManager.Persistence.Tests.FileSystem
             expectedFileBytes = Guid.NewGuid().ToByteArray();
 
             WriteBytes(path, expectedFileBytes);
+
+            machineStateManager = new MockMachineStateManager(proxy);
+        }
+
+        [TestCleanup]
+        public void TestCleanup()
+        {
+            machineStateManager.Dispose();
         }
 
         [TestMethod]
         public void RestoresChangedFile()
         {
-            using (var machineStateManager = new MockMachineStateManager(proxy))
             using (machineStateManager.SnapshotFile(path))
             {
                 var someOtherData = Guid.NewGuid().ToByteArray();
@@ -44,7 +53,6 @@ namespace bradselw.MachineStateManager.Persistence.Tests.FileSystem
         [TestMethod]
         public void RestoresDeletedFile()
         {
-            using (var machineStateManager = new MockMachineStateManager(proxy))
             using (machineStateManager.SnapshotFile(path))
             {
                 proxy.DeleteFile(path);
@@ -54,9 +62,21 @@ namespace bradselw.MachineStateManager.Persistence.Tests.FileSystem
         }
 
         [TestMethod]
+        public void RevertCreatedFile()
+        {
+            var path2 = @"C:\temp\foo.baz";
+
+            using (machineStateManager.SnapshotFile(path2))
+            {
+                proxy.CreateFile(path2);
+            }
+
+            Assert.IsFalse(proxy.FileExists(path2));
+        }
+
+        [TestMethod]
         public void MachineStateManagerCorrectlyDisposes()
         {
-            using var machineStateManager = new MockMachineStateManager(proxy);
             using var caretaker = machineStateManager.SnapshotFile(path);
 
             proxy.DeleteFile(path);
@@ -69,7 +89,6 @@ namespace bradselw.MachineStateManager.Persistence.Tests.FileSystem
         [TestMethod]
         public void CaretakerCorrectlyDisposes()
         {
-            using var machineStateManager = new MockMachineStateManager(proxy);
             using var caretaker = machineStateManager.SnapshotFile(path);
 
             proxy.DeleteFile(path);
@@ -85,7 +104,6 @@ namespace bradselw.MachineStateManager.Persistence.Tests.FileSystem
             var path2 = @"C:\temp\foo.baz";
             WriteBytes(path2, expectedFileBytes);
 
-            using var machineStateManager = new MockMachineStateManager(proxy);
             using (var caretaker = machineStateManager.SnapshotFile(path))
             {
                 proxy.DeleteFile(path);

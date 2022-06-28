@@ -147,7 +147,7 @@ namespace bradselw.MachineStateManager
 
         public ICaretaker SnapshotRegistryKey(RegistryHive hive, RegistryView view, string subKey, IRegistryProxy registry)
         {
-            // TODO: Add some logic here that "resolves" the subKey.
+            subKey = RegistryPath.GetFullPath(subKey);
 
             var id = $"[Registry]{hive}\\{view}\\{subKey}".ToLower();
 
@@ -165,7 +165,7 @@ namespace bradselw.MachineStateManager
 
         public ICaretaker SnapshotRegistryValue(RegistryHive hive, RegistryView view, string subKey, string name, IRegistryProxy registry)
         {
-            // TODO: Add some logic here that "resolves" the subKey.
+            subKey = RegistryPath.GetFullPath(subKey);
 
             var id = $"[Registry]{hive}\\{view}\\{subKey}\\\\{name ?? "(Default)"}".ToLower();
 

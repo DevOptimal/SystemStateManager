@@ -28,14 +28,17 @@ namespace bradselw.MachineStateManager.Persistence.FileSystem
             {
                 if (disposing)
                 {
-                    using (var database = LiteDatabaseFactory.GetDatabase())
+                    if (Memento.Hash != null)
                     {
-                        var collection = database.GetCollection<IPersistentCaretaker>();
-
-                        if (!collection.FindAll().OfType<PersistentFileCaretaker>().Any(c => c.Memento.Hash == Memento.Hash))
+                        using (var database = LiteDatabaseFactory.GetDatabase())
                         {
-                            var fileStorage = database.FileStorage;
-                            fileStorage.Delete(Memento.Hash);
+                            var collection = database.GetCollection<IPersistentCaretaker>();
+
+                            if (!collection.FindAll().OfType<PersistentFileCaretaker>().Any(c => c.Memento.Hash == Memento.Hash))
+                            {
+                                var fileStorage = database.FileStorage;
+                                fileStorage.Delete(Memento.Hash);
+                            }
                         }
                     }
                 }

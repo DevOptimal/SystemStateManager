@@ -27,9 +27,15 @@ namespace bradselw.MachineStateManager.Registry
 
         public RegistryValueMemento GetState()
         {
-            var (value, kind) = Registry.GetRegistryValue(Hive, View, SubKey, Name);
-
-            return new RegistryValueMemento(value, kind);
+            if (Registry.RegistryValueExists(Hive, View, SubKey, Name))
+            {
+                var (value, kind) = Registry.GetRegistryValue(Hive, View, SubKey, Name);
+                return new RegistryValueMemento(value, kind);
+            }
+            else
+            {
+                return new RegistryValueMemento(null, RegistryValueKind.None);
+            }
         }
 
         public void SetState(RegistryValueMemento memento)
