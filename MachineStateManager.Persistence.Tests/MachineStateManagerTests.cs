@@ -1,5 +1,9 @@
-﻿using System;
+﻿using bradselw.System.Resources.Environment;
+using LiteDB;
+using Microsoft.QualityTools.Testing.Fakes;
+using System;
 using System.Collections.Generic;
+using System.Diagnostics.Fakes;
 using System.IO;
 using System.Threading.Tasks;
 
@@ -15,13 +19,13 @@ namespace bradselw.MachineStateManager.Persistence.Tests
         }
 
         [TestMethod]
-        public void RestoreAbandonedCaretakers()
+        public void RestoreAbandonedSnapshots()
         {
             PersistentMachineStateManager.RestoreAbandonedSnapshots();
         }
 
         [TestMethod]
-        public void RestoreAbandonedCaretakersDoesNotRestoreCaretakersFromCurrentProcess()
+        public void DoesNotRestoreSnapshotsFromCurrentProcess()
         {
             var machineStateManager = new PersistentMachineStateManager();
             var name = "foo";
@@ -37,6 +41,39 @@ namespace bradselw.MachineStateManager.Persistence.Tests
             }
 
             Assert.AreEqual(previousValue, global::System.Environment.GetEnvironmentVariable(name));
+        }
+
+        [TestMethod]
+        public void RestoresAbandonedSnapshots()
+        {
+            var name = "foo";
+            var target = EnvironmentVariableTarget.Machine;
+            var value = "bar";
+
+            var environment = new MockEnvironmentProxy();
+            environment.SetEnvironmentVariable(name, value, target);
+
+            var fakeProcessID = global::System.Environment.ProcessId + 1;
+            var fakeProcessStartTime = DateTime.Now;
+
+            using (ShimsContext.Create())
+            {
+                ShimProcess.AllInstances.IdGet = p => fakeProcessID;
+                ShimProcess.AllInstances.StartTimeGet = p => fakeProcessStartTime;
+
+                var machineStateManager = new MockMachineStateManager(environment);
+                var snapshot = machineStateManager.SnapshotEnvironmentVariable(name, target);
+
+                var newValue = "baz";
+                environment.SetEnvironmentVariable(name, newValue, target);
+                Assert.AreEqual(newValue, environment.GetEnvironmentVariable(name, target));
+            }
+
+            BsonMapper.Global.RegisterType<IEnvironmentProxy>(
+                serialize: value => new BsonValue(value),
+                deserialize: bson => environment);
+            MockMachineStateManager.RestoreAbandonedSnapshots();
+            Assert.AreEqual(value, environment.GetEnvironmentVariable(name, target));
         }
 
         [TestMethod]

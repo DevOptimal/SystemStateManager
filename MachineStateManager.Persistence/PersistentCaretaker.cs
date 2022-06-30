@@ -24,7 +24,7 @@ namespace bradselw.MachineStateManager.Persistence
         /// <exception cref="Exception"></exception>
         protected PersistentCaretaker(string id, TOriginator originator) : base(id, originator)
         {
-            var currentProcess = Process.GetProcessById(Process.GetCurrentProcess().Id);
+            var currentProcess = Process.GetCurrentProcess();
             ProcessID = currentProcess.Id;
             ProcessStartTime = currentProcess.StartTime;
 
