@@ -10,7 +10,7 @@ namespace bradselw.MachineStateManager.Persistence.Tests.FileSystem
 
         private MockMachineStateManager machineStateManager;
 
-        private const string path = @"C:\temp\foo\bar";
+        private const string path = @"C:\foo\bar";
 
         [TestInitialize]
         public void TestInitializeAttribute()
@@ -27,7 +27,7 @@ namespace bradselw.MachineStateManager.Persistence.Tests.FileSystem
         }
 
         [TestMethod]
-        public void RevertsDirectoryCreate()
+        public void RevertsDirectoryCreation()
         {
             using (machineStateManager.SnapshotDirectory(path))
             {
@@ -40,7 +40,20 @@ namespace bradselw.MachineStateManager.Persistence.Tests.FileSystem
         }
 
         [TestMethod]
-        public void RevertsDirectoryDelete()
+        public void RevertsDirectoryCreationWithChildren()
+        {
+            using (machineStateManager.SnapshotDirectory(path))
+            {
+                proxy.CreateDirectory(path);
+                proxy.CreateDirectory(Path.Combine(path, "blah"));
+                proxy.CreateFile(Path.Combine(path, "log.txt"));
+            }
+
+            Assert.IsFalse(proxy.DirectoryExists(path));
+        }
+
+        [TestMethod]
+        public void RevertsDirectoryDeletion()
         {
             proxy.CreateDirectory(path);
 
@@ -52,21 +65,6 @@ namespace bradselw.MachineStateManager.Persistence.Tests.FileSystem
             }
 
             Assert.IsTrue(proxy.DirectoryExists(path));
-        }
-
-        [TestMethod]
-        public void RevertsDirectoryCreateWithChildren()
-        {
-            using (machineStateManager.SnapshotDirectory(path))
-            {
-                proxy.CreateDirectory(path);
-                proxy.CreateDirectory(Path.Combine(path, "blah"));
-                proxy.CreateFile(Path.Combine(path, "log.txt"));
-
-                Assert.IsTrue(proxy.DirectoryExists(path));
-            }
-
-            Assert.IsFalse(proxy.DirectoryExists(path));
         }
     }
 }

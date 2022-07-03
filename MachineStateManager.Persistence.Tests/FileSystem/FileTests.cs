@@ -9,20 +9,14 @@ namespace bradselw.MachineStateManager.Persistence.Tests.FileSystem
     {
         private MockFileSystemProxy proxy;
 
-        private const string path = @"C:\temp\foo.bar";
-
         private MockMachineStateManager machineStateManager;
 
-        private byte[] expectedFileBytes;
+        private const string path = @"C:\foo\bar.dat";
 
         [TestInitialize]
         public void TestInitializeAttribute()
         {
             proxy = new MockFileSystemProxy();
-
-            expectedFileBytes = Guid.NewGuid().ToByteArray();
-
-            WriteBytes(path, expectedFileBytes);
 
             machineStateManager = new MockMachineStateManager(proxy);
         }
@@ -34,25 +28,36 @@ namespace bradselw.MachineStateManager.Persistence.Tests.FileSystem
         }
 
         [TestMethod]
-        public void RestoresChangedFile()
+        public void RevertsFileAlteration()
         {
+            var expectedFileBytes = Guid.NewGuid().ToByteArray();
+            WriteBytes(path, expectedFileBytes);
+
             using (machineStateManager.SnapshotFile(path))
             {
-                var someOtherData = Guid.NewGuid().ToByteArray();
-                WriteBytes(path, someOtherData);
-
-                var readOtherData = ReadBytes(path);
-                CollectionAssert.AreEqual(someOtherData, readOtherData);
+                WriteBytes(path, Guid.NewGuid().ToByteArray());
             }
 
-            var actualFileBytes = ReadBytes(path);
-
-            CollectionAssert.AreEqual(expectedFileBytes, actualFileBytes);
+            CollectionAssert.AreEqual(expectedFileBytes, ReadBytes(path));
         }
 
         [TestMethod]
-        public void RestoresDeletedFile()
+        public void RevertsFileCreation()
         {
+            using (machineStateManager.SnapshotFile(path))
+            {
+                proxy.CreateFile(path);
+            }
+
+            Assert.IsFalse(proxy.FileExists(path));
+        }
+
+        [TestMethod]
+        public void RevertsFileDeletion()
+        {
+            var expectedFileBytes = Guid.NewGuid().ToByteArray();
+            WriteBytes(path, expectedFileBytes);
+
             using (machineStateManager.SnapshotFile(path))
             {
                 proxy.DeleteFile(path);
@@ -62,46 +67,12 @@ namespace bradselw.MachineStateManager.Persistence.Tests.FileSystem
         }
 
         [TestMethod]
-        public void RevertCreatedFile()
+        public void RevertsMultipleFileDeletionsWithSameContent()
         {
-            var path2 = @"C:\temp\foo.baz";
+            var expectedFileBytes = Guid.NewGuid().ToByteArray();
+            WriteBytes(path, expectedFileBytes);
 
-            using (machineStateManager.SnapshotFile(path2))
-            {
-                proxy.CreateFile(path2);
-            }
-
-            Assert.IsFalse(proxy.FileExists(path2));
-        }
-
-        [TestMethod]
-        public void MachineStateManagerCorrectlyDisposes()
-        {
-            using var caretaker = machineStateManager.SnapshotFile(path);
-
-            proxy.DeleteFile(path);
-
-            machineStateManager.Dispose();
-
-            CollectionAssert.AreEqual(expectedFileBytes, ReadBytes(path));
-        }
-
-        [TestMethod]
-        public void CaretakerCorrectlyDisposes()
-        {
-            using var caretaker = machineStateManager.SnapshotFile(path);
-
-            proxy.DeleteFile(path);
-
-            caretaker.Dispose();
-
-            CollectionAssert.AreEqual(expectedFileBytes, ReadBytes(path));
-        }
-
-        [TestMethod]
-        public void CorrectlyRestoresTwoDifferentFilesWithSameContent()
-        {
-            var path2 = @"C:\temp\foo.baz";
+            var path2 = @"C:\foo\baz.dat";
             WriteBytes(path2, expectedFileBytes);
 
             using (var caretaker = machineStateManager.SnapshotFile(path))

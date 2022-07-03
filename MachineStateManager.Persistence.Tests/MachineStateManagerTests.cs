@@ -12,47 +12,76 @@ namespace bradselw.MachineStateManager.Persistence.Tests
     [TestClass]
     public class MachineStateManagerTests
     {
+        private MockEnvironmentProxy proxy;
+
+        private MockMachineStateManager machineStateManager;
+
+        private const string name = "foo";
+
+        private const EnvironmentVariableTarget target = EnvironmentVariableTarget.Machine;
+
+        private const string expectedValue = "bar";
+
         [AssemblyInitialize]
         public static void AssemblyInitialize(TestContext testContext)
         {
             PersistentMachineStateManager.PersistenceURI = new Uri(Path.Combine(testContext.DeploymentDirectory, "persistence.litedb"));
         }
 
-        [TestMethod]
-        public void RestoreAbandonedSnapshots()
+        [TestInitialize]
+        public void TestInitializeAttribute()
         {
-            PersistentMachineStateManager.RestoreAbandonedSnapshots();
+            proxy = new MockEnvironmentProxy();
+
+            proxy.SetEnvironmentVariable(name, expectedValue, target);
+
+            machineStateManager = new MockMachineStateManager(proxy);
+        }
+
+        [TestCleanup]
+        public void TestCleanup()
+        {
+            machineStateManager.Dispose();
+        }
+
+        [TestMethod]
+        public void MachineStateManagerCorrectlyDisposes()
+        {
+            using var caretaker = machineStateManager.SnapshotEnvironmentVariable(name, target);
+
+            proxy.SetEnvironmentVariable(name, null, target);
+
+            machineStateManager.Dispose();
+
+            Assert.AreEqual(expectedValue, proxy.GetEnvironmentVariable(name, target));
+        }
+
+        [TestMethod]
+        public void CaretakerCorrectlyDisposes()
+        {
+            using var caretaker = machineStateManager.SnapshotEnvironmentVariable(name, target);
+
+            proxy.SetEnvironmentVariable(name, null, target);
+
+            caretaker.Dispose();
+
+            Assert.AreEqual(expectedValue, proxy.GetEnvironmentVariable(name, target));
         }
 
         [TestMethod]
         public void DoesNotRestoreSnapshotsFromCurrentProcess()
         {
-            var machineStateManager = new PersistentMachineStateManager();
-            var name = "foo";
-            var previousValue = global::System.Environment.GetEnvironmentVariable(name);//"bar";//
-            //System.Environment.SetEnvironmentVariable(name, previousValue);
+            machineStateManager.SnapshotEnvironmentVariable(name, target);
 
-            using (machineStateManager.SnapshotEnvironmentVariable(name))
-            {
-                var newValue = Guid.NewGuid().ToString();
-                global::System.Environment.SetEnvironmentVariable(name, newValue);
-                PersistentMachineStateManager.RestoreAbandonedSnapshots();
-                Assert.AreEqual(newValue, global::System.Environment.GetEnvironmentVariable(name));
-            }
+            proxy.SetEnvironmentVariable(name, null, target);
 
-            Assert.AreEqual(previousValue, global::System.Environment.GetEnvironmentVariable(name));
+            MockMachineStateManager.RestoreAbandonedSnapshots();
+            Assert.AreNotEqual(expectedValue, proxy.GetEnvironmentVariable(name, target));
         }
 
         [TestMethod]
         public void RestoresAbandonedSnapshots()
         {
-            var name = "foo";
-            var target = EnvironmentVariableTarget.Machine;
-            var value = "bar";
-
-            var environment = new MockEnvironmentProxy();
-            environment.SetEnvironmentVariable(name, value, target);
-
             var fakeProcessID = global::System.Environment.ProcessId + 1;
             var fakeProcessStartTime = DateTime.Now;
 
@@ -61,23 +90,20 @@ namespace bradselw.MachineStateManager.Persistence.Tests
                 ShimProcess.AllInstances.IdGet = p => fakeProcessID;
                 ShimProcess.AllInstances.StartTimeGet = p => fakeProcessStartTime;
 
-                var machineStateManager = new MockMachineStateManager(environment);
                 var snapshot = machineStateManager.SnapshotEnvironmentVariable(name, target);
-
-                var newValue = "baz";
-                environment.SetEnvironmentVariable(name, newValue, target);
-                Assert.AreEqual(newValue, environment.GetEnvironmentVariable(name, target));
             }
+
+            proxy.SetEnvironmentVariable(name, null, target);
 
             BsonMapper.Global.RegisterType<IEnvironmentProxy>(
                 serialize: value => new BsonValue(value),
-                deserialize: bson => environment);
+                deserialize: bson => proxy);
             MockMachineStateManager.RestoreAbandonedSnapshots();
-            Assert.AreEqual(value, environment.GetEnvironmentVariable(name, target));
+            Assert.AreEqual(expectedValue, proxy.GetEnvironmentVariable(name, target));
         }
 
         [TestMethod]
-        public void Concurrency()
+        public void RevertsSnapshotsConcurrently()
         {
             var tasks = new List<Task>();
 
@@ -85,15 +111,13 @@ namespace bradselw.MachineStateManager.Persistence.Tests
             {
                 tasks.Add(Task.Factory.StartNew(() =>
                 {
-                    var machineStateManager = new PersistentMachineStateManager();
-
                     var name = Guid.NewGuid().ToString();
-                    using (machineStateManager.SnapshotEnvironmentVariable(name))
+                    using (machineStateManager.SnapshotEnvironmentVariable(name, target))
                     {
-                        global::System.Environment.SetEnvironmentVariable(name, "test");
-                        Assert.AreEqual("test", global::System.Environment.GetEnvironmentVariable(name));
+                        proxy.SetEnvironmentVariable(name, expectedValue, target);
+                        Assert.AreEqual(expectedValue, proxy.GetEnvironmentVariable(name, target));
                     }
-                    Assert.AreEqual(null, global::System.Environment.GetEnvironmentVariable(name));
+                    Assert.AreEqual(null, proxy.GetEnvironmentVariable(name, target));
                 }));
             }
 
@@ -103,19 +127,13 @@ namespace bradselw.MachineStateManager.Persistence.Tests
         [TestMethod]
         public void ReuseExistingCaretaker()
         {
-            var machineStateManager = new PersistentMachineStateManager();
-            var name = "foo";
-            var previousValue = global::System.Environment.GetEnvironmentVariable(name);
-
-            using (machineStateManager.SnapshotEnvironmentVariable(name))
-            using (machineStateManager.SnapshotEnvironmentVariable(name))
+            using (machineStateManager.SnapshotEnvironmentVariable(name, target))
+            using (machineStateManager.SnapshotEnvironmentVariable(name, target))
             {
-                var newValue = Guid.NewGuid().ToString();
-                global::System.Environment.SetEnvironmentVariable(name, newValue);
-                Assert.AreEqual(newValue, global::System.Environment.GetEnvironmentVariable(name));
+                proxy.SetEnvironmentVariable(name, null, target);
             }
 
-            Assert.AreEqual(previousValue, global::System.Environment.GetEnvironmentVariable(name));
+            Assert.AreEqual(expectedValue, proxy.GetEnvironmentVariable(name, target));
         }
     }
 }

@@ -1,3 +1,4 @@
+using bradselw.System.Resources.Environment;
 using System;
 
 namespace bradselw.MachineStateManager.Persistence.Tests.Environment
@@ -5,40 +6,65 @@ namespace bradselw.MachineStateManager.Persistence.Tests.Environment
     [TestClass]
     public class EnvironmentTests
     {
-        [TestMethod]
-        public void TestEnvironmentVariableCaretaker()
+        private MockEnvironmentProxy proxy;
+
+        private MockMachineStateManager machineStateManager;
+
+        private const string name = "foo";
+
+        private const EnvironmentVariableTarget target = EnvironmentVariableTarget.Machine;
+
+        [TestInitialize]
+        public void TestInitializeAttribute()
         {
-            var machineStateManager = new PersistentMachineStateManager();
-            var name = "foo";
-            var previousValue = global::System.Environment.GetEnvironmentVariable(name);//"bar";//
-            //System.Environment.SetEnvironmentVariable(name, previousValue);
+            proxy = new MockEnvironmentProxy();
 
-            using (machineStateManager.SnapshotEnvironmentVariable(name))
-            {
-                var newValue = Guid.NewGuid().ToString();
-                global::System.Environment.SetEnvironmentVariable(name, newValue);
-                Assert.AreEqual(newValue, global::System.Environment.GetEnvironmentVariable(name));
-            }
+            machineStateManager = new MockMachineStateManager(proxy);
+        }
 
-            Assert.AreEqual(previousValue, global::System.Environment.GetEnvironmentVariable(name));
+        [TestCleanup]
+        public void TestCleanup()
+        {
+            machineStateManager.Dispose();
         }
 
         [TestMethod]
-        public void TwoMachineStateManagers()
+        public void RevertsEnvironmentVariableCreation()
         {
-            var machineStateManager1 = new PersistentMachineStateManager();
-            var machineStateManager2 = new PersistentMachineStateManager();
-            var name = "foo";
-            var previousValue = global::System.Environment.GetEnvironmentVariable(name);
-
-            using (machineStateManager1.SnapshotEnvironmentVariable(name))
+            using (machineStateManager.SnapshotEnvironmentVariable(name, target))
             {
-                var newValue = Guid.NewGuid().ToString();
-                global::System.Environment.SetEnvironmentVariable(name, newValue);
-                Assert.AreEqual(newValue, global::System.Environment.GetEnvironmentVariable(name));
+                proxy.SetEnvironmentVariable(name, "bar", target);
             }
 
-            Assert.AreEqual(previousValue, global::System.Environment.GetEnvironmentVariable(name));
+            Assert.AreEqual(null, proxy.GetEnvironmentVariable(name, target));
+        }
+
+        [TestMethod]
+        public void RevertsEnvironmentVariableDeletion()
+        {
+            var expectedValue = "bar";
+            proxy.SetEnvironmentVariable(name, expectedValue, target);
+
+            using (machineStateManager.SnapshotEnvironmentVariable(name, target))
+            {
+                proxy.SetEnvironmentVariable(name, null, target);
+            }
+
+            Assert.AreEqual(expectedValue, proxy.GetEnvironmentVariable(name, target));
+        }
+
+        [TestMethod]
+        public void RevertsEnvironmentVariableAlteration()
+        {
+            var expectedValue = "bar";
+            proxy.SetEnvironmentVariable(name, expectedValue, target);
+
+            using (machineStateManager.SnapshotEnvironmentVariable(name, target))
+            {
+                proxy.SetEnvironmentVariable(name, "baz", target);
+            }
+
+            Assert.AreEqual(expectedValue, proxy.GetEnvironmentVariable(name, target));
         }
     }
 }
