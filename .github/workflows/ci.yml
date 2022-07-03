@@ -29,14 +29,12 @@ jobs:
       run: dotnet restore
       env:
         GITHUB_PACKAGE_PAT: ${{ secrets.PACKAGE_READ_PAT }}
-    - name: Setup MSBuild.exe
+    - name: Setup MSBuild.exe # Must build with MSBuild because `dotnet build` does not support fakes yet.
       uses: microsoft/setup-msbuild@v1.1
     - name: Build
       run: msbuild MachineStateManager.sln /t:Build /p:Configuration=Release
-#     - name: Build
-#       run: dotnet build --configuration Release --no-restore
-#     - name: Test
-#       run: dotnet test --no-build --verbosity normal
+    - name: Test
+      run: dotnet test --no-build --verbosity normal
     - name: Pack
       run: dotnet pack --configuration Release --no-build
     - name: Publish package
