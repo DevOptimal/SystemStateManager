@@ -5,7 +5,7 @@ on:
     branches:
     - 'main'
     paths-ignore:
-    - '.github/workflows/**'
+#     - '.github/workflows/**'
     - 'README.md'
 
 jobs:
@@ -29,8 +29,12 @@ jobs:
       run: dotnet restore
       env:
         GITHUB_PACKAGE_PAT: ${{ secrets.PACKAGE_READ_PAT }}
+    - name: Setup MSBuild.exe
+      uses: microsoft/setup-msbuild@v1.1
     - name: Build
-      run: dotnet build --configuration Release --no-restore
+      run: msbuild MachineStateManager.sln
+#     - name: Build
+#       run: dotnet build --configuration Release --no-restore
 #     - name: Test
 #       run: dotnet test --no-build --verbosity normal
     - name: Pack
