@@ -29,7 +29,8 @@ jobs:
     - name: Test
       uses: microsoft/vstest-action@v1.0.0
       with:
-        searchFolder: D:\a\MachineStateManager\MachineStateManager
+        searchFolder: D:\a\MachineStateManager\MachineStateManager\MachineStateManager.Persistence.Tests\bin\Release\net6.0
+        testAssembly: '*.Tests.dll'
 #     - name: Test
 #       run: dotnet test --configuration Release --no-build --verbosity normal
     - name: Pack
