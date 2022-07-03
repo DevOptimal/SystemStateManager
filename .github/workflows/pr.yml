@@ -28,6 +28,8 @@ jobs:
       run: msbuild MachineStateManager.sln /t:Build /p:Configuration=Release
     - name: Test
       uses: microsoft/vstest-action@v1.0.0
+      with:
+        searchFolder: ./
 #     - name: Test
 #       run: dotnet test --configuration Release --no-build --verbosity normal
     - name: Pack
