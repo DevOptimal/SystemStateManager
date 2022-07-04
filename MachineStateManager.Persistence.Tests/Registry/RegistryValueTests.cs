@@ -83,5 +83,58 @@ namespace bradselw.MachineStateManager.Persistence.Tests.Registry
             Assert.AreEqual(value, actualValue);
             Assert.AreEqual(kind, actualKind);
         }
+
+        [TestMethod]
+        public void RevertsDefaultRegistryValueAlteration()
+        {
+            proxy.CreateRegistryKey(hive, view, subKey);
+
+            var value = "bar";
+            var kind = RegistryValueKind.String;
+            proxy.SetRegistryValue(hive, view, subKey, null, value, kind);
+
+            using (machineStateManager.SnapshotRegistryValue(hive, view, subKey, null))
+            {
+                proxy.SetRegistryValue(hive, view, subKey, null, 10, RegistryValueKind.DWord);
+            }
+
+            Assert.IsTrue(proxy.RegistryValueExists(hive, view, subKey, null));
+            var (actualValue, actualKind) = proxy.GetRegistryValue(hive, view, subKey, null);
+            Assert.AreEqual(value, actualValue);
+            Assert.AreEqual(kind, actualKind);
+        }
+
+        [TestMethod]
+        public void RevertsDefaultRegistryValueCreation()
+        {
+            proxy.CreateRegistryKey(hive, view, subKey);
+
+            using (machineStateManager.SnapshotRegistryValue(hive, view, subKey, null))
+            {
+                proxy.SetRegistryValue(hive, view, subKey, null, "bar", RegistryValueKind.String);
+            }
+
+            Assert.IsFalse(proxy.RegistryValueExists(hive, view, subKey, null));
+        }
+
+        [TestMethod]
+        public void RevertsDefaultRegistryValueDeletion()
+        {
+            proxy.CreateRegistryKey(hive, view, subKey);
+
+            var value = "bar";
+            var kind = RegistryValueKind.String;
+            proxy.SetRegistryValue(hive, view, subKey, null, value, kind);
+
+            using (machineStateManager.SnapshotRegistryValue(hive, view, subKey, null))
+            {
+                proxy.DeleteRegistryValue(hive, view, subKey, null);
+            }
+
+            Assert.IsTrue(proxy.RegistryValueExists(hive, view, subKey, null));
+            var (actualValue, actualKind) = proxy.GetRegistryValue(hive, view, subKey, null);
+            Assert.AreEqual(value, actualValue);
+            Assert.AreEqual(kind, actualKind);
+        }
     }
 }

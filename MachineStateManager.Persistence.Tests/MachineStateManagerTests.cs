@@ -25,7 +25,7 @@ namespace bradselw.MachineStateManager.Persistence.Tests
         [AssemblyInitialize]
         public static void AssemblyInitialize(TestContext testContext)
         {
-            PersistentMachineStateManager.PersistenceURI = new Uri(Path.Combine(testContext.DeploymentDirectory, "persistence.litedb"));
+            PersistentMachineStateManager.PersistenceURI = new Uri(Path.Combine(testContext.ResultsDirectory, "persistence.litedb"));
         }
 
         [TestInitialize]
