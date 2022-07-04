@@ -2,7 +2,7 @@
 using Microsoft.Win32;
 using System.Runtime.Versioning;
 
-namespace bradselw.MachineStateManager.Persistence.Tests.Registry
+namespace bradselw.MachineStateManager.Tests.Registry
 {
     [TestClass]
     [SupportedOSPlatform("windows")]
