@@ -29,4 +29,4 @@ jobs:
     - name: Test
       run: dotnet test --configuration Release --no-build --verbosity normal --filter TestCategory!=OmitFromCI
     - name: Pack
-      run: dotnet pack --no-build
+      run: dotnet pack --configuration Release --no-build
