@@ -1,7 +1,7 @@
-﻿using bradselw.System.Resources.FileSystem;
+﻿using DevOptimal.System.Resources.FileSystem;
 using System;
 
-namespace bradselw.MachineStateManager.FileSystem
+namespace DevOptimal.MachineStateManager.FileSystem
 {
     internal class FileOriginator : IOriginator<FileMemento>
     {

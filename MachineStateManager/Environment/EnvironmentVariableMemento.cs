@@ -1,4 +1,4 @@
-﻿namespace bradselw.MachineStateManager.Environment
+﻿namespace DevOptimal.MachineStateManager.Environment
 {
     internal class EnvironmentVariableMemento : IMemento
     {

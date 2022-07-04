@@ -1,8 +1,8 @@
-﻿using bradselw.System.Resources.FileSystem;
+﻿using DevOptimal.System.Resources.FileSystem;
 using System;
 using System.IO;
 
-namespace bradselw.MachineStateManager.Tests.FileSystem
+namespace DevOptimal.MachineStateManager.Tests.FileSystem
 {
     [TestClass]
     public class FileTests

@@ -1,8 +1,8 @@
-﻿using bradselw.MachineStateManager.Environment;
+﻿using DevOptimal.MachineStateManager.Environment;
 using LiteDB;
 using System;
 
-namespace bradselw.MachineStateManager.Persistence.Environment
+namespace DevOptimal.MachineStateManager.Persistence.Environment
 {
     internal class PersistentEnvironmentVariableCaretaker : PersistentCaretaker<PersistentEnvironmentVariableOriginator, EnvironmentVariableMemento>
     {

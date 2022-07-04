@@ -1,8 +1,8 @@
-﻿using bradselw.System.Resources.Environment;
+﻿using DevOptimal.System.Resources.Environment;
 using System;
 using System.IO;
 
-namespace bradselw.MachineStateManager.Tests
+namespace DevOptimal.MachineStateManager.Tests
 {
     [TestClass]
     public class MachineStateManagerTests

@@ -1,4 +1,4 @@
-﻿namespace bradselw.MachineStateManager.FileSystem
+﻿namespace DevOptimal.MachineStateManager.FileSystem
 {
     internal class DirectoryMemento : IMemento
     {

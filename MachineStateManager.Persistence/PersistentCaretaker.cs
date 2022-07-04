@@ -2,7 +2,7 @@
 using System;
 using System.Diagnostics;
 
-namespace bradselw.MachineStateManager.Persistence
+namespace DevOptimal.MachineStateManager.Persistence
 {
     internal abstract class PersistentCaretaker<TOriginator, TMemento> : Caretaker<TOriginator, TMemento>, IPersistentCaretaker
         where TOriginator : IOriginator<TMemento>

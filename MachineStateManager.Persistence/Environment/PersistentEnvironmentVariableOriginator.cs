@@ -1,9 +1,9 @@
-﻿using bradselw.MachineStateManager.Environment;
-using bradselw.System.Resources.Environment;
+﻿using DevOptimal.MachineStateManager.Environment;
+using DevOptimal.System.Resources.Environment;
 using LiteDB;
 using System;
 
-namespace bradselw.MachineStateManager.Persistence.Environment
+namespace DevOptimal.MachineStateManager.Persistence.Environment
 {
     internal class PersistentEnvironmentVariableOriginator : EnvironmentVariableOriginator
     {

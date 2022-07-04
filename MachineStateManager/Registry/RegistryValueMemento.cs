@@ -1,6 +1,6 @@
 ﻿using Microsoft.Win32;
 
-namespace bradselw.MachineStateManager.Registry
+namespace DevOptimal.MachineStateManager.Registry
 {
     internal class RegistryValueMemento : IMemento
     {

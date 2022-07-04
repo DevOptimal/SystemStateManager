@@ -1,8 +1,8 @@
-﻿using bradselw.MachineStateManager.FileSystem;
+﻿using DevOptimal.MachineStateManager.FileSystem;
 using LiteDB;
 using System;
 
-namespace bradselw.MachineStateManager.Persistence.FileSystem
+namespace DevOptimal.MachineStateManager.Persistence.FileSystem
 {
     internal class PersistentDirectoryCaretaker : PersistentCaretaker<PersistentDirectoryOriginator, DirectoryMemento>
     {

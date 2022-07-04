@@ -1,8 +1,8 @@
-﻿using bradselw.System.Resources.FileSystem;
+﻿using DevOptimal.System.Resources.FileSystem;
 using System;
 using System.IO;
 
-namespace bradselw.MachineStateManager.FileSystem.Caching
+namespace DevOptimal.MachineStateManager.FileSystem.Caching
 {
     internal class LocalBlobStore : IBlobStore
     {

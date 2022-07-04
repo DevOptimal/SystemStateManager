@@ -1,8 +1,8 @@
-﻿using bradselw.MachineStateManager.FileSystem;
-using bradselw.System.Resources.FileSystem;
+﻿using DevOptimal.MachineStateManager.FileSystem;
+using DevOptimal.System.Resources.FileSystem;
 using LiteDB;
 
-namespace bradselw.MachineStateManager.Persistence.FileSystem
+namespace DevOptimal.MachineStateManager.Persistence.FileSystem
 {
     internal class PersistentDirectoryOriginator : DirectoryOriginator
     {

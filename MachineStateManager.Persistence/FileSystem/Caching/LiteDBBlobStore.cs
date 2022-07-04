@@ -1,11 +1,11 @@
-﻿using bradselw.MachineStateManager.FileSystem;
-using bradselw.System.Resources.FileSystem;
+﻿using DevOptimal.MachineStateManager.FileSystem;
+using DevOptimal.System.Resources.FileSystem;
 using LiteDB;
 using System;
 using System.IO;
 using System.Security.Cryptography;
 
-namespace bradselw.MachineStateManager.Persistence.FileSystem.Caching
+namespace DevOptimal.MachineStateManager.Persistence.FileSystem.Caching
 {
     internal class LiteDBBlobStore : IBlobStore
     {

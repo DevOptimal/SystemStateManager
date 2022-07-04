@@ -1,4 +1,4 @@
-﻿namespace bradselw.MachineStateManager.Registry
+﻿namespace DevOptimal.MachineStateManager.Registry
 {
     internal class RegistryKeyMemento : IMemento
     {

@@ -1,8 +1,8 @@
-﻿using bradselw.MachineStateManager.Registry;
+﻿using DevOptimal.MachineStateManager.Registry;
 using LiteDB;
 using System;
 
-namespace bradselw.MachineStateManager.Persistence.Registry
+namespace DevOptimal.MachineStateManager.Persistence.Registry
 {
     internal class PersistentRegistryValueCaretaker : PersistentCaretaker<PersistentRegistryValueOriginator, RegistryValueMemento>
     {

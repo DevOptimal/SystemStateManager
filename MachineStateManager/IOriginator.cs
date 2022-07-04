@@ -1,4 +1,4 @@
-﻿namespace bradselw.MachineStateManager
+﻿namespace DevOptimal.MachineStateManager
 {
     internal interface IOriginator<TMemento>
         where TMemento : IMemento

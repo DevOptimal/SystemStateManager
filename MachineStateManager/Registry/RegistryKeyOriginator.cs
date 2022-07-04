@@ -1,8 +1,8 @@
-﻿using bradselw.System.Resources.Registry;
+﻿using DevOptimal.System.Resources.Registry;
 using Microsoft.Win32;
 using System;
 
-namespace bradselw.MachineStateManager.Registry
+namespace DevOptimal.MachineStateManager.Registry
 {
     internal class RegistryKeyOriginator : IOriginator<RegistryKeyMemento>
     {

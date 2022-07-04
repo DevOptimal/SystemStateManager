@@ -1,4 +1,4 @@
-﻿using bradselw.System.Resources.Environment;
+﻿using DevOptimal.System.Resources.Environment;
 using LiteDB;
 using Microsoft.QualityTools.Testing.Fakes;
 using System;
@@ -7,7 +7,7 @@ using System.Diagnostics.Fakes;
 using System.IO;
 using System.Threading.Tasks;
 
-namespace bradselw.MachineStateManager.Persistence.Tests
+namespace DevOptimal.MachineStateManager.Persistence.Tests
 {
     [TestClass]
     public class PersistentMachineStateManagerTests

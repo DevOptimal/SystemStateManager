@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 using System.Security.AccessControl;
 using System.Security.Principal;
 
-namespace bradselw.MachineStateManager.Persistence
+namespace DevOptimal.MachineStateManager.Persistence
 {
     internal static class LiteDatabaseFactory
     {

@@ -1,16 +1,16 @@
 <Project>
 
   <PropertyGroup>
-    <AssemblyName>bradselw.$(MSBuildProjectName)</AssemblyName>
-    <RootNamespace>bradselw.$(MSBuildProjectName.Replace(" ", "_"))</RootNamespace>
+    <AssemblyName>DevOptimal.$(MSBuildProjectName)</AssemblyName>
+    <RootNamespace>DevOptimal.$(MSBuildProjectName.Replace(" ", "_"))</RootNamespace>
   </PropertyGroup>
 
   <PropertyGroup>
     <Authors>bradselw</Authors>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageProjectUrl>https://github.com/bradselw/MachineStateManager</PackageProjectUrl>
+    <PackageProjectUrl>https://github.com/DevOptimal/MachineStateManager</PackageProjectUrl>
     <RepositoryType>git</RepositoryType>
-    <RepositoryUrl>https://github.com/bradselw/MachineStateManager</RepositoryUrl>
+    <RepositoryUrl>https://github.com/DevOptimal/MachineStateManager</RepositoryUrl>
     <PackageTags>automate;machine;state;checkpoint;snapshot</PackageTags>
   </PropertyGroup>
 

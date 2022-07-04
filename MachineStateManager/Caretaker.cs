@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace bradselw.MachineStateManager
+namespace DevOptimal.MachineStateManager
 {
     internal class Caretaker<TOriginator, TMemento> : ICaretaker
         where TOriginator : IOriginator<TMemento>

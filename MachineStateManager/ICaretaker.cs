@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace bradselw.MachineStateManager
+namespace DevOptimal.MachineStateManager
 {
     public interface ICaretaker : IDisposable
     {

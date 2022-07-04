@@ -1,6 +1,6 @@
-﻿using bradselw.System.Resources.FileSystem;
+﻿using DevOptimal.System.Resources.FileSystem;
 
-namespace bradselw.MachineStateManager.FileSystem
+namespace DevOptimal.MachineStateManager.FileSystem
 {
     public interface IBlobStore
     {

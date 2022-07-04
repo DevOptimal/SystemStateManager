@@ -1,10 +1,10 @@
-﻿using bradselw.MachineStateManager.Environment;
-using bradselw.MachineStateManager.FileSystem;
-using bradselw.MachineStateManager.FileSystem.Caching;
-using bradselw.MachineStateManager.Registry;
-using bradselw.System.Resources.Environment;
-using bradselw.System.Resources.FileSystem;
-using bradselw.System.Resources.Registry;
+﻿using DevOptimal.MachineStateManager.Environment;
+using DevOptimal.MachineStateManager.FileSystem;
+using DevOptimal.MachineStateManager.FileSystem.Caching;
+using DevOptimal.MachineStateManager.Registry;
+using DevOptimal.System.Resources.Environment;
+using DevOptimal.System.Resources.FileSystem;
+using DevOptimal.System.Resources.Registry;
 using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
@@ -12,7 +12,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 
-namespace bradselw.MachineStateManager
+namespace DevOptimal.MachineStateManager
 {
     public class MachineStateManager : IDisposable
     {

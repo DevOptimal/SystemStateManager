@@ -1,9 +1,9 @@
-﻿using bradselw.MachineStateManager.Registry;
-using bradselw.System.Resources.Registry;
+﻿using DevOptimal.MachineStateManager.Registry;
+using DevOptimal.System.Resources.Registry;
 using LiteDB;
 using Microsoft.Win32;
 
-namespace bradselw.MachineStateManager.Persistence.Registry
+namespace DevOptimal.MachineStateManager.Persistence.Registry
 {
     internal class PersistentRegistryKeyOriginator : RegistryKeyOriginator
     {

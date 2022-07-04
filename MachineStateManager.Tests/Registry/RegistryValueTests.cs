@@ -1,8 +1,8 @@
-﻿using bradselw.System.Resources.Registry;
+﻿using DevOptimal.System.Resources.Registry;
 using Microsoft.Win32;
 using System.Runtime.Versioning;
 
-namespace bradselw.MachineStateManager.Tests.Registry
+namespace DevOptimal.MachineStateManager.Tests.Registry
 {
     [TestClass]
     [SupportedOSPlatform("windows")]

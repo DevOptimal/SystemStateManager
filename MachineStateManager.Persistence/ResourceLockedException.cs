@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace bradselw.MachineStateManager.Persistence
+namespace DevOptimal.MachineStateManager.Persistence
 {
     public class ResourceLockedException : Exception
     {

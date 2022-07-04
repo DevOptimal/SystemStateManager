@@ -1,7 +1,7 @@
-using bradselw.System.Resources.Environment;
+using DevOptimal.System.Resources.Environment;
 using System;
 
-namespace bradselw.MachineStateManager.Tests.Environment
+namespace DevOptimal.MachineStateManager.Tests.Environment
 {
     [TestClass]
     public class EnvironmentTests

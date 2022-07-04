@@ -1,11 +1,11 @@
-﻿using bradselw.MachineStateManager.FileSystem;
-using bradselw.MachineStateManager.Persistence.Environment;
-using bradselw.MachineStateManager.Persistence.FileSystem;
-using bradselw.MachineStateManager.Persistence.FileSystem.Caching;
-using bradselw.MachineStateManager.Persistence.Registry;
-using bradselw.System.Resources.Environment;
-using bradselw.System.Resources.FileSystem;
-using bradselw.System.Resources.Registry;
+﻿using DevOptimal.MachineStateManager.FileSystem;
+using DevOptimal.MachineStateManager.Persistence.Environment;
+using DevOptimal.MachineStateManager.Persistence.FileSystem;
+using DevOptimal.MachineStateManager.Persistence.FileSystem.Caching;
+using DevOptimal.MachineStateManager.Persistence.Registry;
+using DevOptimal.System.Resources.Environment;
+using DevOptimal.System.Resources.FileSystem;
+using DevOptimal.System.Resources.Registry;
 using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
@@ -14,7 +14,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 
-namespace bradselw.MachineStateManager.Persistence
+namespace DevOptimal.MachineStateManager.Persistence
 {
     public class PersistentMachineStateManager : MachineStateManager
     {

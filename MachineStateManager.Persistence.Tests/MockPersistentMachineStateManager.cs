@@ -1,8 +1,8 @@
-﻿using bradselw.System.Resources.Environment;
-using bradselw.System.Resources.FileSystem;
-using bradselw.System.Resources.Registry;
+﻿using DevOptimal.System.Resources.Environment;
+using DevOptimal.System.Resources.FileSystem;
+using DevOptimal.System.Resources.Registry;
 
-namespace bradselw.MachineStateManager.Persistence.Tests
+namespace DevOptimal.MachineStateManager.Persistence.Tests
 {
     public class MockPersistentMachineStateManager : PersistentMachineStateManager
     {

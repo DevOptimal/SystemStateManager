@@ -1,7 +1,7 @@
-﻿using bradselw.System.Resources.Environment;
+﻿using DevOptimal.System.Resources.Environment;
 using System;
 
-namespace bradselw.MachineStateManager.Environment
+namespace DevOptimal.MachineStateManager.Environment
 {
     internal class EnvironmentVariableOriginator : IOriginator<EnvironmentVariableMemento>
     {

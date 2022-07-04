@@ -1,9 +1,9 @@
-﻿using bradselw.MachineStateManager.FileSystem;
+﻿using DevOptimal.MachineStateManager.FileSystem;
 using LiteDB;
 using System;
 using System.Linq;
 
-namespace bradselw.MachineStateManager.Persistence.FileSystem
+namespace DevOptimal.MachineStateManager.Persistence.FileSystem
 {
     internal class PersistentFileCaretaker : PersistentCaretaker<PersistentFileOriginator, FileMemento>
     {
