@@ -2,9 +2,9 @@
 using bradselw.System.Resources.FileSystem;
 using bradselw.System.Resources.Registry;
 
-namespace bradselw.MachineStateManager.Persistence.Tests
+namespace bradselw.MachineStateManager.Tests
 {
-    public class MockMachineStateManager : PersistentMachineStateManager
+    public class MockMachineStateManager : MachineStateManager
     {
         public MockMachineStateManager(MockEnvironmentProxy environmentProxy)
             : this(environmentProxy, new MockFileSystemProxy(), new MockRegistryProxy())

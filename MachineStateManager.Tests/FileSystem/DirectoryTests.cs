@@ -1,7 +1,7 @@
 ﻿using bradselw.System.Resources.FileSystem;
 using System.IO;
 
-namespace bradselw.MachineStateManager.Persistence.Tests.FileSystem
+namespace bradselw.MachineStateManager.Tests.FileSystem
 {
     [TestClass]
     public class DirectoryTests

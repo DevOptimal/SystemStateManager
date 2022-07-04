@@ -10,11 +10,11 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - name: Setup .NET
+    - name: Set up .NET
       uses: actions/setup-dotnet@v2
       with:
         dotnet-version: 6.0.x
-    - name: Setup MSBuild.exe # Must build via MSBuild because `dotnet build` does not support fakes yet.
+    - name: Set up MSBuild # Must build via MSBuild because `dotnet build` does not support fakes yet.
       uses: microsoft/setup-msbuild@v1.1
     - name: Clone
       uses: actions/checkout@v3
@@ -27,6 +27,6 @@ jobs:
     - name: Build
       run: msbuild MachineStateManager.sln /t:Build /p:Configuration=Release
     - name: Test
-      run: dotnet test --configuration Release --no-build --verbosity normal
+      run: dotnet test --configuration Release --no-build --verbosity normal --filter TestCategory!=OmitFromCI
     - name: Pack
       run: dotnet pack --no-build

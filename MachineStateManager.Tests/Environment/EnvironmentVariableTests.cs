@@ -1,7 +1,7 @@
 using bradselw.System.Resources.Environment;
 using System;
 
-namespace bradselw.MachineStateManager.Persistence.Tests.Environment
+namespace bradselw.MachineStateManager.Tests.Environment
 {
     [TestClass]
     public class EnvironmentTests
