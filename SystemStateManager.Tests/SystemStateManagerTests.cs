@@ -1,6 +1,5 @@
 ﻿using DevOptimal.System.Resources.Environment;
 using System;
-using System.IO;
 
 namespace DevOptimal.SystemStateManager.Tests
 {
@@ -36,7 +35,7 @@ namespace DevOptimal.SystemStateManager.Tests
         [TestMethod]
         public void SystemStateManagerCorrectlyDisposes()
         {
-            using var caretaker = systemStateManager.SnapshotEnvironmentVariable(name, target);
+            using var snapshot = systemStateManager.SnapshotEnvironmentVariable(name, target);
 
             proxy.SetEnvironmentVariable(name, null, target);
 
@@ -46,26 +45,26 @@ namespace DevOptimal.SystemStateManager.Tests
         }
 
         [TestMethod]
-        public void CaretakerCorrectlyDisposes()
+        public void SnapshotCorrectlyDisposes()
         {
-            using var caretaker = systemStateManager.SnapshotEnvironmentVariable(name, target);
+            using var snapshot = systemStateManager.SnapshotEnvironmentVariable(name, target);
 
             proxy.SetEnvironmentVariable(name, null, target);
 
-            caretaker.Dispose();
+            snapshot.Dispose();
 
             Assert.AreEqual(expectedValue, proxy.GetEnvironmentVariable(name, target));
         }
 
         [TestMethod]
-        public void ReuseExistingCaretaker()
+        public void ReuseExistingSnapshot()
         {
-            using (var caretaker1 = systemStateManager.SnapshotEnvironmentVariable(name, target))
-            using (var caretaker2 = systemStateManager.SnapshotEnvironmentVariable(name, target))
+            using (var snapshot1 = systemStateManager.SnapshotEnvironmentVariable(name, target))
+            using (var snapshot2 = systemStateManager.SnapshotEnvironmentVariable(name, target))
             {
                 proxy.SetEnvironmentVariable(name, null, target);
 
-                Assert.IsTrue(ReferenceEquals(caretaker1, caretaker2));
+                Assert.IsTrue(ReferenceEquals(snapshot1, snapshot2));
             }
 
             Assert.AreEqual(expectedValue, proxy.GetEnvironmentVariable(name, target));

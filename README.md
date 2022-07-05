@@ -22,22 +22,22 @@ var systemStateManager = new SystemStateManager();
 ```
 Once you have a System State Manager instance, you can use it to snapshot system resources:
 ```csharp
-var caretaker = systemStateManager.SnapshotFile(@"C:\foo\bar.txt");
+var snapshot = systemStateManager.SnapshotFile(@"C:\foo\bar.txt");
 ```
-When you snapshot a system resource, you get back a "caretaker" object. This caretaker can be used to restore the state of the system resource later by calling its `Dispose` method:
+When you snapshot a system resource, you get back an `ISnapshot` object. This object can be used to restore the state of the system resource later by calling its `Dispose` method:
 ```csharp
-caretaker.Dispose();
+snapshot.Dispose();
 ```
 
 # Persistence
 
-It is possible for a snapshot to not get restored by the time its process terminates. This can happen when the `Dispose` method on the snapshot doesn't get called, such as when the process is killed prematurely.
+It is possible for a snapshot to not be restored before its process terminates. This can happen when the `Dispose` method on the snapshot doesn't get called, such as when the process is killed prematurely.
 
 This is potentially devastating because system state could be lost. For example, consider an application that uses the System State Manager to snapshot a file, then overwrites the file, and finally uses the System State Manager to restore the original contents of the file. If the process crashes after it overwrites the file but before the System State Manager can restore its contents, then data loss has occurred.
 
-For this reason, the System State Manager has a persistence layer that saves the state of system resources to disk when they are snapshotted. This "persistent" System State Manager has a static method `RestoreAbandonedCaretakers` which can be called to restore any "abandoned caretakers" left behind by old processes.
+For this reason, the System State Manager has a persistence layer that saves the state of system resources to disk when they are snapshotted. This "persistent" System State Manager has a static method `RestoreAbandonedSnapshots` which can be called to restore any "abandoned snapshots" left behind by old processes.
 
-It is good practice to call `RestoreAbandonedCaretakers` periodically (such as at the beginning of your application) to ensure that state from previous processes gets cleaned up.
+It is good practice to call `RestoreAbandonedSnapshots` periodically (such as at the beginning of your application) to ensure that state from previous processes gets cleaned up.
 
 ## Usage
 
@@ -47,7 +47,7 @@ var systemStateManager = new PersistentSystemStateManager();
 ```
 You can snapshot and restore system resources in the same manner previously described.
 
-To restore any abandoned caretakers left behind by old processes, simply call the static `RestoreAbandonedCaretakers` method:
+To restore any abandoned snapshots left behind by old processes, simply call the static `RestoreAbandonedSnapshots` method:
 ```csharp
-PersistentSystemStateManager.RestoreAbandonedCaretakers();
+PersistentSystemStateManager.RestoreAbandonedSnapshots();
 ```

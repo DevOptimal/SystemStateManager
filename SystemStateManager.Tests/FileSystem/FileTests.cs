@@ -75,12 +75,12 @@ namespace DevOptimal.SystemStateManager.Tests.FileSystem
             var path2 = @"C:\foo\baz.dat";
             WriteBytes(path2, expectedFileBytes);
 
-            using (var caretaker = systemStateManager.SnapshotFile(path))
+            using (var snapshot = systemStateManager.SnapshotFile(path))
             {
                 proxy.DeleteFile(path);
                 Assert.IsFalse(proxy.FileExists(path));
 
-                using (var caretaker2 = systemStateManager.SnapshotFile(path2))
+                using (var snapshot2 = systemStateManager.SnapshotFile(path2))
                 {
                     proxy.DeleteFile(path2);
                     Assert.IsFalse(proxy.FileExists(path2));

@@ -2,7 +2,7 @@
 
 namespace DevOptimal.SystemStateManager
 {
-    public interface ICaretaker : IDisposable
+    public interface ISnapshot : IDisposable
     {
         string ID { get; }
     }

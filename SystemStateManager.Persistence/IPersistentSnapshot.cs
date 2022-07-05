@@ -2,7 +2,7 @@
 
 namespace DevOptimal.SystemStateManager.Persistence
 {
-    internal interface IPersistentCaretaker : ICaretaker
+    internal interface IPersistentSnapshot : ISnapshot
     {
         int ProcessID { get; }
 

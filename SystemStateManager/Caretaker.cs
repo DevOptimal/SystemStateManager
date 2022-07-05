@@ -2,7 +2,7 @@
 
 namespace DevOptimal.SystemStateManager
 {
-    internal class Caretaker<TOriginator, TMemento> : ICaretaker
+    internal class Caretaker<TOriginator, TMemento> : ISnapshot
         where TOriginator : IOriginator<TMemento>
         where TMemento : IMemento
     {

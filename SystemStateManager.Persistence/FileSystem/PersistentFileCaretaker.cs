@@ -32,7 +32,7 @@ namespace DevOptimal.SystemStateManager.Persistence.FileSystem
                     {
                         using (var database = LiteDatabaseFactory.GetDatabase())
                         {
-                            var collection = database.GetCollection<IPersistentCaretaker>();
+                            var collection = database.GetCollection<IPersistentSnapshot>();
 
                             if (!collection.FindAll().OfType<PersistentFileCaretaker>().Any(c => c.Memento.Hash == Memento.Hash))
                             {

@@ -16,7 +16,7 @@ namespace DevOptimal.SystemStateManager
 {
     public class SystemStateManager : IDisposable
     {
-        private readonly List<ICaretaker> caretakers;
+        private readonly List<ISnapshot> snapshots;
 
         private readonly IBlobStore fileCache;
 
@@ -39,18 +39,18 @@ namespace DevOptimal.SystemStateManager
         }
 
         internal SystemStateManager(IBlobStore fileCache, IEnvironmentProxy environment, IFileSystemProxy fileSystem, IRegistryProxy registry)
-            : this(new List<ICaretaker>(), fileCache, environment, fileSystem, registry)
+            : this(new List<ISnapshot>(), fileCache, environment, fileSystem, registry)
         {
         }
 
-        internal SystemStateManager(List<ICaretaker> caretakers, IBlobStore fileCache)
-            : this(caretakers, fileCache, new DefaultEnvironmentProxy(), new DefaultFileSystemProxy(), new DefaultRegistryProxy())
+        internal SystemStateManager(List<ISnapshot> snapshots, IBlobStore fileCache)
+            : this(snapshots, fileCache, new DefaultEnvironmentProxy(), new DefaultFileSystemProxy(), new DefaultRegistryProxy())
         {
         }
 
-        internal SystemStateManager(List<ICaretaker> caretakers, IBlobStore fileCache, IEnvironmentProxy environment, IFileSystemProxy fileSystem, IRegistryProxy registry)
+        internal SystemStateManager(List<ISnapshot> snapshots, IBlobStore fileCache, IEnvironmentProxy environment, IFileSystemProxy fileSystem, IRegistryProxy registry)
         {
-            this.caretakers = caretakers;
+            this.snapshots = snapshots;
             this.fileCache = fileCache;
 
             defaultEnvironment = environment;
@@ -58,12 +58,12 @@ namespace DevOptimal.SystemStateManager
             defaultRegistry = registry;
         }
 
-        public ICaretaker SnapshotEnvironmentVariable(string name) => SnapshotEnvironmentVariable(name, EnvironmentVariableTarget.Process);
+        public ISnapshot SnapshotEnvironmentVariable(string name) => SnapshotEnvironmentVariable(name, EnvironmentVariableTarget.Process);
 
-        public virtual ICaretaker SnapshotEnvironmentVariable(string name, EnvironmentVariableTarget target)
+        public virtual ISnapshot SnapshotEnvironmentVariable(string name, EnvironmentVariableTarget target)
             => SnapshotEnvironmentVariable(name, target, defaultEnvironment);
 
-        public ICaretaker SnapshotEnvironmentVariable(string name, EnvironmentVariableTarget target, IEnvironmentProxy environment)
+        public ISnapshot SnapshotEnvironmentVariable(string name, EnvironmentVariableTarget target, IEnvironmentProxy environment)
         {
             if (name == null)
             {
@@ -77,19 +77,19 @@ namespace DevOptimal.SystemStateManager
                 id = id.ToLower();
             }
 
-            if (!TryGetCaretaker(id, out var caretaker))
+            if (!TryGetSnapshot(id, out var snapshot))
             {
-                caretaker = GetEnvironmentVariableCaretaker(id, name, target, environment);
-                caretakers.Add(caretaker);
+                snapshot = CreateEnvironmentVariableSnapshot(id, name, target, environment);
+                snapshots.Add(snapshot);
             }
 
-            return caretaker;
+            return snapshot;
         }
 
-        public ICaretaker SnapshotDirectory(string path)
+        public ISnapshot SnapshotDirectory(string path)
             => SnapshotDirectory(path, defaultFileSystem);
 
-        public ICaretaker SnapshotDirectory(string path, IFileSystemProxy fileSystem)
+        public ISnapshot SnapshotDirectory(string path, IFileSystemProxy fileSystem)
         {
             if (path == null)
             {
@@ -105,19 +105,19 @@ namespace DevOptimal.SystemStateManager
                 id = id.ToLower();
             }
 
-            if (!TryGetCaretaker(id, out var caretaker))
+            if (!TryGetSnapshot(id, out var snapshot))
             {
-                caretaker = GetDirectoryCaretaker(id, path, fileSystem);
-                caretakers.Add(caretaker);
+                snapshot = CreateDirectorySnapshot(id, path, fileSystem);
+                snapshots.Add(snapshot);
             }
 
-            return caretaker;
+            return snapshot;
         }
 
-        public ICaretaker SnapshotFile(string path)
+        public ISnapshot SnapshotFile(string path)
             => SnapshotFile(path, defaultFileSystem);
 
-        public ICaretaker SnapshotFile(string path, IFileSystemProxy fileSystem)
+        public ISnapshot SnapshotFile(string path, IFileSystemProxy fileSystem)
         {
             if (path == null)
             {
@@ -133,82 +133,82 @@ namespace DevOptimal.SystemStateManager
                 id = id.ToLower();
             }
 
-            if (!TryGetCaretaker(id, out var caretaker))
+            if (!TryGetSnapshot(id, out var snapshot))
             {
-                caretaker = GetFileCaretaker(id, path, fileCache, fileSystem);
-                caretakers.Add(caretaker);
+                snapshot = CreateFileSnapshot(id, path, fileCache, fileSystem);
+                snapshots.Add(snapshot);
             }
 
-            return caretaker;
+            return snapshot;
         }
 
-        public ICaretaker SnapshotRegistryKey(RegistryHive hive, RegistryView view, string subKey)
+        public ISnapshot SnapshotRegistryKey(RegistryHive hive, RegistryView view, string subKey)
             => SnapshotRegistryKey(hive, view, subKey, defaultRegistry);
 
-        public ICaretaker SnapshotRegistryKey(RegistryHive hive, RegistryView view, string subKey, IRegistryProxy registry)
+        public ISnapshot SnapshotRegistryKey(RegistryHive hive, RegistryView view, string subKey, IRegistryProxy registry)
         {
             subKey = RegistryPath.GetFullPath(subKey);
 
             var id = $"[Registry]{hive}\\{view}\\{subKey}".ToLower();
 
-            if (!TryGetCaretaker(id, out var caretaker))
+            if (!TryGetSnapshot(id, out var snapshot))
             {
-                caretaker = GetRegistryKeyCaretaker(id, hive, view, subKey, registry);
-                caretakers.Add(caretaker);
+                snapshot = CreateRegistryKeySnapshot(id, hive, view, subKey, registry);
+                snapshots.Add(snapshot);
             }
 
-            return caretaker;
+            return snapshot;
         }
 
-        public ICaretaker SnapshotRegistryValue(RegistryHive hive, RegistryView view, string subKey, string name)
+        public ISnapshot SnapshotRegistryValue(RegistryHive hive, RegistryView view, string subKey, string name)
             => SnapshotRegistryValue(hive, view, subKey, name, defaultRegistry);
 
-        public ICaretaker SnapshotRegistryValue(RegistryHive hive, RegistryView view, string subKey, string name, IRegistryProxy registry)
+        public ISnapshot SnapshotRegistryValue(RegistryHive hive, RegistryView view, string subKey, string name, IRegistryProxy registry)
         {
             subKey = RegistryPath.GetFullPath(subKey);
 
             var id = $"[Registry]{hive}\\{view}\\{subKey}\\\\{name ?? "(Default)"}".ToLower();
 
-            if (!TryGetCaretaker(id, out var caretaker))
+            if (!TryGetSnapshot(id, out var snapshot))
             {
-                caretaker = GetRegistryValueCaretaker(id, hive, view, subKey, name, registry);
-                caretakers.Add(caretaker);
+                snapshot = CreateRegistryValueSnapshot(id, hive, view, subKey, name, registry);
+                snapshots.Add(snapshot);
             }
 
-            return caretaker;
+            return snapshot;
         }
 
-        private bool TryGetCaretaker(string id, out ICaretaker caretaker)
+        private bool TryGetSnapshot(string id, out ISnapshot snapshot)
         {
-            caretaker = caretakers.SingleOrDefault(c => c.ID.Equals(id));
-            return caretaker != null;
+            snapshot = snapshots.SingleOrDefault(c => c.ID.Equals(id));
+            return snapshot != null;
         }
 
-        protected virtual ICaretaker GetEnvironmentVariableCaretaker(string id, string name, EnvironmentVariableTarget target, IEnvironmentProxy environment)
+        protected virtual ISnapshot CreateEnvironmentVariableSnapshot(string id, string name, EnvironmentVariableTarget target, IEnvironmentProxy environment)
         {
             var originator = new EnvironmentVariableOriginator(name, target, environment);
             return new Caretaker<EnvironmentVariableOriginator, EnvironmentVariableMemento>(id, originator);
         }
 
-        protected virtual ICaretaker GetDirectoryCaretaker(string id, string path, IFileSystemProxy fileSystem)
+        protected virtual ISnapshot CreateDirectorySnapshot(string id, string path, IFileSystemProxy fileSystem)
         {
             var originator = new DirectoryOriginator(path, fileSystem);
             return new Caretaker<DirectoryOriginator, DirectoryMemento>(id, originator);
         }
 
-        protected virtual ICaretaker GetFileCaretaker(string id, string path, IBlobStore fileCache, IFileSystemProxy fileSystem)
+        protected virtual ISnapshot CreateFileSnapshot(string id, string path, IBlobStore fileCache, IFileSystemProxy fileSystem)
         {
             var originator = new FileOriginator(path, fileCache, fileSystem);
             return new Caretaker<FileOriginator, FileMemento>(id, originator);
         }
 
-        protected virtual ICaretaker GetRegistryKeyCaretaker(string id, RegistryHive hive, RegistryView view, string subKey, IRegistryProxy registry)
+        protected virtual ISnapshot CreateRegistryKeySnapshot(string id, RegistryHive hive, RegistryView view, string subKey, IRegistryProxy registry)
         {
             var originator = new RegistryKeyOriginator(hive, view, subKey, registry);
             return new Caretaker<RegistryKeyOriginator, RegistryKeyMemento>(id, originator);
         }
 
-        protected virtual ICaretaker GetRegistryValueCaretaker(string id, RegistryHive hive, RegistryView view, string subKey, string name, IRegistryProxy registry)
+        protected virtual ISnapshot CreateRegistryValueSnapshot(string id, RegistryHive hive, RegistryView view, string subKey, string name, IRegistryProxy registry)
         {
             var originator = new RegistryValueOriginator(hive, view, subKey, name, registry);
             return new Caretaker<RegistryValueOriginator, RegistryValueMemento>(id, originator);
@@ -221,11 +221,11 @@ namespace DevOptimal.SystemStateManager
                 if (disposing)
                 {
                     var exceptions = new List<Exception>();
-                    foreach (var caretaker in caretakers)
+                    foreach (var snapshot in snapshots)
                     {
                         try
                         {
-                            caretaker.Dispose();
+                            snapshot.Dispose();
                         }
                         catch (Exception ex)
                         {

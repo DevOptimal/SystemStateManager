@@ -45,7 +45,7 @@ namespace DevOptimal.SystemStateManager.Persistence.Tests
         }
 
         [TestMethod]
-        [TestCategory("OmitFromCI")]
+        [TestCategory("OmitFromCI")] // Fakes require VS Enterprise, but agent machines only have Community installed.
         public void RestoresAbandonedSnapshots()
         {
             var fakeProcessID = global::System.Environment.ProcessId + 1;
@@ -56,7 +56,7 @@ namespace DevOptimal.SystemStateManager.Persistence.Tests
                 ShimProcess.AllInstances.IdGet = p => fakeProcessID;
                 ShimProcess.AllInstances.StartTimeGet = p => fakeProcessStartTime;
 
-                var caretaker = systemStateManager.SnapshotEnvironmentVariable(name, target);
+                var snapshot = systemStateManager.SnapshotEnvironmentVariable(name, target);
             }
 
             proxy.SetEnvironmentVariable(name, null, target);
@@ -64,7 +64,7 @@ namespace DevOptimal.SystemStateManager.Persistence.Tests
             BsonMapper.Global.RegisterType<IEnvironmentProxy>(
                 serialize: value => new BsonValue(value),
                 deserialize: bson => proxy);
-            MockPersistentSystemStateManager.RestoreAbandonedCaretakers();
+            MockPersistentSystemStateManager.RestoreAbandonedSnapshots();
             Assert.AreEqual(expectedValue, proxy.GetEnvironmentVariable(name, target));
         }
 
@@ -75,7 +75,7 @@ namespace DevOptimal.SystemStateManager.Persistence.Tests
 
             proxy.SetEnvironmentVariable(name, null, target);
 
-            MockPersistentSystemStateManager.RestoreAbandonedCaretakers();
+            MockPersistentSystemStateManager.RestoreAbandonedSnapshots();
             Assert.AreNotEqual(expectedValue, proxy.GetEnvironmentVariable(name, target));
         }
 

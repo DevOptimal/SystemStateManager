@@ -4,7 +4,7 @@ using System.Diagnostics;
 
 namespace DevOptimal.SystemStateManager.Persistence
 {
-    internal abstract class PersistentCaretaker<TOriginator, TMemento> : Caretaker<TOriginator, TMemento>, IPersistentCaretaker
+    internal abstract class PersistentCaretaker<TOriginator, TMemento> : Caretaker<TOriginator, TMemento>, IPersistentSnapshot
         where TOriginator : IOriginator<TMemento>
         where TMemento : IMemento
     {
@@ -34,7 +34,7 @@ namespace DevOptimal.SystemStateManager.Persistence
                 {
                     try
                     {
-                        var col = database.GetCollection<IPersistentCaretaker>();
+                        var col = database.GetCollection<IPersistentSnapshot>();
                         col.Insert(this);
                         database.Commit();
                         persisted = true;
@@ -89,7 +89,7 @@ namespace DevOptimal.SystemStateManager.Persistence
                             {
                                 try
                                 {
-                                    var col = database.GetCollection<IPersistentCaretaker>();
+                                    var col = database.GetCollection<IPersistentSnapshot>();
                                     col.Delete(ID);
                                     database.Commit();
                                 }
