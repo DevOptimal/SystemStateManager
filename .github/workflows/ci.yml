@@ -32,7 +32,7 @@ jobs:
       env:
         GITHUB_PACKAGE_PAT: ${{ secrets.PACKAGE_READ_PAT }}
     - name: Build
-      run: msbuild MachineStateManager.sln /t:Build /p:Configuration=Release
+      run: msbuild SystemStateManager.sln /t:Build /p:Configuration=Release
     - name: Test
       run: dotnet test --configuration Release --no-build --verbosity normal --filter TestCategory!=OmitFromCI
     - name: Pack

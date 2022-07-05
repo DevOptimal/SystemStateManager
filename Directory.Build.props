@@ -8,9 +8,9 @@
   <PropertyGroup>
     <Authors>bradselw</Authors>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageProjectUrl>https://github.com/DevOptimal/MachineStateManager</PackageProjectUrl>
+    <PackageProjectUrl>https://github.com/DevOptimal/SystemStateManager</PackageProjectUrl>
     <RepositoryType>git</RepositoryType>
-    <RepositoryUrl>https://github.com/DevOptimal/MachineStateManager</RepositoryUrl>
+    <RepositoryUrl>https://github.com/DevOptimal/SystemStateManager</RepositoryUrl>
     <PackageTags>automate;machine;state;checkpoint;snapshot</PackageTags>
   </PropertyGroup>
 
