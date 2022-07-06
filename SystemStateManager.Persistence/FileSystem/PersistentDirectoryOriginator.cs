@@ -1,5 +1,5 @@
 ﻿using DevOptimal.SystemStateManager.FileSystem;
-using DevOptimal.System.Resources.FileSystem;
+using DevOptimal.SystemUtilities.FileSystem;
 using LiteDB;
 
 namespace DevOptimal.SystemStateManager.Persistence.FileSystem

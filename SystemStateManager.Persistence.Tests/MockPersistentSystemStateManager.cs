@@ -1,6 +1,6 @@
-﻿using DevOptimal.System.Resources.Environment;
-using DevOptimal.System.Resources.FileSystem;
-using DevOptimal.System.Resources.Registry;
+﻿using DevOptimal.SystemUtilities.Environment;
+using DevOptimal.SystemUtilities.FileSystem;
+using DevOptimal.SystemUtilities.Registry;
 
 namespace DevOptimal.SystemStateManager.Persistence.Tests
 {

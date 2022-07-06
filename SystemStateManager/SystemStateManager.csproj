@@ -12,9 +12,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="DevOptimal.System.Resources.Environment" Version="1.0.7" />
-    <PackageReference Include="DevOptimal.System.Resources.FileSystem" Version="1.0.10" />
-    <PackageReference Include="DevOptimal.System.Resources.Registry" Version="1.0.11" />
+    <PackageReference Include="DevOptimal.SystemUtilities.Environment" Version="1.0.8" />
+    <PackageReference Include="DevOptimal.SystemUtilities.FileSystem" Version="1.0.11" />
+    <PackageReference Include="DevOptimal.SystemUtilities.Registry" Version="1.0.12" />
     <PackageReference Include="Microsoft.Win32.Registry" Version="5.0.0" />
   </ItemGroup>
 

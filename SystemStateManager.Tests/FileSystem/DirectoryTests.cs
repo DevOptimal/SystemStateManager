@@ -1,4 +1,4 @@
-﻿using DevOptimal.System.Resources.FileSystem;
+﻿using DevOptimal.SystemUtilities.FileSystem;
 using System.IO;
 
 namespace DevOptimal.SystemStateManager.Tests.FileSystem

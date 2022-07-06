@@ -1,4 +1,4 @@
-﻿using DevOptimal.System.Resources.Registry;
+﻿using DevOptimal.SystemUtilities.Registry;
 using Microsoft.Win32;
 using System.IO;
 using System.Runtime.Versioning;

@@ -1,5 +1,5 @@
 ﻿using DevOptimal.SystemStateManager.Registry;
-using DevOptimal.System.Resources.Registry;
+using DevOptimal.SystemUtilities.Registry;
 using LiteDB;
 using Microsoft.Win32;
 

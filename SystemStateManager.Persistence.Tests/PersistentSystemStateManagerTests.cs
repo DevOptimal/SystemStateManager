@@ -1,4 +1,4 @@
-﻿using DevOptimal.System.Resources.Environment;
+﻿using DevOptimal.SystemUtilities.Environment;
 using LiteDB;
 using Microsoft.QualityTools.Testing.Fakes;
 using System;

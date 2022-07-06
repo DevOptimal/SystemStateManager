@@ -1,4 +1,4 @@
-﻿using DevOptimal.System.Resources.Environment;
+﻿using DevOptimal.SystemUtilities.Environment;
 using System;
 
 namespace DevOptimal.SystemStateManager.Environment

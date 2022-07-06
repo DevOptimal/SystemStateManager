@@ -2,9 +2,9 @@
 using DevOptimal.SystemStateManager.FileSystem;
 using DevOptimal.SystemStateManager.FileSystem.Caching;
 using DevOptimal.SystemStateManager.Registry;
-using DevOptimal.System.Resources.Environment;
-using DevOptimal.System.Resources.FileSystem;
-using DevOptimal.System.Resources.Registry;
+using DevOptimal.SystemUtilities.Environment;
+using DevOptimal.SystemUtilities.FileSystem;
+using DevOptimal.SystemUtilities.Registry;
 using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
