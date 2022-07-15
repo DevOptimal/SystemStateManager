@@ -18,7 +18,7 @@ namespace DevOptimal.SystemStateManager
     {
         private readonly List<ISnapshot> snapshots;
 
-        private readonly IBlobStore fileCache;
+        private readonly IFileCache fileCache;
 
         protected readonly IEnvironment defaultEnvironment;
 
@@ -34,21 +34,21 @@ namespace DevOptimal.SystemStateManager
         }
 
         public SystemStateManager(IEnvironment environment, IFileSystem fileSystem, IRegistry registry)
-            : this(new LocalBlobStore(Path.Combine(global::System.Environment.GetFolderPath(global::System.Environment.SpecialFolder.CommonApplicationData), nameof(SystemStateManager), "FileCache"), fileSystem), environment, fileSystem, registry)
+            : this(new LocalFileCache(Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.CommonApplicationData), nameof(SystemStateManager), "FileCache"), fileSystem), environment, fileSystem, registry)
         {
         }
 
-        internal SystemStateManager(IBlobStore fileCache, IEnvironment environment, IFileSystem fileSystem, IRegistry registry)
+        internal SystemStateManager(IFileCache fileCache, IEnvironment environment, IFileSystem fileSystem, IRegistry registry)
             : this(new List<ISnapshot>(), fileCache, environment, fileSystem, registry)
         {
         }
 
-        internal SystemStateManager(List<ISnapshot> snapshots, IBlobStore fileCache)
+        internal SystemStateManager(List<ISnapshot> snapshots, IFileCache fileCache)
             : this(snapshots, fileCache, new DefaultEnvironment(), new DefaultFileSystem(), new DefaultRegistry())
         {
         }
 
-        internal SystemStateManager(List<ISnapshot> snapshots, IBlobStore fileCache, IEnvironment environment, IFileSystem fileSystem, IRegistry registry)
+        internal SystemStateManager(List<ISnapshot> snapshots, IFileCache fileCache, IEnvironment environment, IFileSystem fileSystem, IRegistry registry)
         {
             this.snapshots = snapshots;
             this.fileCache = fileCache;
@@ -196,7 +196,7 @@ namespace DevOptimal.SystemStateManager
             return new Caretaker<DirectoryOriginator, DirectoryMemento>(id, originator);
         }
 
-        protected virtual ISnapshot CreateFileSnapshot(string id, string path, IBlobStore fileCache, IFileSystem fileSystem)
+        protected virtual ISnapshot CreateFileSnapshot(string id, string path, IFileCache fileCache, IFileSystem fileSystem)
         {
             var originator = new FileOriginator(path, fileCache, fileSystem);
             return new Caretaker<FileOriginator, FileMemento>(id, originator);

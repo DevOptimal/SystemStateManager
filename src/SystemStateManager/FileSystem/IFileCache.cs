@@ -2,7 +2,7 @@
 
 namespace DevOptimal.SystemStateManager.FileSystem
 {
-    public interface IBlobStore
+    public interface IFileCache
     {
         /// <summary>
         /// The abstraction used to access the file system.

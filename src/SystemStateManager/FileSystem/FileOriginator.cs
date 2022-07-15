@@ -11,18 +11,18 @@ namespace DevOptimal.SystemStateManager.FileSystem
         /// Files can be big, so their contents cannot be stored in memory. Instead, persist the content to a blob
         /// store, indexed by its hash. The hash will be stored in the FileMemento.
         /// </summary>
-        public IBlobStore FileCache { get; }
+        public IFileCache FileCache { get; }
 
         public IFileSystem FileSystem { get; }
 
-        public FileOriginator(string path, IBlobStore fileCache, IFileSystem fileSystem)
+        public FileOriginator(string path, IFileCache fileCache, IFileSystem fileSystem)
         {
             if (path == null)
             {
                 throw new ArgumentNullException(nameof(path));
             }
 
-            Path = global::System.IO.Path.GetFullPath(path);
+            Path = System.IO.Path.GetFullPath(path);
             FileCache = fileCache ?? throw new ArgumentNullException(nameof(fileCache));
             FileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
         }
@@ -39,7 +39,7 @@ namespace DevOptimal.SystemStateManager.FileSystem
 
         public void SetState(FileMemento memento)
         {
-            var directoryPath = global::System.IO.Path.GetDirectoryName(Path);
+            var directoryPath = System.IO.Path.GetDirectoryName(Path);
             if (!FileSystem.DirectoryExists(directoryPath))
             {
                 FileSystem.CreateDirectory(directoryPath);

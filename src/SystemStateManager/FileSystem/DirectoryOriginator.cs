@@ -16,7 +16,7 @@ namespace DevOptimal.SystemStateManager.FileSystem
                 throw new ArgumentNullException(nameof(path));
             }
 
-            Path = global::System.IO.Path.GetFullPath(path);
+            Path = System.IO.Path.GetFullPath(path);
             FileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
         }
 

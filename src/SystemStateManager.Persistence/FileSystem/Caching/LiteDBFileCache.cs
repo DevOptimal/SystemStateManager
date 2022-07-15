@@ -7,17 +7,17 @@ using System.Security.Cryptography;
 
 namespace DevOptimal.SystemStateManager.Persistence.FileSystem.Caching
 {
-    internal class LiteDBBlobStore : IBlobStore
+    internal class LiteDBFileCache : IFileCache
     {
         public IFileSystem FileSystem { get; }
 
-        public LiteDBBlobStore(IFileSystem fileSystem)
+        public LiteDBFileCache(IFileSystem fileSystem)
         {
             FileSystem = fileSystem;
         }
 
         [BsonCtor]
-        public LiteDBBlobStore(BsonDocument fileSystem)
+        public LiteDBFileCache(BsonDocument fileSystem)
         {
             FileSystem = BsonMapper.Global.ToObject<IFileSystem>(fileSystem);
         }

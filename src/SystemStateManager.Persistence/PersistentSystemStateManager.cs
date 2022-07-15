@@ -20,7 +20,7 @@ namespace DevOptimal.SystemStateManager.Persistence
     {
         public static Uri PersistenceURI { get; set; } = new Uri(
             Path.Combine(
-                global::System.Environment.GetFolderPath(global::System.Environment.SpecialFolder.CommonApplicationData),
+                System.Environment.GetFolderPath(System.Environment.SpecialFolder.CommonApplicationData),
                 nameof(SystemStateManager),
                 $"{nameof(Persistence)}.litedb"));
 
@@ -30,12 +30,12 @@ namespace DevOptimal.SystemStateManager.Persistence
         }
 
         protected PersistentSystemStateManager(IEnvironment environment, IFileSystem fileSystem, IRegistry registry)
-            : base(new LiteDBBlobStore(fileSystem), environment, fileSystem, registry)
+            : base(new LiteDBFileCache(fileSystem), environment, fileSystem, registry)
         {
         }
 
         internal PersistentSystemStateManager(List<ISnapshot> snapshots)
-            : base(snapshots, new LiteDBBlobStore(new DefaultFileSystem()))
+            : base(snapshots, new LiteDBFileCache(new DefaultFileSystem()))
         {
         }
 
@@ -51,7 +51,7 @@ namespace DevOptimal.SystemStateManager.Persistence
             return new PersistentDirectoryCaretaker(id, originator);
         }
 
-        protected override ISnapshot CreateFileSnapshot(string id, string path, IBlobStore fileCache, IFileSystem fileSystem)
+        protected override ISnapshot CreateFileSnapshot(string id, string path, IFileCache fileCache, IFileSystem fileSystem)
         {
             var originator = new PersistentFileOriginator(path, fileCache, fileSystem);
             return new PersistentFileCaretaker(id, originator);

@@ -4,13 +4,13 @@ using System.IO;
 
 namespace DevOptimal.SystemStateManager.FileSystem.Caching
 {
-    internal class LocalBlobStore : IBlobStore
+    internal class LocalFileCache : IFileCache
     {
         public string RootPath { get; }
 
         public IFileSystem FileSystem { get; }
 
-        public LocalBlobStore(string rootDirectoryPath, IFileSystem fileSystem)
+        public LocalFileCache(string rootDirectoryPath, IFileSystem fileSystem)
         {
             FileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
 

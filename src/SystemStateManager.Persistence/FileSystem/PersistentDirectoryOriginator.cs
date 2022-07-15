@@ -6,14 +6,14 @@ namespace DevOptimal.SystemStateManager.Persistence.FileSystem
 {
     internal class PersistentDirectoryOriginator : DirectoryOriginator
     {
-        [BsonCtor]
-        public PersistentDirectoryOriginator(string path, BsonDocument fileSystem)
-            : this(path, BsonMapper.Global.ToObject<IFileSystem>(fileSystem))
+        public PersistentDirectoryOriginator(string path, IFileSystem fileSystem)
+            : base(path, fileSystem)
         {
         }
 
-        public PersistentDirectoryOriginator(string path, IFileSystem fileSystem)
-            : base(path, fileSystem)
+        [BsonCtor]
+        public PersistentDirectoryOriginator(string path, BsonDocument fileSystem)
+            : this(path, BsonMapper.Global.ToObject<IFileSystem>(fileSystem))
         {
         }
     }

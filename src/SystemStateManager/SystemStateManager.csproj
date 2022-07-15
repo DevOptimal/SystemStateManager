@@ -14,9 +14,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="DevOptimal.SystemUtilities.Environment" Version="1.0.33" />
-    <PackageReference Include="DevOptimal.SystemUtilities.FileSystem" Version="1.0.33" />
-    <PackageReference Include="DevOptimal.SystemUtilities.Registry" Version="1.0.33" />
+    <PackageReference Include="DevOptimal.SystemUtilities.Environment" Version="1.0.34" />
+    <PackageReference Include="DevOptimal.SystemUtilities.FileSystem" Version="1.0.34" />
+    <PackageReference Include="DevOptimal.SystemUtilities.Registry" Version="1.0.34" />
     <PackageReference Include="Microsoft.Win32.Registry" Version="5.0.0" />
   </ItemGroup>
 

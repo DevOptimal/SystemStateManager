@@ -48,7 +48,7 @@ namespace DevOptimal.SystemStateManager.Persistence.Tests
         [TestCategory("OmitFromCI")] // Fakes require VS Enterprise, but agent machines only have Community installed.
         public void RestoresAbandonedSnapshots()
         {
-            var fakeProcessID = global::System.Environment.ProcessId + 1;
+            var fakeProcessID = System.Environment.ProcessId + 1;
             var fakeProcessStartTime = DateTime.Now;
 
             using (ShimsContext.Create())

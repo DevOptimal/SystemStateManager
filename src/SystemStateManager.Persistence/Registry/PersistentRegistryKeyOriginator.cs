@@ -7,14 +7,14 @@ namespace DevOptimal.SystemStateManager.Persistence.Registry
 {
     internal class PersistentRegistryKeyOriginator : RegistryKeyOriginator
     {
-        [BsonCtor]
-        public PersistentRegistryKeyOriginator(RegistryHive hive, RegistryView view, string subKey, BsonDocument registry)
-            : this(hive, view, subKey, BsonMapper.Global.ToObject<IRegistry>(registry))
+        public PersistentRegistryKeyOriginator(RegistryHive hive, RegistryView view, string subKey, IRegistry registry)
+            : base(hive, view, subKey, registry)
         {
         }
 
-        public PersistentRegistryKeyOriginator(RegistryHive hive, RegistryView view, string subKey, IRegistry registry)
-            : base(hive, view, subKey, registry)
+        [BsonCtor]
+        public PersistentRegistryKeyOriginator(RegistryHive hive, RegistryView view, string subKey, BsonDocument registry)
+            : this(hive, view, subKey, BsonMapper.Global.ToObject<IRegistry>(registry))
         {
         }
     }
