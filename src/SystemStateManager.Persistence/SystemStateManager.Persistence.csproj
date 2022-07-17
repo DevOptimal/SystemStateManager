@@ -5,6 +5,7 @@
     <Description>Library for snapshotting and restoring the state of system resources in a persistent manner.</Description>
     <SignAssembly>True</SignAssembly>
     <AssemblyOriginatorKeyFile>..\..\StrongName.snk</AssemblyOriginatorKeyFile>
+    <PackageTags>$(PackageTags);persistence</PackageTags>
   </PropertyGroup>
 
   <ItemGroup>
