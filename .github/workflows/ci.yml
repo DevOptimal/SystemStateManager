@@ -5,7 +5,8 @@ on:
     branches:
     - 'main'
     paths-ignore:
-    - '.github/workflows/**'
+    - 'doc/**'
+    - 'CONTRIBUTING.md'
     - 'README.md'
 
 jobs:
@@ -34,7 +35,7 @@ jobs:
     - name: Build
       run: msbuild SystemStateManager.sln /t:Build /p:Configuration=Release
     - name: Test
-      run: dotnet test --configuration Release --no-build --verbosity normal --filter TestCategory!=OmitFromCI
+      run: dotnet test --configuration Release --no-build --verbosity normal --filter 'TestCategory != OmitFromCI & TestCategory != Bug & TestCategory != MissingFeature'
     - name: Pack
       run: dotnet pack --configuration Release --no-build
     - name: Publish
