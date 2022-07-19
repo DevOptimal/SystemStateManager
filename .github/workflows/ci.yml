@@ -35,7 +35,7 @@ jobs:
     - name: Build
       run: msbuild SystemStateManager.sln /t:Build /p:Configuration=Release
     - name: Test
-      run: dotnet test --configuration Release --no-build --verbosity normal --filter 'TestCategory != OmitFromCI & TestCategory != Bug & TestCategory != MissingFeature'
+      run: dotnet test --configuration Release --no-build --verbosity normal --filter "TestCategory != OmitFromCI & TestCategory != Bug & TestCategory != FeatureRequest"
     - name: Pack
       run: dotnet pack --configuration Release --no-build
     - name: Publish
