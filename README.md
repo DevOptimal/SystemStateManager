@@ -4,17 +4,18 @@
 
 ## Features
 
-- Snapshot and restore the state of various system resources, including:
+- Programatically snapshot and restore the state of various system resources
+- Persistence layer ensures you never lose state, even if the process crashes!
+- Supported system resources include:
     - Environment variables
     - Directories
     - Files
     - Registry keys
     - Registry values
-- Persistence layer ensures you never lose state, even if the process crashes!
 
 ## Documentation
 
-Documentation can be found [here](doc/index.md).
+Documentation can be found [here](https://github.com/DevOptimal/SystemStateManager/blob/main/doc/index.md).
 
 ## Target Platforms
 

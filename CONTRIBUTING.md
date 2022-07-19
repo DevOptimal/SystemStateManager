@@ -54,10 +54,10 @@ Pull requests welcome!
 This project adheres to the principles of [test-driven development](https://en.wikipedia.org/wiki/Test-driven_development). All pull requests should include one or more tests that demonstrate a bug or missing feature. They may also be paired with changes that fix/add the corresponding bug/feature.
 
 All tests in `main` should always pass. If you are contributing a test that fails (e.g. to demostrate a bug), you must mark it with one of the following test categories:
-| Failure Reason | Test Category |
-| -------------- | ------------- |
-| Demonstrates a bug | `Bug` |
-| Demonstrates a mising feature | `MissingFeature` |
+| Failure Reason                | Test Category    |
+| ----------------------------- | ---------------- |
+| Demonstrates a bug            | `Bug`            |
+| Demonstrates a mising feature | `FeatureRequest` |
 
 For example, to mark a test that demonstrates a bug in [MSTest](https://docs.microsoft.com/en-us/dotnet/core/testing/selective-unit-tests?pivots=mstest), use the [`TestCategory` attribute](https://docs.microsoft.com/en-us/dotnet/api/microsoft.visualstudio.testtools.unittesting.testcategoryattribute):
 ```csharp
