@@ -1,6 +1,9 @@
 # DevOptimal.SystemStateManager
 
-![Continuous Integration](https://github.com/DevOptimal/SystemStateManager/actions/workflows/ci.yml/badge.svg)
+[![Continuous Integration](https://github.com/DevOptimal/SystemStateManager/actions/workflows/ci.yml/badge.svg)](https://github.com/DevOptimal/SystemStateManager/actions/workflows/ci.yml)
+
+[![NuGet package](https://img.shields.io/nuget/v/DevOptimal.SystemStateManager.svg?label=DevOptimal.SystemStateManager&logo=nuget)](https://nuget.org/packages/DevOptimal.SystemStateManager)
+[![NuGet package](https://img.shields.io/nuget/v/DevOptimal.SystemStateManager.Persistence.svg?label=DevOptimal.SystemStateManager.Persistence&logo=nuget)](https://nuget.org/packages/DevOptimal.SystemStateManager.Persistence)
 
 ## Features
 

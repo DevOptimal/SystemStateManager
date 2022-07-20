@@ -10,16 +10,14 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - name: Set up .NET
-      uses: actions/setup-dotnet@v2
-      with:
-        dotnet-version: 6.0.x
-    - name: Set up MSBuild # Must build via MSBuild because `dotnet build` does not support fakes yet.
-      uses: microsoft/setup-msbuild@v1.1
     - name: Clone
       uses: actions/checkout@v3
       with:
         fetch-depth: 0 # Entire history required by Nerdbank.GitVersioning
+    - name: Set up .NET
+      uses: actions/setup-dotnet@v2
+    - name: Set up MSBuild # Must build via MSBuild because `dotnet build` does not support fakes yet.
+      uses: microsoft/setup-msbuild@v1.1
     - name: Restore
       run: dotnet restore
       env:
