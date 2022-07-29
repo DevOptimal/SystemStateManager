@@ -29,7 +29,7 @@ namespace DevOptimal.SystemStateManager.Persistence
         {
         }
 
-        protected PersistentSystemStateManager(IEnvironment environment, IFileSystem fileSystem, IRegistry registry)
+        public PersistentSystemStateManager(IEnvironment environment, IFileSystem fileSystem, IRegistry registry)
             : base(new LiteDBFileCache(fileSystem), environment, fileSystem, registry)
         {
         }

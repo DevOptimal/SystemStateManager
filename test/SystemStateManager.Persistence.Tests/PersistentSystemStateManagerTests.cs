@@ -1,8 +1,4 @@
-﻿using DevOptimal.SystemUtilities.Environment;
-using DevOptimal.SystemUtilities.FileSystem;
-using DevOptimal.SystemUtilities.Registry;
-using LiteDB;
-using Microsoft.QualityTools.Testing.Fakes;
+﻿using Microsoft.QualityTools.Testing.Fakes;
 using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
@@ -14,26 +10,8 @@ using System.Threading.Tasks;
 namespace DevOptimal.SystemStateManager.Persistence.Tests
 {
     [TestClass]
-    public class PersistentSystemStateManagerTests
+    public class PersistentSystemStateManagerTests : TestBase
     {
-        private MockEnvironment environment;
-        private MockFileSystem fileSystem;
-        private MockRegistry registry;
-
-        [AssemblyInitialize]
-        public static void AssemblyInitialize(TestContext testContext)
-        {
-            PersistentSystemStateManager.PersistenceURI = new Uri(Path.Combine(testContext.ResultsDirectory, "persistence.litedb"));
-        }
-
-        [TestInitialize]
-        public void TestInitializeAttribute()
-        {
-            environment = new MockEnvironment();
-            fileSystem = new MockFileSystem();
-            registry = new MockRegistry();
-        }
-
         [TestMethod]
         [TestCategory("OmitFromCI")] // Fakes require VS Enterprise, but agent machines only have Community installed.
         public void RestoresAbandonedSnapshots()
@@ -69,7 +47,7 @@ namespace DevOptimal.SystemStateManager.Persistence.Tests
                 ShimProcess.AllInstances.IdGet = p => fakeProcessID;
                 ShimProcess.AllInstances.StartTimeGet = p => fakeProcessStartTime;
 
-                var systemStateManager = new MockPersistentSystemStateManager(environment, fileSystem, registry);
+                var systemStateManager = new PersistentSystemStateManager(environment, fileSystem, registry);
 
                 systemStateManager.SnapshotEnvironmentVariable(environmentVariableName, environmentVariableTarget);
 
@@ -88,10 +66,8 @@ namespace DevOptimal.SystemStateManager.Persistence.Tests
 
             environment.SetEnvironmentVariable(environmentVariableName, null, environmentVariableTarget);
 
-            BsonMapper.Global.RegisterType<IEnvironment>(
-                serialize: value => new BsonValue(value),
-                deserialize: bson => environment);
-            MockPersistentSystemStateManager.RestoreAbandonedSnapshots();
+            PersistentSystemStateManager.RestoreAbandonedSnapshots();
+
             Assert.AreEqual(expectedEnvironmentVariableValue, environment.GetEnvironmentVariable(environmentVariableName, environmentVariableTarget));
 
             Assert.IsTrue(fileSystem.DirectoryExists(directoryPath));
@@ -113,20 +89,20 @@ namespace DevOptimal.SystemStateManager.Persistence.Tests
             var target = EnvironmentVariableTarget.Machine;
             var expectedValue = "bar";
 
-            using var systemStateManager = new MockPersistentSystemStateManager(environment, fileSystem, registry);
+            using var systemStateManager = new PersistentSystemStateManager(environment, fileSystem, registry);
 
             systemStateManager.SnapshotEnvironmentVariable(name, target);
 
             environment.SetEnvironmentVariable(name, null, target);
 
-            MockPersistentSystemStateManager.RestoreAbandonedSnapshots();
+            PersistentSystemStateManager.RestoreAbandonedSnapshots();
             Assert.AreNotEqual(expectedValue, environment.GetEnvironmentVariable(name, target));
         }
 
         [TestMethod]
         public void RevertsSnapshotsConcurrently()
         {
-            using var systemStateManager = new MockPersistentSystemStateManager(environment, fileSystem, registry);
+            using var systemStateManager = new PersistentSystemStateManager(environment, fileSystem, registry);
 
             var target = EnvironmentVariableTarget.Machine;
             var expectedValue = "bar";

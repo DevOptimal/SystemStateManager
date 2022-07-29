@@ -1,36 +1,18 @@
-using DevOptimal.SystemUtilities.Environment;
 using System;
 
 namespace DevOptimal.SystemStateManager.Tests.Environment
 {
     [TestClass]
-    public class EnvironmentTests
+    public class EnvironmentTests : TestBase
     {
-        private MockEnvironment environment;
-
-        private MockSystemStateManager systemStateManager;
-
-        private const string name = "foo";
-
-        private const EnvironmentVariableTarget target = EnvironmentVariableTarget.Machine;
-
-        [TestInitialize]
-        public void TestInitializeAttribute()
-        {
-            environment = new MockEnvironment();
-
-            systemStateManager = new MockSystemStateManager(environment);
-        }
-
-        [TestCleanup]
-        public void TestCleanup()
-        {
-            systemStateManager.Dispose();
-        }
-
         [TestMethod]
         public void RevertsEnvironmentVariableCreation()
         {
+            var name = "foo";
+            var target = EnvironmentVariableTarget.Machine;
+            environment.SetEnvironmentVariable(name, null, target);
+
+            using var systemStateManager = CreateSystemStateManager();
             using (systemStateManager.SnapshotEnvironmentVariable(name, target))
             {
                 environment.SetEnvironmentVariable(name, "bar", target);
@@ -42,9 +24,12 @@ namespace DevOptimal.SystemStateManager.Tests.Environment
         [TestMethod]
         public void RevertsEnvironmentVariableDeletion()
         {
+            var name = "foo";
+            var target = EnvironmentVariableTarget.Machine;
             var expectedValue = "bar";
             environment.SetEnvironmentVariable(name, expectedValue, target);
 
+            using var systemStateManager = CreateSystemStateManager();
             using (systemStateManager.SnapshotEnvironmentVariable(name, target))
             {
                 environment.SetEnvironmentVariable(name, null, target);
@@ -56,9 +41,12 @@ namespace DevOptimal.SystemStateManager.Tests.Environment
         [TestMethod]
         public void RevertsEnvironmentVariableAlteration()
         {
+            var name = "foo";
+            var target = EnvironmentVariableTarget.Machine;
             var expectedValue = "bar";
             environment.SetEnvironmentVariable(name, expectedValue, target);
 
+            using var systemStateManager = CreateSystemStateManager();
             using (systemStateManager.SnapshotEnvironmentVariable(name, target))
             {
                 environment.SetEnvironmentVariable(name, "baz", target);

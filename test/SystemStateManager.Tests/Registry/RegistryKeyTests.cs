@@ -7,35 +7,16 @@ namespace DevOptimal.SystemStateManager.Tests.Registry
 {
     [TestClass]
     [SupportedOSPlatform("windows")]
-    public class RegistryKeyTests
+    public class RegistryKeyTests : TestBase
     {
-        private MockRegistry registry;
-
-        private MockSystemStateManager systemStateManager;
-
-        private const RegistryHive hive = RegistryHive.LocalMachine;
-
-        private const RegistryView view = RegistryView.Default;
-
-        private const string subKey = @"SOTFWARE\Microsoft\Windows";
-
-        [TestInitialize]
-        public void TestInitializeAttribute()
-        {
-            registry = new MockRegistry();
-
-            systemStateManager = new MockSystemStateManager(registry);
-        }
-
-        [TestCleanup]
-        public void TestCleanup()
-        {
-            systemStateManager.Dispose();
-        }
-
         [TestMethod]
         public void RevertsRegistryKeyCreation()
         {
+            var hive = RegistryHive.LocalMachine;
+            var view = RegistryView.Default;
+            var subKey = @"SOTFWARE\Microsoft\Windows";
+
+            using var systemStateManager = CreateSystemStateManager();
             using (systemStateManager.SnapshotRegistryKey(hive, view, subKey))
             {
                 registry.CreateRegistryKey(hive, view, subKey);
@@ -47,6 +28,11 @@ namespace DevOptimal.SystemStateManager.Tests.Registry
         [TestMethod]
         public void RevertsRegistryKeyCreationWithChildren()
         {
+            var hive = RegistryHive.LocalMachine;
+            var view = RegistryView.Default;
+            var subKey = @"SOTFWARE\Microsoft\Windows";
+
+            using var systemStateManager = CreateSystemStateManager();
             using (systemStateManager.SnapshotRegistryKey(hive, view, subKey))
             {
                 registry.CreateRegistryKey(hive, view, subKey);
@@ -60,8 +46,13 @@ namespace DevOptimal.SystemStateManager.Tests.Registry
         [TestMethod]
         public void RevertsRegistryKeyDeletion()
         {
+            var hive = RegistryHive.LocalMachine;
+            var view = RegistryView.Default;
+            var subKey = @"SOTFWARE\Microsoft\Windows";
+
             registry.CreateRegistryKey(hive, view, subKey);
 
+            using var systemStateManager = CreateSystemStateManager();
             using (systemStateManager.SnapshotRegistryKey(hive, view, subKey))
             {
                 registry.DeleteRegistryKey(hive, view, subKey, recursive: true);
