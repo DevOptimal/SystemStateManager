@@ -21,7 +21,7 @@ namespace DevOptimal.SystemStateManager.Persistence.Tests
         {
         }
 
-        private MockPersistentSystemStateManager(
+        public MockPersistentSystemStateManager(
             MockEnvironment environment,
             MockFileSystem fileSystem,
             MockRegistry registry)
