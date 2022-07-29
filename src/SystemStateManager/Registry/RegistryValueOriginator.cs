@@ -34,7 +34,7 @@ namespace DevOptimal.SystemStateManager.Registry
             }
             else
             {
-                return new RegistryValueMemento(null, RegistryValueKind.None);
+                return new RegistryValueMemento((object)null, RegistryValueKind.None);
             }
         }
 

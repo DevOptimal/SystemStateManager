@@ -79,7 +79,7 @@ namespace DevOptimal.SystemStateManager.Persistence.Tests
             CollectionAssert.AreEqual(expectedFileBytes, actualFileBytes);
 
             Assert.IsTrue(registry.RegistryKeyExists(registryHive, registryView, registrySubKey));
-            Assert.AreEqual(expectedRegistryValue, registry.GetRegistryValue(registryHive, registryView, registrySubKey, registryValueName));
+            Assert.AreEqual((expectedRegistryValue, expectedRegistryValueKind), registry.GetRegistryValue(registryHive, registryView, registrySubKey, registryValueName));
         }
 
         [TestMethod]
