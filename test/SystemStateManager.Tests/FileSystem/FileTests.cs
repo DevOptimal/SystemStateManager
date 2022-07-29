@@ -1,38 +1,19 @@
-﻿using DevOptimal.SystemUtilities.FileSystem;
-using System;
+﻿using System;
 using System.IO;
 
 namespace DevOptimal.SystemStateManager.Tests.FileSystem
 {
     [TestClass]
-    public class FileTests
+    public class FileTests : TestBase
     {
-        private MockFileSystem fileSystem;
-
-        private MockSystemStateManager systemStateManager;
-
-        private const string path = @"C:\foo\bar.dat";
-
-        [TestInitialize]
-        public void TestInitializeAttribute()
-        {
-            fileSystem = new MockFileSystem();
-
-            systemStateManager = new MockSystemStateManager(fileSystem);
-        }
-
-        [TestCleanup]
-        public void TestCleanup()
-        {
-            systemStateManager.Dispose();
-        }
-
         [TestMethod]
         public void RevertsFileAlteration()
         {
+            var path = @"C:\foo\bar.dat";
             var expectedFileBytes = Guid.NewGuid().ToByteArray();
             WriteBytes(path, expectedFileBytes);
 
+            using var systemStateManager = CreateSystemStateManager();
             using (systemStateManager.SnapshotFile(path))
             {
                 WriteBytes(path, Guid.NewGuid().ToByteArray());
@@ -44,6 +25,9 @@ namespace DevOptimal.SystemStateManager.Tests.FileSystem
         [TestMethod]
         public void RevertsFileCreation()
         {
+            var path = @"C:\foo\bar.dat";
+
+            using var systemStateManager = CreateSystemStateManager();
             using (systemStateManager.SnapshotFile(path))
             {
                 fileSystem.CreateFile(path);
@@ -55,9 +39,11 @@ namespace DevOptimal.SystemStateManager.Tests.FileSystem
         [TestMethod]
         public void RevertsFileDeletion()
         {
+            var path = @"C:\foo\bar.dat";
             var expectedFileBytes = Guid.NewGuid().ToByteArray();
             WriteBytes(path, expectedFileBytes);
 
+            using var systemStateManager = CreateSystemStateManager();
             using (systemStateManager.SnapshotFile(path))
             {
                 fileSystem.DeleteFile(path);
@@ -70,11 +56,14 @@ namespace DevOptimal.SystemStateManager.Tests.FileSystem
         public void RevertsMultipleFileDeletionsWithSameContent()
         {
             var expectedFileBytes = Guid.NewGuid().ToByteArray();
+
+            var path = @"C:\foo\bar.dat";
             WriteBytes(path, expectedFileBytes);
 
             var path2 = @"C:\foo\baz.dat";
             WriteBytes(path2, expectedFileBytes);
 
+            using var systemStateManager = CreateSystemStateManager();
             using (var snapshot = systemStateManager.SnapshotFile(path))
             {
                 fileSystem.DeleteFile(path);

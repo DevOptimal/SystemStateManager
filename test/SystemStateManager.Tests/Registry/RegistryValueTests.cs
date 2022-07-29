@@ -6,40 +6,22 @@ namespace DevOptimal.SystemStateManager.Tests.Registry
 {
     [TestClass]
     [SupportedOSPlatform("windows")]
-    public class RegistryValueTests
+    public class RegistryValueTests : TestBase
     {
-        private MockRegistry registry;
-
-        private MockSystemStateManager systemStateManager;
-
-        private const RegistryHive hive = RegistryHive.LocalMachine;
-        private const RegistryView view = RegistryView.Default;
-        private const string subKey = @"SOFTWARE\Microsoft\Windows";
-        private const string name = "foo";
-
-        [TestInitialize]
-        public void TestInitializeAttribute()
-        {
-            registry = new MockRegistry();
-
-            systemStateManager = new MockSystemStateManager(registry);
-        }
-
-        [TestCleanup]
-        public void TestCleanup()
-        {
-            systemStateManager.Dispose();
-        }
-
         [TestMethod]
         public void RevertsRegistryValueAlteration()
         {
+            var hive = RegistryHive.LocalMachine;
+            var view = RegistryView.Default;
+            var subKey = @"SOFTWARE\Microsoft\Windows";
             registry.CreateRegistryKey(hive, view, subKey);
 
+            var name = "foo";
             var value = "bar";
             var kind = RegistryValueKind.String;
             registry.SetRegistryValue(hive, view, subKey, name, value, kind);
 
+            using var systemStateManager = CreateSystemStateManager();
             using (systemStateManager.SnapshotRegistryValue(hive, view, subKey, name))
             {
                 registry.SetRegistryValue(hive, view, subKey, name, 10, RegistryValueKind.DWord);
@@ -54,8 +36,14 @@ namespace DevOptimal.SystemStateManager.Tests.Registry
         [TestMethod]
         public void RevertsRegistryValueCreation()
         {
+            var hive = RegistryHive.LocalMachine;
+            var view = RegistryView.Default;
+            var subKey = @"SOFTWARE\Microsoft\Windows";
             registry.CreateRegistryKey(hive, view, subKey);
 
+            var name = "foo";
+
+            using var systemStateManager = CreateSystemStateManager();
             using (systemStateManager.SnapshotRegistryValue(hive, view, subKey, name))
             {
                 registry.SetRegistryValue(hive, view, subKey, name, "bar", RegistryValueKind.String);
@@ -67,12 +55,17 @@ namespace DevOptimal.SystemStateManager.Tests.Registry
         [TestMethod]
         public void RevertsRegistryValueDeletion()
         {
+            var hive = RegistryHive.LocalMachine;
+            var view = RegistryView.Default;
+            var subKey = @"SOFTWARE\Microsoft\Windows";
             registry.CreateRegistryKey(hive, view, subKey);
 
+            var name = "foo";
             var value = "bar";
             var kind = RegistryValueKind.String;
             registry.SetRegistryValue(hive, view, subKey, name, value, kind);
 
+            using var systemStateManager = CreateSystemStateManager();
             using (systemStateManager.SnapshotRegistryValue(hive, view, subKey, name))
             {
                 registry.DeleteRegistryValue(hive, view, subKey, name);
@@ -87,12 +80,16 @@ namespace DevOptimal.SystemStateManager.Tests.Registry
         [TestMethod]
         public void RevertsDefaultRegistryValueAlteration()
         {
+            var hive = RegistryHive.LocalMachine;
+            var view = RegistryView.Default;
+            var subKey = @"SOFTWARE\Microsoft\Windows";
             registry.CreateRegistryKey(hive, view, subKey);
 
             var value = "bar";
             var kind = RegistryValueKind.String;
             registry.SetRegistryValue(hive, view, subKey, null, value, kind);
 
+            using var systemStateManager = CreateSystemStateManager();
             using (systemStateManager.SnapshotRegistryValue(hive, view, subKey, null))
             {
                 registry.SetRegistryValue(hive, view, subKey, null, 10, RegistryValueKind.DWord);
@@ -107,8 +104,12 @@ namespace DevOptimal.SystemStateManager.Tests.Registry
         [TestMethod]
         public void RevertsDefaultRegistryValueCreation()
         {
+            var hive = RegistryHive.LocalMachine;
+            var view = RegistryView.Default;
+            var subKey = @"SOFTWARE\Microsoft\Windows";
             registry.CreateRegistryKey(hive, view, subKey);
 
+            using var systemStateManager = CreateSystemStateManager();
             using (systemStateManager.SnapshotRegistryValue(hive, view, subKey, null))
             {
                 registry.SetRegistryValue(hive, view, subKey, null, "bar", RegistryValueKind.String);
@@ -120,12 +121,16 @@ namespace DevOptimal.SystemStateManager.Tests.Registry
         [TestMethod]
         public void RevertsDefaultRegistryValueDeletion()
         {
+            var hive = RegistryHive.LocalMachine;
+            var view = RegistryView.Default;
+            var subKey = @"SOFTWARE\Microsoft\Windows";
             registry.CreateRegistryKey(hive, view, subKey);
 
             var value = "bar";
             var kind = RegistryValueKind.String;
             registry.SetRegistryValue(hive, view, subKey, null, value, kind);
 
+            using var systemStateManager = CreateSystemStateManager();
             using (systemStateManager.SnapshotRegistryValue(hive, view, subKey, null))
             {
                 registry.DeleteRegistryValue(hive, view, subKey, null);

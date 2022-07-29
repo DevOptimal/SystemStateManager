@@ -1,34 +1,16 @@
-﻿using DevOptimal.SystemUtilities.FileSystem;
-using System.IO;
+﻿using System.IO;
 
 namespace DevOptimal.SystemStateManager.Tests.FileSystem
 {
     [TestClass]
-    public class DirectoryTests
+    public class DirectoryTests : TestBase
     {
-        private MockFileSystem fileSystem;
-
-        private MockSystemStateManager systemStateManager;
-
-        private const string path = @"C:\foo\bar";
-
-        [TestInitialize]
-        public void TestInitializeAttribute()
-        {
-            fileSystem = new MockFileSystem();
-
-            systemStateManager = new MockSystemStateManager(fileSystem);
-        }
-
-        [TestCleanup]
-        public void TestCleanup()
-        {
-            systemStateManager.Dispose();
-        }
-
         [TestMethod]
         public void RevertsDirectoryCreation()
         {
+            var path = @"C:\foo\bar";
+
+            using var systemStateManager = CreateSystemStateManager();
             using (systemStateManager.SnapshotDirectory(path))
             {
                 fileSystem.CreateDirectory(path);
@@ -42,6 +24,9 @@ namespace DevOptimal.SystemStateManager.Tests.FileSystem
         [TestMethod]
         public void RevertsDirectoryCreationWithChildren()
         {
+            var path = @"C:\foo\bar";
+
+            using var systemStateManager = CreateSystemStateManager();
             using (systemStateManager.SnapshotDirectory(path))
             {
                 fileSystem.CreateDirectory(path);
@@ -55,8 +40,10 @@ namespace DevOptimal.SystemStateManager.Tests.FileSystem
         [TestMethod]
         public void RevertsDirectoryDeletion()
         {
+            var path = @"C:\foo\bar";
             fileSystem.CreateDirectory(path);
 
+            using var systemStateManager = CreateSystemStateManager();
             using (systemStateManager.SnapshotDirectory(path))
             {
                 fileSystem.DeleteDirectory(path, recursive: true);
