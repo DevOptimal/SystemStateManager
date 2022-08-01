@@ -13,7 +13,7 @@ namespace DevOptimal.SystemStateManager.Persistence.FileSystem
 
         [BsonCtor]
         public PersistentFileOriginator(string path, BsonDocument fileCache, BsonDocument fileSystem)
-            : this(path, BsonMapper.Global.ToObject<IFileCache>(fileCache), BsonMapper.Global.ToObject<IFileSystem>(fileSystem))
+            : this(path, LiteDatabaseFactory.Mapper.ToObject<IFileCache>(fileCache), LiteDatabaseFactory.Mapper.ToObject<IFileSystem>(fileSystem))
         {
         }
     }

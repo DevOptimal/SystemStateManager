@@ -14,7 +14,7 @@ namespace DevOptimal.SystemStateManager.Persistence.Registry
 
         [BsonCtor]
         public PersistentRegistryValueOriginator(RegistryHive hive, RegistryView view, string subKey, string name, BsonDocument registry)
-            : this(hive, view, subKey, name, BsonMapper.Global.ToObject<IRegistry>(registry))
+            : this(hive, view, subKey, name, LiteDatabaseFactory.Mapper.ToObject<IRegistry>(registry))
         {
         }
     }

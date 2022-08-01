@@ -24,18 +24,18 @@ namespace DevOptimal.SystemStateManager.Persistence.Tests
         public void TestInitialize()
         {
             environment = new MockEnvironment();
-            BsonMapper.Global.RegisterType(
-                serialize: value => new BsonValue(value),
+            LiteDatabaseFactory.Mapper.RegisterType(
+                serialize: value => BsonMapper.Global.ToDocument(value),//new BsonValue(value),
                 deserialize: bson => environment);
 
             fileSystem = new MockFileSystem();
-            BsonMapper.Global.RegisterType(
-                serialize: value => new BsonValue(value),
+            LiteDatabaseFactory.Mapper.RegisterType(
+                serialize: value => BsonMapper.Global.ToDocument(value),//new BsonValue(value),
                 deserialize: bson => fileSystem);
 
             registry = new MockRegistry();
-            BsonMapper.Global.RegisterType(
-                serialize: value => new BsonValue(value),
+            LiteDatabaseFactory.Mapper.RegisterType(
+                serialize: value => BsonMapper.Global.ToDocument(value),//new BsonValue(value),
                 deserialize: bson => registry);
         }
     }

@@ -38,6 +38,10 @@ namespace DevOptimal.SystemStateManager.Persistence.Tests
             var expectedRegistryValue = "bar";
             var expectedRegistryValueKind = RegistryValueKind.String;
             registry.SetRegistryValue(registryHive, registryView, registrySubKey, registryValueName, expectedRegistryValue, expectedRegistryValueKind);
+            var registryValueName2 = "fooint";
+            var expectedRegistryValue2 = 3;
+            var expectedRegistryValueKind2 = RegistryValueKind.DWord;
+            registry.SetRegistryValue(registryHive, registryView, registrySubKey, registryValueName2, expectedRegistryValue2, expectedRegistryValueKind2);
 
             var fakeProcessID = System.Environment.ProcessId + 1;
             var fakeProcessStartTime = DateTime.Now;
@@ -56,8 +60,10 @@ namespace DevOptimal.SystemStateManager.Persistence.Tests
 
                 systemStateManager.SnapshotRegistryKey(registryHive, registryView, registrySubKey);
                 systemStateManager.SnapshotRegistryValue(registryHive, registryView, registrySubKey, registryValueName);
+                systemStateManager.SnapshotRegistryValue(registryHive, registryView, registrySubKey, registryValueName2);
             }
 
+            registry.DeleteRegistryValue(registryHive, registryView, registrySubKey, registryValueName2);
             registry.DeleteRegistryValue(registryHive, registryView, registrySubKey, registryValueName);
             registry.DeleteRegistryKey(registryHive, registryView, registrySubKey, recursive: true);
 
@@ -80,6 +86,7 @@ namespace DevOptimal.SystemStateManager.Persistence.Tests
 
             Assert.IsTrue(registry.RegistryKeyExists(registryHive, registryView, registrySubKey));
             Assert.AreEqual((expectedRegistryValue, expectedRegistryValueKind), registry.GetRegistryValue(registryHive, registryView, registrySubKey, registryValueName));
+            Assert.AreEqual((expectedRegistryValue2, expectedRegistryValueKind2), registry.GetRegistryValue(registryHive, registryView, registrySubKey, registryValueName2));
         }
 
         [TestMethod]
