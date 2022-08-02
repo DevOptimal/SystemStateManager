@@ -2,7 +2,9 @@
 using DevOptimal.SystemUtilities.FileSystem;
 using DevOptimal.SystemUtilities.Registry;
 using LiteDB;
+using Microsoft.QualityTools.Testing.Fakes;
 using System;
+using System.Diagnostics.Fakes;
 using System.IO;
 
 namespace DevOptimal.SystemStateManager.Persistence.Tests
@@ -13,6 +15,9 @@ namespace DevOptimal.SystemStateManager.Persistence.Tests
         protected IEnvironment environment;
         protected IFileSystem fileSystem;
         protected IRegistry registry;
+
+        private readonly int fakeProcessID = System.Environment.ProcessId + 1;
+        private readonly DateTime fakeProcessStartTime = DateTime.Now;
 
         [AssemblyInitialize]
         public static void AssemblyInitialize(TestContext testContext)
@@ -37,6 +42,16 @@ namespace DevOptimal.SystemStateManager.Persistence.Tests
             LiteDatabaseFactory.Mapper.RegisterType(
                 serialize: value => BsonMapper.Global.ToDocument(value),//new BsonValue(value),
                 deserialize: bson => registry);
+        }
+
+        protected IDisposable CreateShimsContext()
+        {
+            var context = ShimsContext.Create();
+
+            ShimProcess.AllInstances.IdGet = p => fakeProcessID;
+            ShimProcess.AllInstances.StartTimeGet = p => fakeProcessStartTime;
+
+            return context;
         }
     }
 }
