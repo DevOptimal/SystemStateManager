@@ -13,7 +13,7 @@ namespace DevOptimal.SystemStateManager.Persistence.Environment
 
         [BsonCtor]
         public PersistentEnvironmentVariableCaretaker(string _id, int processID, DateTime processStartTime, BsonDocument originator, BsonDocument memento)
-            : base(_id, processID, processStartTime, BsonMapper.Global.ToObject<PersistentEnvironmentVariableOriginator>(originator), BsonMapper.Global.ToObject<EnvironmentVariableMemento>(memento))
+            : base(_id, processID, processStartTime, LiteDatabaseFactory.Mapper.ToObject<PersistentEnvironmentVariableOriginator>(originator), LiteDatabaseFactory.Mapper.ToObject<EnvironmentVariableMemento>(memento))
         {
         }
     }

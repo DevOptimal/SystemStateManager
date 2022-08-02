@@ -16,7 +16,7 @@ namespace DevOptimal.SystemStateManager.Persistence.FileSystem
 
         [BsonCtor]
         public PersistentFileCaretaker(string _id, int processID, DateTime processStartTime, BsonDocument originator, BsonDocument memento)
-            : base(_id, processID, processStartTime, BsonMapper.Global.ToObject<PersistentFileOriginator>(originator), BsonMapper.Global.ToObject<FileMemento>(memento))
+            : base(_id, processID, processStartTime, LiteDatabaseFactory.Mapper.ToObject<PersistentFileOriginator>(originator), LiteDatabaseFactory.Mapper.ToObject<FileMemento>(memento))
         {
         }
 

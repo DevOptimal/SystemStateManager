@@ -2,11 +2,6 @@
 {
     internal class RegistryKeyMemento : IMemento
     {
-        public bool Exists { get; }
-
-        public RegistryKeyMemento(bool exists)
-        {
-            Exists = exists;
-        }
+        public bool Exists { get; set;  }
     }
 }

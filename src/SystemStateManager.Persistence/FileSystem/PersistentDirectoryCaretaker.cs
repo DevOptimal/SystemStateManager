@@ -13,7 +13,7 @@ namespace DevOptimal.SystemStateManager.Persistence.FileSystem
 
         [BsonCtor]
         public PersistentDirectoryCaretaker(string _id, int processID, DateTime processStartTime, BsonDocument originator, BsonDocument memento)
-            : base(_id, processID, processStartTime, BsonMapper.Global.ToObject<PersistentDirectoryOriginator>(originator), BsonMapper.Global.ToObject<DirectoryMemento>(memento))
+            : base(_id, processID, processStartTime, LiteDatabaseFactory.Mapper.ToObject<PersistentDirectoryOriginator>(originator), LiteDatabaseFactory.Mapper.ToObject<DirectoryMemento>(memento))
         {
         }
     }

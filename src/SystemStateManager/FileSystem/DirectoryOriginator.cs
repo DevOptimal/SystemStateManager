@@ -22,7 +22,10 @@ namespace DevOptimal.SystemStateManager.FileSystem
 
         public DirectoryMemento GetState()
         {
-            return new DirectoryMemento(FileSystem.DirectoryExists(Path));
+            return new DirectoryMemento
+            {
+                Exists = FileSystem.DirectoryExists(Path)
+            };
         }
 
         public void SetState(DirectoryMemento memento)
