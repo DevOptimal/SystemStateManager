@@ -1,11 +1,7 @@
-﻿using DevOptimal.SystemStateManager.Registry;
-using LiteDB;
-using Microsoft.Win32;
+﻿using LiteDB;
 using System;
-using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
-using System.Linq;
 using System.Runtime.InteropServices;
 using System.Security.AccessControl;
 using System.Security.Principal;
@@ -26,39 +22,6 @@ namespace DevOptimal.SystemStateManager.Persistence
             Mapper.RegisterType(
                 serialize: value => value.ToString("o", CultureInfo.InvariantCulture),
                 deserialize: bson => DateTime.ParseExact(bson, "o", CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind));
-
-            Mapper.RegisterType(
-                serialize: value =>
-                {
-                    var dictionary = new Dictionary<string, BsonValue>
-                    {
-                        [nameof(RegistryValueMemento.Value)] = new BsonValue(value.Value),
-                        [nameof(RegistryValueMemento.Kind)] = new BsonValue(value.Kind.ToString())
-                    };
-                    return new BsonDocument(dictionary);
-                },
-                deserialize: bson =>
-                {
-                    var value = bson[nameof(RegistryValueMemento.Value)];
-                    var kind = (RegistryValueKind)Enum.Parse(typeof(RegistryValueKind), bson[nameof(RegistryValueMemento.Kind)].AsString);
-
-                    switch (kind)
-                    {
-                        case RegistryValueKind.String:
-                        case RegistryValueKind.ExpandString:
-                            return new RegistryValueMemento(value.AsString, kind);
-                        case RegistryValueKind.Binary:
-                            return new RegistryValueMemento(value.AsBinary, kind);
-                        case RegistryValueKind.DWord:
-                            return new RegistryValueMemento(value.AsInt32, kind);
-                        case RegistryValueKind.QWord:
-                            return new RegistryValueMemento(value.AsInt64, kind);
-                        case RegistryValueKind.MultiString:
-                            return new RegistryValueMemento(value.AsArray.Select(b => b.AsString).ToArray(), kind);
-                        default:
-                            throw new NotSupportedException($"The {nameof(RegistryValueKind)} '{kind}' is not supported.");
-                    }
-                });
         }
 
         public static LiteDatabase GetDatabase()

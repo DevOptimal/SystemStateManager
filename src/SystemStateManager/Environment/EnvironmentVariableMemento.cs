@@ -2,11 +2,6 @@
 {
     internal class EnvironmentVariableMemento : IMemento
     {
-        public string Value { get; }
-
-        public EnvironmentVariableMemento(string value)
-        {
-            Value = value;
-        }
+        public string Value { get; set; }
     }
 }

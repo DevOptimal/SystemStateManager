@@ -24,7 +24,10 @@ namespace DevOptimal.SystemStateManager.Registry
 
         public RegistryKeyMemento GetState()
         {
-            return new RegistryKeyMemento(Registry.RegistryKeyExists(Hive, View, SubKey));
+            return new RegistryKeyMemento
+            {
+                Exists = Registry.RegistryKeyExists(Hive, View, SubKey)
+            };
         }
 
         public void SetState(RegistryKeyMemento memento)

@@ -20,7 +20,10 @@ namespace DevOptimal.SystemStateManager.Environment
 
         public EnvironmentVariableMemento GetState()
         {
-            return new EnvironmentVariableMemento(Environment.GetEnvironmentVariable(Name, Target));
+            return new EnvironmentVariableMemento
+            {
+                Value = Environment.GetEnvironmentVariable(Name, Target)
+            };
         }
 
         public void SetState(EnvironmentVariableMemento memento)
