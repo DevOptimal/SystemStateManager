@@ -2,11 +2,6 @@
 {
     internal class FileMemento : IMemento
     {
-        public string Hash { get; }
-
-        public FileMemento(string hash)
-        {
-            Hash = hash;
-        }
+        public string Hash { get; set; }
     }
 }

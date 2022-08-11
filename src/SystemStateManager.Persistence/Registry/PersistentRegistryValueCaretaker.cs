@@ -13,7 +13,7 @@ namespace DevOptimal.SystemStateManager.Persistence.Registry
 
         [BsonCtor]
         public PersistentRegistryValueCaretaker(string _id, int processID, DateTime processStartTime, BsonDocument originator, BsonDocument memento)
-            : base(_id, processID, processStartTime, BsonMapper.Global.ToObject<PersistentRegistryValueOriginator>(originator), BsonMapper.Global.ToObject<RegistryValueMemento>(memento))
+            : base(_id, processID, processStartTime, LiteDatabaseFactory.Mapper.ToObject<PersistentRegistryValueOriginator>(originator), LiteDatabaseFactory.Mapper.ToObject<RegistryValueMemento>(memento))
         {
         }
     }

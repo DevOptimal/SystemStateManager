@@ -30,11 +30,19 @@ namespace DevOptimal.SystemStateManager.Registry
             if (Registry.RegistryValueExists(Hive, View, SubKey, Name))
             {
                 var (value, kind) = Registry.GetRegistryValue(Hive, View, SubKey, Name);
-                return new RegistryValueMemento(value, kind);
+                return new RegistryValueMemento
+                {
+                    Value = value,
+                    Kind = kind
+                };
             }
             else
             {
-                return new RegistryValueMemento(null, RegistryValueKind.None);
+                return new RegistryValueMemento
+                {
+                    Value = null,
+                    Kind = RegistryValueKind.None
+                };
             }
         }
 

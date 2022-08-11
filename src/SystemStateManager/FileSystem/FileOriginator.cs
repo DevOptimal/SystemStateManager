@@ -31,10 +31,16 @@ namespace DevOptimal.SystemStateManager.FileSystem
         {
             if (!FileSystem.FileExists(Path))
             {
-                return new FileMemento(null);
+                return new FileMemento
+                {
+                    Hash = null
+                };
             }
 
-            return new FileMemento(FileCache.UploadFile(Path));
+            return new FileMemento
+            {
+                Hash = FileCache.UploadFile(Path)
+            };
         }
 
         public void SetState(FileMemento memento)

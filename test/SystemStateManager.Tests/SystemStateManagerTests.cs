@@ -1,45 +1,26 @@
-﻿using DevOptimal.SystemUtilities.Environment;
-using System;
+﻿using System;
 
 namespace DevOptimal.SystemStateManager.Tests
 {
     [TestClass]
-    public class SystemStateManagerTests
+    public class SystemStateManagerTests : TestBase
     {
-        private MockEnvironment environment;
-
-        private MockSystemStateManager systemStateManager;
-
-        private const string name = "foo";
-
-        private const EnvironmentVariableTarget target = EnvironmentVariableTarget.Machine;
-
-        private const string expectedValue = "bar";
-
-        [TestInitialize]
-        public void TestInitializeAttribute()
-        {
-            environment = new MockEnvironment();
-
-            environment.SetEnvironmentVariable(name, expectedValue, target);
-
-            systemStateManager = new MockSystemStateManager(environment);
-        }
-
-        [TestCleanup]
-        public void TestCleanup()
-        {
-            systemStateManager.Dispose();
-        }
-
         [TestMethod]
         public void SystemStateManagerCorrectlyDisposes()
         {
-            using var snapshot = systemStateManager.SnapshotEnvironmentVariable(name, target);
+            var name = "foo";
+            var target = EnvironmentVariableTarget.Machine;
+            var expectedValue = "bar";
 
-            environment.SetEnvironmentVariable(name, null, target);
+            environment.SetEnvironmentVariable(name, expectedValue, target);
 
-            systemStateManager.Dispose();
+            using (var systemStateManager = CreateSystemStateManager())
+            {
+
+                systemStateManager.SnapshotEnvironmentVariable(name, target);
+
+                environment.SetEnvironmentVariable(name, null, target);
+            }
 
             Assert.AreEqual(expectedValue, environment.GetEnvironmentVariable(name, target));
         }
@@ -47,11 +28,18 @@ namespace DevOptimal.SystemStateManager.Tests
         [TestMethod]
         public void SnapshotCorrectlyDisposes()
         {
-            using var snapshot = systemStateManager.SnapshotEnvironmentVariable(name, target);
+            var name = "foo";
+            var target = EnvironmentVariableTarget.Machine;
+            var expectedValue = "bar";
 
-            environment.SetEnvironmentVariable(name, null, target);
+            environment.SetEnvironmentVariable(name, expectedValue, target);
 
-            snapshot.Dispose();
+            using var systemStateManager = CreateSystemStateManager();
+
+            using (systemStateManager.SnapshotEnvironmentVariable(name, target))
+            {
+                environment.SetEnvironmentVariable(name, null, target);
+            }
 
             Assert.AreEqual(expectedValue, environment.GetEnvironmentVariable(name, target));
         }
@@ -59,12 +47,19 @@ namespace DevOptimal.SystemStateManager.Tests
         [TestMethod]
         public void ReuseExistingSnapshot()
         {
+            var name = "foo";
+            var target = EnvironmentVariableTarget.Machine;
+            var expectedValue = "bar";
+
+            environment.SetEnvironmentVariable(name, expectedValue, target);
+
+            using var systemStateManager = CreateSystemStateManager();
             using (var snapshot1 = systemStateManager.SnapshotEnvironmentVariable(name, target))
             using (var snapshot2 = systemStateManager.SnapshotEnvironmentVariable(name, target))
             {
-                environment.SetEnvironmentVariable(name, null, target);
-
                 Assert.IsTrue(ReferenceEquals(snapshot1, snapshot2));
+
+                environment.SetEnvironmentVariable(name, null, target);
             }
 
             Assert.AreEqual(expectedValue, environment.GetEnvironmentVariable(name, target));

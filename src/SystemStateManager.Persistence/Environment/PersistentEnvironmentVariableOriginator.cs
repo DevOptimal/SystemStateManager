@@ -14,7 +14,7 @@ namespace DevOptimal.SystemStateManager.Persistence.Environment
 
         [BsonCtor]
         public PersistentEnvironmentVariableOriginator(string name, EnvironmentVariableTarget target, BsonDocument environment)
-            : this(name, target, BsonMapper.Global.ToObject<IEnvironment>(environment))
+            : this(name, target, LiteDatabaseFactory.Mapper.ToObject<IEnvironment>(environment))
         {
         }
     }

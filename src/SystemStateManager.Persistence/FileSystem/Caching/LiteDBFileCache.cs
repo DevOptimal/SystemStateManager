@@ -19,7 +19,7 @@ namespace DevOptimal.SystemStateManager.Persistence.FileSystem.Caching
         [BsonCtor]
         public LiteDBFileCache(BsonDocument fileSystem)
         {
-            FileSystem = BsonMapper.Global.ToObject<IFileSystem>(fileSystem);
+            FileSystem = LiteDatabaseFactory.Mapper.ToObject<IFileSystem>(fileSystem);
         }
 
         public void DownloadFile(string id, string destinationPath)
