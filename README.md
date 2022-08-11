@@ -22,4 +22,5 @@ Documentation can be found [here](https://github.com/DevOptimal/SystemStateManag
 
 ## Target Platforms
 
+- [.NET Framework 4.7.2](https://docs.microsoft.com/en-us/dotnet/framework/migration-guide/versions-and-dependencies#net-framework-472)
 - [.NET Standard 2.0](https://docs.microsoft.com/en-us/dotnet/standard/net-standard?tabs=net-standard-2-0)
