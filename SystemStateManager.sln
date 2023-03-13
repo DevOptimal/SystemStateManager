@@ -15,7 +15,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{261360A6
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SystemStateManager.Persistence.SQLite", "src\SystemStateManager.Persistence.SQLite\SystemStateManager.Persistence.SQLite.csproj", "{79BA8FC3-A70E-4684-A343-38B3E4B48CAE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SystemStateManager.Persistence.SQLite.Tests", "test\SystemStateManager.Persistence.SQLite.Tests\SystemStateManager.Persistence.SQLite.Tests.csproj", "{47A2D36E-1CFC-45AB-A080-136A03225AD3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SystemStateManager.Persistence.SQLite.Tests", "test\SystemStateManager.Persistence.SQLite.Tests\SystemStateManager.Persistence.SQLite.Tests.csproj", "{47A2D36E-1CFC-45AB-A080-136A03225AD3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

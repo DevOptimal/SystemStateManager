@@ -1,4 +1,4 @@
-﻿using SQLite;
+﻿using Microsoft.Data.Sqlite;
 using System;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -7,9 +7,9 @@ using System.Security.Principal;
 
 namespace DevOptimal.SystemStateManager.Persistence.SQLite
 {
-    internal static class SQLiteDatabaseFactory
+    internal static class SQLiteConnectionFactory
     {
-        public static SQLiteConnection GetDatabase()
+        public static SqliteConnection GetConnection()
         {
             if (!PersistentSystemStateManager.PersistenceURI.IsFile)
             {
@@ -37,7 +37,14 @@ namespace DevOptimal.SystemStateManager.Persistence.SQLite
                 }
             }
 
-            return new SQLiteConnection(databaseFile.FullName);
+            var connectionString = new SqliteConnectionStringBuilder
+            {
+                DataSource = databaseFile.FullName
+            }.ToString();
+            var connection = new SqliteConnection(connectionString);
+            connection.Open();
+
+            return connection;
         }
     }
 }

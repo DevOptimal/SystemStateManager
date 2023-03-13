@@ -27,7 +27,7 @@ namespace DevOptimal.SystemStateManager.Persistence.SQLite
             ProcessID = currentProcess.Id;
             ProcessStartTime = currentProcess.StartTime;
 
-            using (var database = SQLiteDatabaseFactory.GetDatabase())
+            using (var database = SQLiteConnectionFactory.GetConnection())
             {
                 database.BeginTransaction();
                 try
@@ -76,7 +76,7 @@ namespace DevOptimal.SystemStateManager.Persistence.SQLite
                 {
                     if (disposing)
                     {
-                        using (var database = SQLiteDatabaseFactory.GetDatabase())
+                        using (var database = SQLiteConnectionFactory.GetConnection())
                         {
                             database.BeginTransaction();
                             try
