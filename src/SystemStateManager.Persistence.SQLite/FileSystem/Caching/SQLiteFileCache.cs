@@ -37,35 +37,31 @@ namespace DevOptimal.SystemStateManager.Persistence.SQLite.FileSystem.Caching
         {
             FileSystem = fileSystem;
 
-            using (var connection = SQLiteConnectionFactory.GetConnection())
-            {
-                connection.Execute($@"CREATE TABLE IF NOT EXISTS {nameof(FileRecord)} (
-                    {nameof(FileRecord.ID)} INTEGER PRIMARY KEY,
-                    {nameof(FileRecord.FileID)} TEXT,
-                    {nameof(FileRecord.ChunkHash)} TEXT,
-                    {nameof(FileRecord.ChunkIndex)} INTEGER
-                );");
-                connection.Execute($@"CREATE INDEX IF NOT EXISTS {nameof(FileRecord.FileID)} ON {nameof(FileRecord)} (
-                    {nameof(FileRecord.FileID)}
-                );");
-                connection.Execute($@"CREATE TABLE IF NOT EXISTS {nameof(FileChunk)} (
-                    {nameof(FileChunk.Hash)} TEXT PRIMARY KEY,
-                    {nameof(FileChunk.Data)} BLOB
-                );");
-            }
+            PersistentSystemStateManager.Connection.Execute($@"CREATE TABLE IF NOT EXISTS {nameof(FileRecord)} (
+                {nameof(FileRecord.ID)} INTEGER PRIMARY KEY,
+                {nameof(FileRecord.FileID)} TEXT,
+                {nameof(FileRecord.ChunkHash)} TEXT,
+                {nameof(FileRecord.ChunkIndex)} INTEGER
+            );");
+            PersistentSystemStateManager.Connection.Execute($@"CREATE INDEX IF NOT EXISTS {nameof(FileRecord.FileID)} ON {nameof(FileRecord)} (
+                {nameof(FileRecord.FileID)}
+            );");
+            PersistentSystemStateManager.Connection.Execute($@"CREATE TABLE IF NOT EXISTS {nameof(FileChunk)} (
+                {nameof(FileChunk.Hash)} TEXT PRIMARY KEY,
+                {nameof(FileChunk.Data)} BLOB
+            );");
         }
 
         public void DownloadFile(string id, string destinationPath)
         {
             var destinationFile = new FileInfo(destinationPath);
-            using (var connection = SQLiteConnectionFactory.GetConnection())
             using (var fileStream = FileSystem.OpenFile(destinationFile.FullName, FileMode.OpenOrCreate, FileAccess.Write, FileShare.None))
             {
                 fileStream.SetLength(0); // Delete existing file.
-                var records = connection.Query<FileRecord>($"SELECT * FROM {nameof(FileRecord)} WHERE {nameof(FileRecord.FileID)} = '{id}'").OrderBy(r => r.ChunkIndex).ToList();
+                var records = PersistentSystemStateManager.Connection.Query<FileRecord>($"SELECT * FROM {nameof(FileRecord)} WHERE {nameof(FileRecord.FileID)} = '{id}'").OrderBy(r => r.ChunkIndex).ToList();
                 foreach (var record in records)
                 {
-                    var chunk = connection.QuerySingle<FileChunk>($"SELECT * FROM {nameof(FileChunk)} WHERE {nameof(FileChunk.Hash)} = '{record.ChunkHash}'");
+                    var chunk = PersistentSystemStateManager.Connection.QuerySingle<FileChunk>($"SELECT * FROM {nameof(FileChunk)} WHERE {nameof(FileChunk.Hash)} = '{record.ChunkHash}'");
                     fileStream.Write(chunk.Data, 0, chunk.Data.Length);
                 }
             }
@@ -75,7 +71,6 @@ namespace DevOptimal.SystemStateManager.Persistence.SQLite.FileSystem.Caching
         {
             var fileID = Guid.NewGuid().ToString();
             var file = new FileInfo(sourcePath);
-            using (var connection = SQLiteConnectionFactory.GetConnection())
             using (var fileStream = FileSystem.OpenFile(file.FullName, FileMode.Open, FileAccess.Read, FileShare.Read))
             using (var chunkHashAlgorithm = SHA1.Create())
             {
@@ -90,7 +85,7 @@ namespace DevOptimal.SystemStateManager.Persistence.SQLite.FileSystem.Caching
                     var hash = BitConverter.ToString(chunkHashAlgorithm.ComputeHash(buffer)).Replace("-", string.Empty);
                     try
                     {
-                        connection.Execute(
+                        PersistentSystemStateManager.Connection.Execute(
                             $@"INSERT INTO {nameof(FileChunk)} ({nameof(FileChunk.Hash)}, {nameof(FileChunk.Data)}) VALUES (@{nameof(FileChunk.Hash)}, @{nameof(FileChunk.Data)})",
                             new FileChunk {
                                 Hash = hash,
@@ -105,7 +100,7 @@ namespace DevOptimal.SystemStateManager.Persistence.SQLite.FileSystem.Caching
                     {
                         buffer = null;
                     }
-                    connection.Execute(
+                    PersistentSystemStateManager.Connection.Execute(
                         $@"INSERT INTO {nameof(FileRecord)} ({nameof(FileRecord.FileID)}, {nameof(FileRecord.ChunkHash)}, {nameof(FileRecord.ChunkIndex)}) VALUES (@{nameof(FileRecord.FileID)}, @{nameof(FileRecord.ChunkHash)}, @{nameof(FileRecord.ChunkIndex)})",
                         new FileRecord
                         {

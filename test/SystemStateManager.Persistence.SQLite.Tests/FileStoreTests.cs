@@ -6,15 +6,13 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 
-namespace SystemStateManager.Persistence.SQLite.Tests
+namespace DevOptimal.SystemStateManager.Persistence.SQLite.Tests
 {
     [TestClass]
-    public class FileStoreTests
+    public class FileStoreTests : TestBase
     {
         private const string filePath = @"";
         private const string fileID = "";
-
-        public TestContext TestContext { get; set; }
 
         public class FileRecord
         {
@@ -38,63 +36,61 @@ namespace SystemStateManager.Persistence.SQLite.Tests
         public void UploadFile()
         {
             const int maxChunkSize = 10000000;//999999953;
-            using (var connection = GetConnection())
+
+            connection.Execute($@"CREATE TABLE IF NOT EXISTS {nameof(FileRecord)}s (
+                {nameof(FileRecord.ID)} INTEGER PRIMARY KEY,
+                {nameof(FileRecord.FileID)} TEXT,
+                {nameof(FileRecord.ChunkHash)} TEXT,
+                {nameof(FileRecord.ChunkIndex)} INTEGER
+            );");
+            connection.Execute($@"CREATE INDEX IF NOT EXISTS {nameof(FileRecord.FileID)} ON {nameof(FileRecord)}s (
+                {nameof(FileRecord.FileID)}
+            );");
+            connection.Execute($@"CREATE TABLE IF NOT EXISTS {nameof(FileChunk)}s (
+                {nameof(FileChunk.Hash)} TEXT PRIMARY KEY,
+                {nameof(FileChunk.Data)} BLOB
+            );");
+
+            var file = new FileInfo(filePath);
+            using (var fileStream = File.Open(file.FullName, FileMode.Open, FileAccess.Read, FileShare.Read))
             {
-                connection.Execute($@"CREATE TABLE IF NOT EXISTS {nameof(FileRecord)}s (
-                    {nameof(FileRecord.ID)} INTEGER PRIMARY KEY,
-                    {nameof(FileRecord.FileID)} TEXT,
-                    {nameof(FileRecord.ChunkHash)} TEXT,
-                    {nameof(FileRecord.ChunkIndex)} INTEGER
-                );");
-                connection.Execute($@"CREATE INDEX IF NOT EXISTS {nameof(FileRecord.FileID)} ON {nameof(FileRecord)}s (
-                    {nameof(FileRecord.FileID)}
-                );");
-                connection.Execute($@"CREATE TABLE IF NOT EXISTS {nameof(FileChunk)}s (
-                    {nameof(FileChunk.Hash)} TEXT PRIMARY KEY,
-                    {nameof(FileChunk.Data)} BLOB
-                );");
-
-                var file = new FileInfo(filePath);
-                using (var fileStream = File.Open(file.FullName, FileMode.Open, FileAccess.Read, FileShare.Read))
+                var index = 0;
+                var remainingBytes = file.Length;
+                while (remainingBytes > 0)
                 {
-                    var index = 0;
-                    var remainingBytes = file.Length;
-                    while (remainingBytes > 0)
+                    var chunkSize = Math.Min(maxChunkSize, remainingBytes);
+                    var buffer = new byte[chunkSize];
+                    remainingBytes -= fileStream.Read(buffer, 0, (int)chunkSize);
+                    var hash = BitConverter.ToString(SHA1.HashData(buffer)).Replace("-", string.Empty);
+                    try
                     {
-                        var chunkSize = Math.Min(maxChunkSize, remainingBytes);
-                        var buffer = new byte[chunkSize];
-                        remainingBytes -= fileStream.Read(buffer, 0, (int)chunkSize);
-                        var hash = BitConverter.ToString(SHA1.HashData(buffer)).Replace("-", string.Empty);
-                        try
-                        {
-                            connection.Execute(
-                            sql: $@"INSERT INTO {nameof(FileChunk)}s ({nameof(FileChunk.Hash)}, {nameof(FileChunk.Data)}) VALUES (@{nameof(FileChunk.Hash)}, @{nameof(FileChunk.Data)})",
-                            param: new FileChunk
-                            {
-                                Hash = hash,
-                                Data = buffer
-                            });
-                        }
-                        catch (SqliteException ex) when (ex.SqliteErrorCode == 19 && ex.SqliteExtendedErrorCode == 1555)
-                        {
-                            // Ignorable - means the chunk has already been uploaded.
-                        }
-                        finally
-                        {
-                            buffer = null;
-                        }
                         connection.Execute(
-                            sql: $@"INSERT INTO {nameof(FileRecord)}s ({nameof(FileRecord.FileID)}, {nameof(FileRecord.ChunkHash)}, {nameof(FileRecord.ChunkIndex)}) VALUES (@{nameof(FileRecord.FileID)}, @{nameof(FileRecord.ChunkHash)}, @{nameof(FileRecord.ChunkIndex)})",
-                            param: new FileRecord
-                            {
-                                FileID = fileID,
-                                ChunkHash = hash,
-                                ChunkIndex = index++
-                            });
+                        sql: $@"INSERT INTO {nameof(FileChunk)}s ({nameof(FileChunk.Hash)}, {nameof(FileChunk.Data)}) VALUES (@{nameof(FileChunk.Hash)}, @{nameof(FileChunk.Data)})",
+                        param: new FileChunk
+                        {
+                            Hash = hash,
+                            Data = buffer
+                        });
                     }
-
-                    Console.WriteLine("DONE");
+                    catch (SqliteException ex) when (ex.SqliteErrorCode == 19 && ex.SqliteExtendedErrorCode == 1555)
+                    {
+                        // Ignorable - means the chunk has already been uploaded.
+                    }
+                    finally
+                    {
+                        buffer = null;
+                    }
+                    connection.Execute(
+                        sql: $@"INSERT INTO {nameof(FileRecord)}s ({nameof(FileRecord.FileID)}, {nameof(FileRecord.ChunkHash)}, {nameof(FileRecord.ChunkIndex)}) VALUES (@{nameof(FileRecord.FileID)}, @{nameof(FileRecord.ChunkHash)}, @{nameof(FileRecord.ChunkIndex)})",
+                        param: new FileRecord
+                        {
+                            FileID = fileID,
+                            ChunkHash = hash,
+                            ChunkIndex = index++
+                        });
                 }
+
+                Console.WriteLine("DONE");
             }
         }
 
@@ -103,7 +99,6 @@ namespace SystemStateManager.Persistence.SQLite.Tests
         {
             var destinationPath = Path.Combine(TestContext.ResultsDirectory, Path.GetFileName(filePath));
             var destinationFile = new FileInfo(destinationPath);
-            using (var connection = GetConnection())
             using (var fileStream = File.Open(destinationFile.FullName, FileMode.OpenOrCreate, FileAccess.Write, FileShare.None))
             {
                 fileStream.SetLength(0); // Delete existing file.
@@ -137,19 +132,6 @@ namespace SystemStateManager.Persistence.SQLite.Tests
             var actualHash = BitConverter.ToString(sha1.Hash).Replace("-", string.Empty);
 
             Assert.AreEqual(expectedHash, actualHash);
-        }
-
-        private SqliteConnection GetConnection()
-        {
-            var connectionString = new SqliteConnectionStringBuilder
-            {
-                DataSource = Path.Combine(TestContext.ResultsDirectory, "persistence.sqlite")
-            }.ToString();
-            var connection = new SqliteConnection(connectionString);
-
-            connection.Open();
-
-            return connection;
         }
     }
 }

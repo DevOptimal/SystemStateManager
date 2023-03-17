@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Data.Sqlite;
+using System;
 using System.Diagnostics;
 
 namespace DevOptimal.SystemStateManager.Persistence.SQLite
@@ -7,9 +8,9 @@ namespace DevOptimal.SystemStateManager.Persistence.SQLite
         where TOriginator : IOriginator<TMemento>
         where TMemento : IMemento
     {
-        public int ProcessID { get; }
+        public string ProcessID { get; }
 
-        public DateTime ProcessStartTime { get; }
+        protected readonly SqliteConnection connection;
 
         private readonly bool persisted;
 
@@ -21,29 +22,27 @@ namespace DevOptimal.SystemStateManager.Persistence.SQLite
         /// <param name="id">A string that uniquely identifies the resource represented by the caretaker.</param>
         /// <param name="originator">The caretaker's originator, used for getting and setting a memento from the resource.</param>
         /// <exception cref="Exception"></exception>
-        protected PersistentCaretaker(string id, TOriginator originator) : base(id, originator)
+        protected PersistentCaretaker(string id, TOriginator originator, SqliteConnection connection) : base(id, originator)
         {
+            this.connection = connection;
             var currentProcess = Process.GetCurrentProcess();
-            ProcessID = currentProcess.Id;
-            ProcessStartTime = currentProcess.StartTime;
+            ProcessID = $"{currentProcess.Id}/{currentProcess.StartTime.Ticks}";
 
-            using (var database = SQLiteConnectionFactory.GetConnection())
+            using (var transaction = this.connection.BeginTransaction())
             {
-                database.BeginTransaction();
                 try
                 {
-                    var col = database.GetCollection<IPersistentSnapshot>();
-                    col.Insert(this);
-                    database.Commit();
+                    Persist();
+                    transaction.Commit();
                     persisted = true;
                 }
                 catch (Exception ex)
                 {
-                    database.Rollback();
+                    transaction.Rollback();
 
-                    if (ex is LiteException liteEx && liteEx.ErrorCode == LiteException.INDEX_DUPLICATE_KEY)
+                    if (ex is SqliteException sqliteEx && sqliteEx.SqliteErrorCode == 19 && sqliteEx.SqliteExtendedErrorCode == 1555)
                     {
-                        throw new ResourceLockedException($"The resource '{ID}' is locked by another instance.", liteEx);
+                        throw new ResourceLockedException($"The resource '{ID}' is locked by another instance.", sqliteEx);
                     }
 
                     throw;
@@ -59,12 +58,15 @@ namespace DevOptimal.SystemStateManager.Persistence.SQLite
         /// <param name="processStartTime">The start time of the process that created the caretaker. Process IDs are reused, so start time is required to identify a unique process.</param>
         /// <param name="originator">The caretaker's originator, used for getting and setting a memento from the resource.</param>
         /// <param name="memento">The caretaker's memento, which stores the current state of the resource.</param>
-        protected PersistentCaretaker(string id, int processID, DateTime processStartTime, TOriginator originator, TMemento memento) : base(id, originator, memento)
+        protected PersistentCaretaker(string id, string processID, TOriginator originator, TMemento memento) : base(id, originator, memento)
         {
             ProcessID = processID;
-            ProcessStartTime = processStartTime;
             persisted = true;
         }
+
+        protected abstract void Persist();
+
+        protected abstract void Unpersist();
 
         protected override void Dispose(bool disposing)
         {
@@ -76,18 +78,16 @@ namespace DevOptimal.SystemStateManager.Persistence.SQLite
                 {
                     if (disposing)
                     {
-                        using (var database = SQLiteConnectionFactory.GetConnection())
+                        using (var transaction = connection.BeginTransaction())
                         {
-                            database.BeginTransaction();
                             try
                             {
-                                var col = database.GetCollection<IPersistentSnapshot>();
-                                col.Delete(ID);
-                                database.Commit();
+                                Unpersist();
+                                transaction.Commit();
                             }
                             catch
                             {
-                                database.Rollback();
+                                transaction.Rollback();
                                 throw;
                             }
                         }
