@@ -11,6 +11,16 @@ namespace DevOptimal.SystemStateManager.Persistence.SQLite.FileSystem
         public PersistentDirectoryCaretaker(string id, DirectoryOriginator originator, SqliteConnection connection)
             : base(id, originator, connection)
         {
+        }
+
+        public PersistentDirectoryCaretaker(string id, int processID, DateTime processStartTime, DirectoryOriginator originator, DirectoryMemento memento)
+            : base(id, processID, processStartTime, originator, memento)
+        {
+        }
+
+
+        protected override void Initialize()
+        {
             var command = connection.CreateCommand();
             command.CommandText =
             $@"CREATE TABLE IF NOT EXISTS {nameof(PersistentDirectoryCaretaker)} (
@@ -21,11 +31,6 @@ namespace DevOptimal.SystemStateManager.Persistence.SQLite.FileSystem
                 {nameof(Memento.Exists)} INTEGER NOT NULL
             );";
             command.ExecuteNonQuery();
-        }
-
-        public PersistentDirectoryCaretaker(string id, int processID, DateTime processStartTime, DirectoryOriginator originator, DirectoryMemento memento)
-            : base(id, processID, processStartTime, originator, memento)
-        {
         }
 
         protected override void Persist()

@@ -31,6 +31,8 @@ namespace DevOptimal.SystemStateManager.Persistence.SQLite
             ProcessID = currentProcess.Id;
             ProcessStartTime = currentProcess.StartTime;
 
+            Initialize();
+
             using (var transaction = this.connection.BeginTransaction())
             {
                 try
@@ -67,6 +69,8 @@ namespace DevOptimal.SystemStateManager.Persistence.SQLite
             ProcessStartTime = processStartTime;
             persisted = true;
         }
+
+        protected abstract void Initialize();
 
         protected abstract void Persist();
 

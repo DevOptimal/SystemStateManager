@@ -1,4 +1,5 @@
-﻿using Microsoft.Win32;
+﻿using DevOptimal.SystemStateManager.Persistence.SQLite;
+using Microsoft.Win32;
 using System;
 using System.IO;
 using System.Text;
@@ -25,7 +26,7 @@ namespace DevOptimal.SystemStateManager.Persistence.Tests
 
             environment.SetEnvironmentVariable(environmentVariableName, null, environmentVariableTarget);
 
-            PersistentSystemStateManager.RestoreAbandonedSnapshots();
+            PersistentSystemStateManager.RestoreAbandonedSnapshots(environment, fileSystem, registry);
 
             Assert.AreEqual(expectedEnvironmentVariableValue, environment.GetEnvironmentVariable(environmentVariableName, environmentVariableTarget));
         }
@@ -44,7 +45,7 @@ namespace DevOptimal.SystemStateManager.Persistence.Tests
 
             fileSystem.DeleteDirectory(directoryPath, recursive: true);
 
-            PersistentSystemStateManager.RestoreAbandonedSnapshots();
+            PersistentSystemStateManager.RestoreAbandonedSnapshots(environment, fileSystem, registry);
 
             Assert.IsTrue(fileSystem.DirectoryExists(directoryPath));
         }
@@ -67,7 +68,7 @@ namespace DevOptimal.SystemStateManager.Persistence.Tests
 
             fileSystem.DeleteFile(filePath);
 
-            PersistentSystemStateManager.RestoreAbandonedSnapshots();
+            PersistentSystemStateManager.RestoreAbandonedSnapshots(environment, fileSystem, registry);
 
             var actualFileBytes = new byte[expectedFileBytes.Length];
             using (var stream = fileSystem.OpenFile(filePath, FileMode.Open, FileAccess.Read, FileShare.None))
@@ -93,7 +94,7 @@ namespace DevOptimal.SystemStateManager.Persistence.Tests
 
             registry.DeleteRegistryKey(registryHive, registryView, registrySubKey, recursive: true);
 
-            PersistentSystemStateManager.RestoreAbandonedSnapshots();
+            PersistentSystemStateManager.RestoreAbandonedSnapshots(environment, fileSystem, registry);
 
             Assert.IsTrue(registry.RegistryKeyExists(registryHive, registryView, registrySubKey));
         }
@@ -149,7 +150,7 @@ namespace DevOptimal.SystemStateManager.Persistence.Tests
             registry.DeleteRegistryValue(registryHive, registryView, registrySubKey, qwordRegistryValueName);
             registry.DeleteRegistryValue(registryHive, registryView, registrySubKey, multiStringRegistryValueName);
 
-            PersistentSystemStateManager.RestoreAbandonedSnapshots();
+            PersistentSystemStateManager.RestoreAbandonedSnapshots(environment, fileSystem, registry);
 
             var (stringRegistryValueActualValue, stringRegistryValueActualKind) = registry.GetRegistryValue(registryHive, registryView, registrySubKey, stringRegistryValueName);
             Assert.AreEqual(stringRegistryValueExpectedValue, stringRegistryValueActualValue);

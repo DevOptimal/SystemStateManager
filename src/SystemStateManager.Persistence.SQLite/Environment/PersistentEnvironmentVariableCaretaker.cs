@@ -11,6 +11,15 @@ namespace DevOptimal.SystemStateManager.Persistence.SQLite.Environment
         public PersistentEnvironmentVariableCaretaker(string id, EnvironmentVariableOriginator originator, SqliteConnection connection)
             : base(id, originator, connection)
         {
+        }
+
+        public PersistentEnvironmentVariableCaretaker(string id, long processID, DateTime processStartTime, EnvironmentVariableOriginator originator, EnvironmentVariableMemento memento)
+            : base(id, (int)processID, processStartTime, originator, memento)
+        {
+        }
+
+        protected override void Initialize()
+        {
             var command = connection.CreateCommand();
             command.CommandText =
             $@"CREATE TABLE IF NOT EXISTS {nameof(PersistentEnvironmentVariableCaretaker)} (
@@ -22,11 +31,6 @@ namespace DevOptimal.SystemStateManager.Persistence.SQLite.Environment
                 {nameof(Memento.Value)} TEXT
             );";
             command.ExecuteNonQuery();
-        }
-
-        public PersistentEnvironmentVariableCaretaker(string id, long processID, DateTime processStartTime, EnvironmentVariableOriginator originator, EnvironmentVariableMemento memento)
-            : base(id, (int)processID, processStartTime, originator, memento)
-        {
         }
 
         protected override void Persist()

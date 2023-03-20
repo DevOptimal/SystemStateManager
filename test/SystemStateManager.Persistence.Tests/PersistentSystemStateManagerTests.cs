@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DevOptimal.SystemStateManager.Persistence.SQLite;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -20,7 +21,7 @@ namespace DevOptimal.SystemStateManager.Persistence.Tests
 
             environment.SetEnvironmentVariable(name, null, target);
 
-            PersistentSystemStateManager.RestoreAbandonedSnapshots();
+            PersistentSystemStateManager.RestoreAbandonedSnapshots(environment, fileSystem, registry);
             Assert.AreNotEqual(expectedValue, environment.GetEnvironmentVariable(name, target));
         }
 

@@ -12,6 +12,16 @@ namespace DevOptimal.SystemStateManager.Persistence.SQLite.Registry
         public PersistentRegistryKeyCaretaker(string id, RegistryKeyOriginator originator, SqliteConnection connection)
             : base(id, originator, connection)
         {
+        }
+
+        public PersistentRegistryKeyCaretaker(string id, int processID, DateTime processStartTime, RegistryKeyOriginator originator, RegistryKeyMemento memento)
+            : base(id, processID, processStartTime, originator, memento)
+        {
+        }
+
+
+        protected override void Initialize()
+        {
             var command = connection.CreateCommand();
             command.CommandText =
             $@"CREATE TABLE IF NOT EXISTS {nameof(PersistentRegistryKeyCaretaker)} (
@@ -24,11 +34,6 @@ namespace DevOptimal.SystemStateManager.Persistence.SQLite.Registry
                 {nameof(Memento.Exists)} INTEGER NOT NULL
             );";
             command.ExecuteNonQuery();
-        }
-
-        public PersistentRegistryKeyCaretaker(string id, int processID, DateTime processStartTime, RegistryKeyOriginator originator, RegistryKeyMemento memento)
-            : base(id, processID, processStartTime, originator, memento)
-        {
         }
 
         protected override void Persist()

@@ -1,7 +1,7 @@
-﻿using DevOptimal.SystemUtilities.Environment;
+﻿using DevOptimal.SystemStateManager.Persistence.SQLite;
+using DevOptimal.SystemUtilities.Environment;
 using DevOptimal.SystemUtilities.FileSystem;
 using DevOptimal.SystemUtilities.Registry;
-using LiteDB;
 using Microsoft.QualityTools.Testing.Fakes;
 using System;
 using System.Diagnostics.Fakes;
@@ -29,19 +29,8 @@ namespace DevOptimal.SystemStateManager.Persistence.Tests
         public void TestInitialize()
         {
             environment = new MockEnvironment();
-            LiteDatabaseFactory.Mapper.RegisterType(
-                serialize: value => BsonMapper.Global.ToDocument(value),//new BsonValue(value),
-                deserialize: bson => environment);
-
             fileSystem = new MockFileSystem();
-            LiteDatabaseFactory.Mapper.RegisterType(
-                serialize: value => BsonMapper.Global.ToDocument(value),//new BsonValue(value),
-                deserialize: bson => fileSystem);
-
             registry = new MockRegistry();
-            LiteDatabaseFactory.Mapper.RegisterType(
-                serialize: value => BsonMapper.Global.ToDocument(value),//new BsonValue(value),
-                deserialize: bson => registry);
         }
 
         protected IDisposable CreateShimsContext()
