@@ -1,9 +1,10 @@
-﻿using Dapper;
-using DevOptimal.SystemStateManager.Registry;
+﻿using DevOptimal.SystemStateManager.Registry;
+using DevOptimal.SystemUtilities.Registry;
 using Microsoft.Data.Sqlite;
 using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 
@@ -11,64 +12,113 @@ namespace DevOptimal.SystemStateManager.Persistence.SQLite.Registry
 {
     internal class PersistentRegistryValueCaretaker : PersistentCaretaker<RegistryValueOriginator, RegistryValueMemento>
     {
-        public RegistryHive Hive => Originator.Hive;
-
-        public RegistryView View => Originator.View;
-
-        public string SubKey => Originator.SubKey;
-
-        public string Name => Originator.Name;
-
-        public byte[] Value => ConvertValueToBytes(Memento.Value);
-
-        public RegistryValueKind Kind => Memento.Kind;
-
         public PersistentRegistryValueCaretaker(string id, RegistryValueOriginator originator, SqliteConnection connection)
             : base(id, originator, connection)
         {
-            connection.Execute($@"CREATE TABLE IF NOT EXISTS {nameof(PersistentRegistryKeyCaretaker)}s (
+            var command = connection.CreateCommand();
+            command.CommandText =
+            $@"CREATE TABLE IF NOT EXISTS {nameof(PersistentRegistryValueCaretaker)} (
                 {nameof(ID)} TEXT PRIMARY KEY,
-                {nameof(ProcessID)} TEXT NOT NULL,
-                {nameof(Hive)} INTEGER NOT NULL,
-                {nameof(View)} INTEGER NOT NULL,
-                {nameof(SubKey)} TEXT NOT NULL,
-                {nameof(Name)} TEXT,
-                {nameof(Value)} BLOB,
-                {nameof(Kind)} INTEGER NOT NULL
-            );");
+                {nameof(ProcessID)} TEXT,
+                {nameof(ProcessStartTime)} INTEGER,
+                {nameof(Originator.Hive)} INTEGER NOT NULL,
+                {nameof(Originator.View)} INTEGER NOT NULL,
+                {nameof(Originator.SubKey)} TEXT NOT NULL,
+                {nameof(Originator.Name)} TEXT,
+                {nameof(Memento.Value)} BLOB,
+                {nameof(Memento.Kind)} INTEGER NOT NULL
+            );";
+            command.ExecuteNonQuery();
         }
 
-        public PersistentRegistryValueCaretaker(string id, string processID, long hive, long view, string subKey, string name, byte[] value, long kind)
-            : base(id, processID, new RegistryValueOriginator((RegistryHive)hive, (RegistryView)view, subKey, name), new RegistryValueMemento { Value = ConvertBytesToValue(value), Kind = (RegistryValueKind)kind })
+        public PersistentRegistryValueCaretaker(string id, int processID, DateTime processStartTime, RegistryValueOriginator originator, RegistryValueMemento memento)
+            : base(id, processID, processStartTime, originator, memento)
         {
         }
 
         protected override void Persist()
         {
-            connection.Execute($@"INSERT INTO {nameof(PersistentRegistryValueCaretaker)}s (
+            var command = connection.CreateCommand();
+            command.CommandText =
+            $@"INSERT INTO {nameof(PersistentRegistryValueCaretaker)} (
                 {nameof(ID)},
                 {nameof(ProcessID)},
-                {nameof(Hive)},
-                {nameof(View)},
-                {nameof(SubKey)},
-                {nameof(Name)},
-                {nameof(Value)},
-                {nameof(Kind)}
+                {nameof(ProcessStartTime)},
+                {nameof(Originator.Hive)},
+                {nameof(Originator.View)},
+                {nameof(Originator.SubKey)},
+                {nameof(Originator.Name)},
+                {nameof(Memento.Value)},
+                {nameof(Memento.Kind)}
             ) VALUES (
                 @{nameof(ID)},
                 @{nameof(ProcessID)},
-                @{nameof(Hive)},
-                @{nameof(View)},
-                @{nameof(SubKey)},
-                @{nameof(Name)},
-                @{nameof(Value)},
-                @{nameof(Kind)}
-            );", this);
+                @{nameof(ProcessStartTime)},
+                @{nameof(Originator.Hive)},
+                @{nameof(Originator.View)},
+                @{nameof(Originator.SubKey)},
+                @{nameof(Originator.Name)},
+                @{nameof(Memento.Value)},
+                @{nameof(Memento.Kind)}
+            );";
+            command.Parameters.AddWithValue($"@{nameof(ID)}", ID);
+            command.Parameters.AddWithValue($"@{nameof(ProcessID)}", ProcessID);
+            command.Parameters.AddWithValue($"@{nameof(ProcessStartTime)}", ProcessStartTime.Ticks);
+            command.Parameters.AddWithValue($"@{nameof(Originator.Hive)}", Originator.Hive);
+            command.Parameters.AddWithValue($"@{nameof(Originator.View)}", Originator.View);
+            command.Parameters.AddWithValue($"@{nameof(Originator.SubKey)}", Originator.SubKey);
+            command.Parameters.AddWithValue($"@{nameof(Originator.Name)}", Originator.Name);
+            command.Parameters.AddWithValue($"@{nameof(Memento.Value)}", ConvertValueToBytes(Memento.Value));
+            command.Parameters.AddWithValue($"@{nameof(Memento.Kind)}", Memento.Kind);
+            command.ExecuteNonQuery();
         }
 
         protected override void Unpersist()
         {
-            connection.Execute($@"DELETE FROM {nameof(PersistentRegistryValueCaretaker)}s WHERE {nameof(ID)} = @{nameof(ID)};", this);
+            var command = connection.CreateCommand();
+            command.CommandText = $@"DELETE FROM {nameof(PersistentRegistryValueCaretaker)} WHERE {nameof(ID)} = @{nameof(ID)};";
+            command.Parameters.AddWithValue($"@{nameof(ID)}", ID);
+            command.ExecuteNonQuery();
+        }
+
+        public static IEnumerable<IPersistentSnapshot> GetCaretakers(SqliteConnection connection, IRegistry registry)
+        {
+            var caretakers = new List<PersistentRegistryValueCaretaker>();
+            var command = connection.CreateCommand();
+            command.CommandText = $@"SELECT * FROM {nameof(PersistentRegistryValueCaretaker)};";
+            using (var reader = command.ExecuteReader())
+            {
+                while (reader.Read())
+                {
+                    byte[] valueBytes;
+                    using (var valueStream = reader.GetStream(reader.GetOrdinal(nameof(RegistryValueMemento.Value))))
+                    using (var memoryStream = new MemoryStream())
+                    {
+                        valueStream.CopyTo(memoryStream);
+                        valueBytes = memoryStream.ToArray();
+                    }
+                    var caretaker = new PersistentRegistryValueCaretaker(
+                        id: reader.GetString(reader.GetOrdinal(nameof(ID))),
+                        processID: reader.GetInt32(reader.GetOrdinal(nameof(ProcessID))),
+                        processStartTime: new DateTime(reader.GetInt64(reader.GetOrdinal(nameof(ProcessStartTime)))),
+                        originator: new RegistryValueOriginator(
+                            hive: (RegistryHive)reader.GetInt32(reader.GetOrdinal(nameof(RegistryValueOriginator.Hive))),
+                            view: (RegistryView)reader.GetInt32(reader.GetOrdinal(nameof(RegistryValueOriginator.View))),
+                            subKey: reader.GetString(reader.GetOrdinal(nameof(RegistryValueOriginator.SubKey))),
+                            name: reader.GetString(reader.GetOrdinal(nameof(RegistryValueOriginator.Name))),
+                            registry: registry
+                        ),
+                        memento: new RegistryValueMemento
+                        {
+                            Value = ConvertBytesToValue(valueBytes),
+                            Kind = (RegistryValueKind)reader.GetInt32(reader.GetOrdinal(nameof(RegistryValueMemento.Kind)))
+                        }
+                    );
+                    caretakers.Add(caretaker);
+                }
+            }
+
+            return caretakers;
         }
 
         private static byte[] ConvertValueToBytes(object value)

@@ -4,6 +4,8 @@ namespace DevOptimal.SystemStateManager.Persistence.SQLite
 {
     internal interface IPersistentSnapshot : ISnapshot
     {
-        string ProcessID { get; }
+        int ProcessID { get; }
+
+        DateTime ProcessStartTime { get; }
     }
 }

@@ -1,9 +1,7 @@
-using Dapper;
 using Microsoft.Data.Sqlite;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.IO;
-using System.Linq;
 using System.Security.Cryptography;
 
 namespace DevOptimal.SystemStateManager.Persistence.SQLite.Tests
@@ -12,22 +10,13 @@ namespace DevOptimal.SystemStateManager.Persistence.SQLite.Tests
     public class FileStoreTests : TestBase
     {
         private const string filePath = @"";
-        private const string fileID = "";
-
-        public class FileRecord
-        {
-            public int ID { get; set; }
-
-            public string FileID { get; set; }
-
-            public string ChunkHash { get; set; }
-
-            public int ChunkIndex { get; set; }
-        }
+        private const string fileID = "A6BA9119-75F6-4630-B27B-C00238CCF751";
 
         public class FileChunk
         {
-            public string Hash { get; set; }
+            public int FileID { get; set; }
+             
+            public int ChunkIndex { get; set; }
 
             public byte[] Data { get; set; }
         }
@@ -35,21 +24,17 @@ namespace DevOptimal.SystemStateManager.Persistence.SQLite.Tests
         [TestMethod]
         public void UploadFile()
         {
-            const int maxChunkSize = 10000000;//999999953;
+            const int maxChunkSize = 999999953;
 
-            connection.Execute($@"CREATE TABLE IF NOT EXISTS {nameof(FileRecord)}s (
-                {nameof(FileRecord.ID)} INTEGER PRIMARY KEY,
-                {nameof(FileRecord.FileID)} TEXT,
-                {nameof(FileRecord.ChunkHash)} TEXT,
-                {nameof(FileRecord.ChunkIndex)} INTEGER
-            );");
-            connection.Execute($@"CREATE INDEX IF NOT EXISTS {nameof(FileRecord.FileID)} ON {nameof(FileRecord)}s (
-                {nameof(FileRecord.FileID)}
-            );");
-            connection.Execute($@"CREATE TABLE IF NOT EXISTS {nameof(FileChunk)}s (
-                {nameof(FileChunk.Hash)} TEXT PRIMARY KEY,
-                {nameof(FileChunk.Data)} BLOB
-            );");
+            var createCommand = connection.CreateCommand();
+            createCommand.CommandText =
+            $@"CREATE TABLE IF NOT EXISTS {nameof(FileChunk)} (
+                {nameof(FileChunk.FileID)} INTEGER NOT NULL,
+                {nameof(FileChunk.ChunkIndex)} INTEGER NOT NULL,
+                {nameof(FileChunk.Data)} BLOB,
+                PRIMARY KEY ({nameof(FileChunk.FileID)}, {nameof(FileChunk.ChunkIndex)})
+            );";
+            createCommand.ExecuteNonQuery();
 
             var file = new FileInfo(filePath);
             using (var fileStream = File.Open(file.FullName, FileMode.Open, FileAccess.Read, FileShare.Read))
@@ -59,35 +44,35 @@ namespace DevOptimal.SystemStateManager.Persistence.SQLite.Tests
                 while (remainingBytes > 0)
                 {
                     var chunkSize = Math.Min(maxChunkSize, remainingBytes);
-                    var buffer = new byte[chunkSize];
-                    remainingBytes -= fileStream.Read(buffer, 0, (int)chunkSize);
-                    var hash = BitConverter.ToString(SHA1.HashData(buffer)).Replace("-", string.Empty);
-                    try
+
+                    var insertCommand = connection.CreateCommand();
+                    insertCommand.CommandText =
+                    $@"INSERT INTO {nameof(FileChunk)} (
+                        {nameof(FileChunk.FileID)},
+                        {nameof(FileChunk.ChunkIndex)},
+                        {nameof(FileChunk.Data)}
+                    ) VALUES (
+                        @{nameof(FileChunk.FileID)},
+                        @{nameof(FileChunk.ChunkIndex)},
+                        zeroblob(@{nameof(chunkSize)})
+                    );
+                    SELECT last_insert_rowid();";
+                    insertCommand.Parameters.AddWithValue($"@{nameof(FileChunk.FileID)}", fileID);
+                    insertCommand.Parameters.AddWithValue($"@{nameof(FileChunk.ChunkIndex)}", index++);
+                    insertCommand.Parameters.AddWithValue($"@{nameof(chunkSize)}", chunkSize);
+                    var rowid = (long)insertCommand.ExecuteScalar();
+
+                    var bufferSize = 81920;
+                    using (var blobStream = new SqliteBlob(connection, nameof(FileChunk), nameof(FileChunk.Data), rowid))
                     {
-                        connection.Execute(
-                        sql: $@"INSERT INTO {nameof(FileChunk)}s ({nameof(FileChunk.Hash)}, {nameof(FileChunk.Data)}) VALUES (@{nameof(FileChunk.Hash)}, @{nameof(FileChunk.Data)})",
-                        param: new FileChunk
+                        for (var i = 0; i < chunkSize; i += bufferSize)
                         {
-                            Hash = hash,
-                            Data = buffer
-                        });
+                            bufferSize = (int)Math.Min(bufferSize, chunkSize - i);
+                            var buffer = new byte[bufferSize];
+                            remainingBytes -= fileStream.Read(buffer, 0, bufferSize);
+                            blobStream.Write(buffer, 0, bufferSize);
+                        }
                     }
-                    catch (SqliteException ex) when (ex.SqliteErrorCode == 19 && ex.SqliteExtendedErrorCode == 1555)
-                    {
-                        // Ignorable - means the chunk has already been uploaded.
-                    }
-                    finally
-                    {
-                        buffer = null;
-                    }
-                    connection.Execute(
-                        sql: $@"INSERT INTO {nameof(FileRecord)}s ({nameof(FileRecord.FileID)}, {nameof(FileRecord.ChunkHash)}, {nameof(FileRecord.ChunkIndex)}) VALUES (@{nameof(FileRecord.FileID)}, @{nameof(FileRecord.ChunkHash)}, @{nameof(FileRecord.ChunkIndex)})",
-                        param: new FileRecord
-                        {
-                            FileID = fileID,
-                            ChunkHash = hash,
-                            ChunkIndex = index++
-                        });
                 }
 
                 Console.WriteLine("DONE");
@@ -102,11 +87,19 @@ namespace DevOptimal.SystemStateManager.Persistence.SQLite.Tests
             using (var fileStream = File.Open(destinationFile.FullName, FileMode.OpenOrCreate, FileAccess.Write, FileShare.None))
             {
                 fileStream.SetLength(0); // Delete existing file.
-                var records = connection.Query<FileRecord>($"SELECT * FROM {nameof(FileRecord)} WHERE {nameof(FileRecord.FileID)} = '{fileID}'").OrderBy(r => r.ChunkIndex).ToList();
-                foreach (var record in records)
+
+                var selectCommand = connection.CreateCommand();
+                selectCommand.CommandText = $@"SELECT {nameof(FileChunk.Data)} FROM {nameof(FileChunk)} WHERE {nameof(FileChunk.FileID)} = @{nameof(FileChunk.FileID)} ORDER BY {nameof(FileChunk.ChunkIndex)} ASC";
+                selectCommand.Parameters.AddWithValue($"@{nameof(FileChunk.FileID)}", fileID);
+                using (var reader = selectCommand.ExecuteReader())
                 {
-                    var chunk = connection.QuerySingle<FileChunk>($"SELECT * FROM {nameof(FileChunk)} WHERE {nameof(FileChunk.Hash)} = '{record.ChunkHash}'");
-                    fileStream.Write(chunk.Data, 0, chunk.Data.Length);
+                    while (reader.Read())
+                    {
+                        using (var blobStream = reader.GetStream(reader.GetOrdinal(nameof(FileChunk.Data))))
+                        {
+                            blobStream.CopyTo(fileStream);
+                        }
+                    }
                 }
             }
         }
