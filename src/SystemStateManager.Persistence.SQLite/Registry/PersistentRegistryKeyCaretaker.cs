@@ -14,8 +14,8 @@ namespace DevOptimal.SystemStateManager.Persistence.SQLite.Registry
         {
         }
 
-        public PersistentRegistryKeyCaretaker(string id, int processID, DateTime processStartTime, RegistryKeyOriginator originator, RegistryKeyMemento memento)
-            : base(id, processID, processStartTime, originator, memento)
+        public PersistentRegistryKeyCaretaker(string id, int processID, DateTime processStartTime, RegistryKeyOriginator originator, RegistryKeyMemento memento, SqliteConnection connection)
+            : base(id, processID, processStartTime, originator, memento, connection)
         {
         }
 
@@ -25,13 +25,13 @@ namespace DevOptimal.SystemStateManager.Persistence.SQLite.Registry
             var command = connection.CreateCommand();
             command.CommandText =
             $@"CREATE TABLE IF NOT EXISTS {nameof(PersistentRegistryKeyCaretaker)} (
-                {nameof(ID)} TEXT PRIMARY KEY,
-                {nameof(ProcessID)} TEXT,
-                {nameof(ProcessStartTime)} INTEGER,
-                {nameof(Originator.Hive)} INTEGER NOT NULL,
-                {nameof(Originator.View)} INTEGER NOT NULL,
-                {nameof(Originator.SubKey)} TEXT NOT NULL,
-                {nameof(Memento.Exists)} INTEGER NOT NULL
+                '{nameof(ID)}' TEXT PRIMARY KEY,
+                '{nameof(ProcessID)}' INTEGER NOT NULL,
+                '{nameof(ProcessStartTime)}' INTEGER NOT NULL,
+                '{nameof(Originator.Hive)}' INTEGER NOT NULL,
+                '{nameof(Originator.View)}' INTEGER NOT NULL,
+                '{nameof(Originator.SubKey)}' TEXT NOT NULL,
+                '{nameof(Memento.Exists)}' INTEGER NOT NULL
             );";
             command.ExecuteNonQuery();
         }
@@ -41,13 +41,13 @@ namespace DevOptimal.SystemStateManager.Persistence.SQLite.Registry
             var command = connection.CreateCommand();
             command.CommandText =
             $@"INSERT INTO {nameof(PersistentRegistryKeyCaretaker)} (
-                {nameof(ID)},
-                {nameof(ProcessID)},
-                {nameof(ProcessStartTime)},
-                {nameof(Originator.Hive)},
-                {nameof(Originator.View)},
-                {nameof(Originator.SubKey)},
-                {nameof(Memento.Exists)}
+                '{nameof(ID)}',
+                '{nameof(ProcessID)}',
+                '{nameof(ProcessStartTime)}',
+                '{nameof(Originator.Hive)}',
+                '{nameof(Originator.View)}',
+                '{nameof(Originator.SubKey)}',
+                '{nameof(Memento.Exists)}'
             ) VALUES (
                 @{nameof(ID)},
                 @{nameof(ProcessID)},
@@ -78,28 +78,31 @@ namespace DevOptimal.SystemStateManager.Persistence.SQLite.Registry
         public static IEnumerable<IPersistentSnapshot> GetCaretakers(SqliteConnection connection, IRegistry registry)
         {
             var caretakers = new List<PersistentRegistryKeyCaretaker>();
-            var command = connection.CreateCommand();
-            command.CommandText = $@"SELECT * FROM {nameof(PersistentRegistryKeyCaretaker)};";
-            using (var reader = command.ExecuteReader())
+
+            if (connection.TableExists(nameof(PersistentRegistryKeyCaretaker)))
             {
-                while (reader.Read())
+                using (var reader = connection.ExecuteReader($@"SELECT * FROM {nameof(PersistentRegistryKeyCaretaker)};"))
                 {
-                    var caretaker = new PersistentRegistryKeyCaretaker(
-                        id: reader.GetString(reader.GetOrdinal(nameof(ID))),
-                        processID: reader.GetInt32(reader.GetOrdinal(nameof(ProcessID))),
-                        processStartTime: new DateTime(reader.GetInt64(reader.GetOrdinal(nameof(ProcessStartTime)))),
-                        originator: new RegistryKeyOriginator(
-                            hive: (RegistryHive)reader.GetInt32(reader.GetOrdinal(nameof(RegistryKeyOriginator.Hive))),
-                            view: (RegistryView)reader.GetInt32(reader.GetOrdinal(nameof(RegistryKeyOriginator.View))),
-                            subKey: reader.GetString(reader.GetOrdinal(nameof(RegistryKeyOriginator.SubKey))),
-                            registry: registry
-                        ),
-                        memento: new RegistryKeyMemento
-                        {
-                            Exists = reader.GetBoolean(reader.GetOrdinal(nameof(RegistryKeyMemento.Exists)))
-                        }
-                    );
-                    caretakers.Add(caretaker);
+                    while (reader.Read())
+                    {
+                        var caretaker = new PersistentRegistryKeyCaretaker(
+                            id: reader.GetString(reader.GetOrdinal(nameof(ID))),
+                            processID: reader.GetInt32(reader.GetOrdinal(nameof(ProcessID))),
+                            processStartTime: new DateTime(reader.GetInt64(reader.GetOrdinal(nameof(ProcessStartTime)))),
+                            originator: new RegistryKeyOriginator(
+                                hive: (RegistryHive)reader.GetInt32(reader.GetOrdinal(nameof(RegistryKeyOriginator.Hive))),
+                                view: (RegistryView)reader.GetInt32(reader.GetOrdinal(nameof(RegistryKeyOriginator.View))),
+                                subKey: reader.GetString(reader.GetOrdinal(nameof(RegistryKeyOriginator.SubKey))),
+                                registry: registry
+                            ),
+                            memento: new RegistryKeyMemento
+                            {
+                                Exists = reader.GetBoolean(reader.GetOrdinal(nameof(RegistryKeyMemento.Exists)))
+                            },
+                            connection: connection
+                        );
+                        caretakers.Add(caretaker);
+                    }
                 }
             }
 

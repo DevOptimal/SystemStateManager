@@ -13,8 +13,8 @@ namespace DevOptimal.SystemStateManager.Persistence.SQLite.FileSystem
         {
         }
 
-        public PersistentDirectoryCaretaker(string id, int processID, DateTime processStartTime, DirectoryOriginator originator, DirectoryMemento memento)
-            : base(id, processID, processStartTime, originator, memento)
+        public PersistentDirectoryCaretaker(string id, int processID, DateTime processStartTime, DirectoryOriginator originator, DirectoryMemento memento, SqliteConnection connection)
+            : base(id, processID, processStartTime, originator, memento, connection)
         {
         }
 
@@ -24,11 +24,11 @@ namespace DevOptimal.SystemStateManager.Persistence.SQLite.FileSystem
             var command = connection.CreateCommand();
             command.CommandText =
             $@"CREATE TABLE IF NOT EXISTS {nameof(PersistentDirectoryCaretaker)} (
-                {nameof(ID)} TEXT PRIMARY KEY,
-                {nameof(ProcessID)} TEXT,
-                {nameof(ProcessStartTime)} INTEGER,
-                {nameof(Originator.Path)} TEXT NOT NULL,
-                {nameof(Memento.Exists)} INTEGER NOT NULL
+                '{nameof(ID)}' TEXT PRIMARY KEY,
+                '{nameof(ProcessID)}' INTEGER NOT NULL,
+                '{nameof(ProcessStartTime)}' INTEGER NOT NULL,
+                '{nameof(Originator.Path)}' TEXT NOT NULL,
+                '{nameof(Memento.Exists)}' INTEGER NOT NULL
             );";
             command.ExecuteNonQuery();
         }
@@ -38,11 +38,11 @@ namespace DevOptimal.SystemStateManager.Persistence.SQLite.FileSystem
             var command = connection.CreateCommand();
             command.CommandText =
             $@"INSERT INTO {nameof(PersistentDirectoryCaretaker)} (
-                {nameof(ID)},
-                {nameof(ProcessID)},
-                {nameof(ProcessStartTime)},
-                {nameof(Originator.Path)},
-                {nameof(Memento.Exists)}
+                '{nameof(ID)}',
+                '{nameof(ProcessID)}',
+                '{nameof(ProcessStartTime)}',
+                '{nameof(Originator.Path)}',
+                '{nameof(Memento.Exists)}'
             ) VALUES (
                 @{nameof(ID)},
                 @{nameof(ProcessID)},
@@ -69,26 +69,29 @@ namespace DevOptimal.SystemStateManager.Persistence.SQLite.FileSystem
         public static IEnumerable<IPersistentSnapshot> GetCaretakers(SqliteConnection connection, IFileSystem fileSystem)
         {
             var caretakers = new List<PersistentDirectoryCaretaker>();
-            var command = connection.CreateCommand();
-            command.CommandText = $@"SELECT * FROM {nameof(PersistentDirectoryCaretaker)};";
-            using (var reader = command.ExecuteReader())
+
+            if (connection.TableExists(nameof(PersistentDirectoryCaretaker)))
             {
-                while (reader.Read())
+                using (var reader = connection.ExecuteReader($@"SELECT * FROM {nameof(PersistentDirectoryCaretaker)};"))
                 {
-                    var caretaker = new PersistentDirectoryCaretaker(
-                        id: reader.GetString(reader.GetOrdinal(nameof(ID))),
-                        processID: reader.GetInt32(reader.GetOrdinal(nameof(ProcessID))),
-                        processStartTime: new DateTime(reader.GetInt64(reader.GetOrdinal(nameof(ProcessStartTime)))),
-                        originator: new DirectoryOriginator(
-                            path: reader.GetString(reader.GetOrdinal(nameof(DirectoryOriginator.Path))),
-                            fileSystem: fileSystem
-                        ),
-                        memento: new DirectoryMemento
-                        {
-                            Exists = reader.GetBoolean(reader.GetOrdinal(nameof(DirectoryMemento.Exists)))
-                        }
-                    );
-                    caretakers.Add(caretaker);
+                    while (reader.Read())
+                    {
+                        var caretaker = new PersistentDirectoryCaretaker(
+                            id: reader.GetString(reader.GetOrdinal(nameof(ID))),
+                            processID: reader.GetInt32(reader.GetOrdinal(nameof(ProcessID))),
+                            processStartTime: new DateTime(reader.GetInt64(reader.GetOrdinal(nameof(ProcessStartTime)))),
+                            originator: new DirectoryOriginator(
+                                path: reader.GetString(reader.GetOrdinal(nameof(DirectoryOriginator.Path))),
+                                fileSystem: fileSystem
+                            ),
+                            memento: new DirectoryMemento
+                            {
+                                Exists = reader.GetBoolean(reader.GetOrdinal(nameof(DirectoryMemento.Exists)))
+                            },
+                            connection: connection
+                        );
+                        caretakers.Add(caretaker);
+                    }
                 }
             }
 

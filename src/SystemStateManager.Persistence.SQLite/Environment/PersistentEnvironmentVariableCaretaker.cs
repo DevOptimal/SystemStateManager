@@ -13,8 +13,8 @@ namespace DevOptimal.SystemStateManager.Persistence.SQLite.Environment
         {
         }
 
-        public PersistentEnvironmentVariableCaretaker(string id, long processID, DateTime processStartTime, EnvironmentVariableOriginator originator, EnvironmentVariableMemento memento)
-            : base(id, (int)processID, processStartTime, originator, memento)
+        public PersistentEnvironmentVariableCaretaker(string id, long processID, DateTime processStartTime, EnvironmentVariableOriginator originator, EnvironmentVariableMemento memento, SqliteConnection connection)
+            : base(id, (int)processID, processStartTime, originator, memento, connection)
         {
         }
 
@@ -23,12 +23,12 @@ namespace DevOptimal.SystemStateManager.Persistence.SQLite.Environment
             var command = connection.CreateCommand();
             command.CommandText =
             $@"CREATE TABLE IF NOT EXISTS {nameof(PersistentEnvironmentVariableCaretaker)} (
-                {nameof(ID)} TEXT PRIMARY KEY,
-                {nameof(ProcessID)} TEXT,
-                {nameof(ProcessStartTime)} INTEGER,
-                {nameof(Originator.Name)} TEXT,
-                {nameof(Originator.Target)} INTEGER,
-                {nameof(Memento.Value)} TEXT
+                '{nameof(ID)}' TEXT PRIMARY KEY,
+                '{nameof(ProcessID)}' INTEGER NOT NULL,
+                '{nameof(ProcessStartTime)}' INTEGER NOT NULL,
+                '{nameof(Originator.Name)}' TEXT NOT NULL,
+                '{nameof(Originator.Target)}' INTEGER NOT NULL,
+                '{nameof(Memento.Value)}' TEXT
             );";
             command.ExecuteNonQuery();
         }
@@ -38,12 +38,12 @@ namespace DevOptimal.SystemStateManager.Persistence.SQLite.Environment
             var command = connection.CreateCommand();
             command.CommandText =
             $@"INSERT INTO {nameof(PersistentEnvironmentVariableCaretaker)} (
-                {nameof(ID)},
-                {nameof(ProcessID)},
-                {nameof(ProcessStartTime)},
-                {nameof(Originator.Name)},
-                {nameof(Originator.Target)},
-                {nameof(Memento.Value)}
+                '{nameof(ID)}',
+                '{nameof(ProcessID)}',
+                '{nameof(ProcessStartTime)}',
+                '{nameof(Originator.Name)}',
+                '{nameof(Originator.Target)}',
+                '{nameof(Memento.Value)}'
             ) VALUES (
                 @{nameof(ID)},
                 @{nameof(ProcessID)},
@@ -57,7 +57,7 @@ namespace DevOptimal.SystemStateManager.Persistence.SQLite.Environment
             command.Parameters.AddWithValue($"@{nameof(ProcessStartTime)}", ProcessStartTime.Ticks);
             command.Parameters.AddWithValue($"@{nameof(Originator.Name)}", Originator.Name);
             command.Parameters.AddWithValue($"@{nameof(Originator.Target)}", Originator.Target);
-            command.Parameters.AddWithValue($"@{nameof(Memento.Value)}", Memento.Value);
+            command.Parameters.AddWithNullableValue($"@{nameof(Memento.Value)}", Memento.Value);
             command.ExecuteNonQuery();
         }
 
@@ -72,27 +72,30 @@ namespace DevOptimal.SystemStateManager.Persistence.SQLite.Environment
         public static IEnumerable<IPersistentSnapshot> GetCaretakers(SqliteConnection connection, IEnvironment environment)
         {
             var caretakers = new List<PersistentEnvironmentVariableCaretaker>();
-            var command = connection.CreateCommand();
-            command.CommandText = $@"SELECT * FROM {nameof(PersistentEnvironmentVariableCaretaker)};";
-            using (var reader = command.ExecuteReader())
+
+            if (connection.TableExists(nameof(PersistentEnvironmentVariableCaretaker)))
             {
-                while (reader.Read())
+                using (var reader = connection.ExecuteReader($@"SELECT * FROM {nameof(PersistentEnvironmentVariableCaretaker)};"))
                 {
-                    var caretaker = new PersistentEnvironmentVariableCaretaker(
-                        id: reader.GetString(reader.GetOrdinal(nameof(ID))),
-                        processID: reader.GetInt32(reader.GetOrdinal(nameof(ProcessID))),
-                        processStartTime: new DateTime(reader.GetInt64(reader.GetOrdinal(nameof(ProcessStartTime)))),
-                        originator: new EnvironmentVariableOriginator(
-                            name: reader.GetString(reader.GetOrdinal(nameof(EnvironmentVariableOriginator.Name))),
-                            target: (EnvironmentVariableTarget)reader.GetInt32(reader.GetOrdinal(nameof(EnvironmentVariableOriginator.Target))),
-                            environment: environment
-                        ),
-                        memento: new EnvironmentVariableMemento
-                        {
-                            Value = reader.GetString(reader.GetOrdinal(nameof(EnvironmentVariableMemento.Value)))
-                        }
-                    );
-                    caretakers.Add(caretaker);
+                    while (reader.Read())
+                    {
+                        var caretaker = new PersistentEnvironmentVariableCaretaker(
+                            id: reader.GetString(reader.GetOrdinal(nameof(ID))),
+                            processID: reader.GetInt32(reader.GetOrdinal(nameof(ProcessID))),
+                            processStartTime: new DateTime(reader.GetInt64(reader.GetOrdinal(nameof(ProcessStartTime)))),
+                            originator: new EnvironmentVariableOriginator(
+                                name: reader.GetString(reader.GetOrdinal(nameof(EnvironmentVariableOriginator.Name))),
+                                target: (EnvironmentVariableTarget)reader.GetInt32(reader.GetOrdinal(nameof(EnvironmentVariableOriginator.Target))),
+                                environment: environment
+                            ),
+                            memento: new EnvironmentVariableMemento
+                            {
+                                Value = reader.GetNullableString(reader.GetOrdinal(nameof(EnvironmentVariableMemento.Value)))
+                            },
+                            connection: connection
+                        );
+                        caretakers.Add(caretaker);
+                    }
                 }
             }
 

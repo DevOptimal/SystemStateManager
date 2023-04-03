@@ -22,7 +22,7 @@ namespace DevOptimal.SystemStateManager.Persistence.Tests
         [AssemblyInitialize]
         public static void AssemblyInitialize(TestContext testContext)
         {
-            PersistentSystemStateManager.PersistenceURI = new Uri(Path.Combine(testContext.ResultsDirectory, "persistence.litedb"));
+            PersistentSystemStateManager.PersistenceURI = new Uri(Path.Combine(testContext.ResultsDirectory, "persistence.db"));
         }
 
         [TestInitialize]

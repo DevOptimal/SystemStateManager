@@ -63,8 +63,9 @@ namespace DevOptimal.SystemStateManager.Persistence.SQLite
         /// <param name="processStartTime">The start time of the process that created the caretaker. Process IDs are reused, so start time is required to identify a unique process.</param>
         /// <param name="originator">The caretaker's originator, used for getting and setting a memento from the resource.</param>
         /// <param name="memento">The caretaker's memento, which stores the current state of the resource.</param>
-        protected PersistentCaretaker(string id, int processID, DateTime processStartTime, TOriginator originator, TMemento memento) : base(id, originator, memento)
+        protected PersistentCaretaker(string id, int processID, DateTime processStartTime, TOriginator originator, TMemento memento, SqliteConnection connection) : base(id, originator, memento)
         {
+            this.connection = connection;
             ProcessID = processID;
             ProcessStartTime = processStartTime;
             persisted = true;

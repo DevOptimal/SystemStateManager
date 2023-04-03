@@ -4,6 +4,7 @@ using Microsoft.Data.Sqlite;
 using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.Design;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -17,8 +18,8 @@ namespace DevOptimal.SystemStateManager.Persistence.SQLite.Registry
         {
         }
 
-        public PersistentRegistryValueCaretaker(string id, int processID, DateTime processStartTime, RegistryValueOriginator originator, RegistryValueMemento memento)
-            : base(id, processID, processStartTime, originator, memento)
+        public PersistentRegistryValueCaretaker(string id, int processID, DateTime processStartTime, RegistryValueOriginator originator, RegistryValueMemento memento, SqliteConnection connection)
+            : base(id, processID, processStartTime, originator, memento, connection)
         {
         }
 
@@ -28,15 +29,15 @@ namespace DevOptimal.SystemStateManager.Persistence.SQLite.Registry
             var command = connection.CreateCommand();
             command.CommandText =
             $@"CREATE TABLE IF NOT EXISTS {nameof(PersistentRegistryValueCaretaker)} (
-                {nameof(ID)} TEXT PRIMARY KEY,
-                {nameof(ProcessID)} TEXT,
-                {nameof(ProcessStartTime)} INTEGER,
-                {nameof(Originator.Hive)} INTEGER NOT NULL,
-                {nameof(Originator.View)} INTEGER NOT NULL,
-                {nameof(Originator.SubKey)} TEXT NOT NULL,
-                {nameof(Originator.Name)} TEXT,
-                {nameof(Memento.Value)} BLOB,
-                {nameof(Memento.Kind)} INTEGER NOT NULL
+                '{nameof(ID)}' TEXT PRIMARY KEY,
+                '{nameof(ProcessID)}' INTEGER NOT NULL,
+                '{nameof(ProcessStartTime)}' INTEGER NOT NULL,
+                '{nameof(Originator.Hive)}' INTEGER NOT NULL,
+                '{nameof(Originator.View)}' INTEGER NOT NULL,
+                '{nameof(Originator.SubKey)}' TEXT NOT NULL,
+                '{nameof(Originator.Name)}' TEXT,
+                '{nameof(Memento.Value)}' BLOB,
+                '{nameof(Memento.Kind)}' INTEGER NOT NULL
             );";
             command.ExecuteNonQuery();
         }
@@ -46,15 +47,15 @@ namespace DevOptimal.SystemStateManager.Persistence.SQLite.Registry
             var command = connection.CreateCommand();
             command.CommandText =
             $@"INSERT INTO {nameof(PersistentRegistryValueCaretaker)} (
-                {nameof(ID)},
-                {nameof(ProcessID)},
-                {nameof(ProcessStartTime)},
-                {nameof(Originator.Hive)},
-                {nameof(Originator.View)},
-                {nameof(Originator.SubKey)},
-                {nameof(Originator.Name)},
-                {nameof(Memento.Value)},
-                {nameof(Memento.Kind)}
+                '{nameof(ID)}',
+                '{nameof(ProcessID)}',
+                '{nameof(ProcessStartTime)}',
+                '{nameof(Originator.Hive)}',
+                '{nameof(Originator.View)}',
+                '{nameof(Originator.SubKey)}',
+                '{nameof(Originator.Name)}',
+                '{nameof(Memento.Value)}',
+                '{nameof(Memento.Kind)}'
             ) VALUES (
                 @{nameof(ID)},
                 @{nameof(ProcessID)},
@@ -72,8 +73,8 @@ namespace DevOptimal.SystemStateManager.Persistence.SQLite.Registry
             command.Parameters.AddWithValue($"@{nameof(Originator.Hive)}", Originator.Hive);
             command.Parameters.AddWithValue($"@{nameof(Originator.View)}", Originator.View);
             command.Parameters.AddWithValue($"@{nameof(Originator.SubKey)}", Originator.SubKey);
-            command.Parameters.AddWithValue($"@{nameof(Originator.Name)}", Originator.Name);
-            command.Parameters.AddWithValue($"@{nameof(Memento.Value)}", ConvertValueToBytes(Memento.Value));
+            command.Parameters.AddWithNullableValue($"@{nameof(Originator.Name)}", Originator.Name);
+            command.Parameters.AddWithNullableValue($"@{nameof(Memento.Value)}", ConvertValueToBytes(Memento.Value));
             command.Parameters.AddWithValue($"@{nameof(Memento.Kind)}", Memento.Kind);
             command.ExecuteNonQuery();
         }
@@ -89,37 +90,49 @@ namespace DevOptimal.SystemStateManager.Persistence.SQLite.Registry
         public static IEnumerable<IPersistentSnapshot> GetCaretakers(SqliteConnection connection, IRegistry registry)
         {
             var caretakers = new List<PersistentRegistryValueCaretaker>();
-            var command = connection.CreateCommand();
-            command.CommandText = $@"SELECT * FROM {nameof(PersistentRegistryValueCaretaker)};";
-            using (var reader = command.ExecuteReader())
+
+            if (connection.TableExists(nameof(PersistentRegistryValueCaretaker)))
             {
-                while (reader.Read())
+                using (var reader = connection.ExecuteReader($@"SELECT * FROM {nameof(PersistentRegistryValueCaretaker)};"))
                 {
-                    byte[] valueBytes;
-                    using (var valueStream = reader.GetStream(reader.GetOrdinal(nameof(RegistryValueMemento.Value))))
-                    using (var memoryStream = new MemoryStream())
+                    while (reader.Read())
                     {
-                        valueStream.CopyTo(memoryStream);
-                        valueBytes = memoryStream.ToArray();
-                    }
-                    var caretaker = new PersistentRegistryValueCaretaker(
-                        id: reader.GetString(reader.GetOrdinal(nameof(ID))),
-                        processID: reader.GetInt32(reader.GetOrdinal(nameof(ProcessID))),
-                        processStartTime: new DateTime(reader.GetInt64(reader.GetOrdinal(nameof(ProcessStartTime)))),
-                        originator: new RegistryValueOriginator(
-                            hive: (RegistryHive)reader.GetInt32(reader.GetOrdinal(nameof(RegistryValueOriginator.Hive))),
-                            view: (RegistryView)reader.GetInt32(reader.GetOrdinal(nameof(RegistryValueOriginator.View))),
-                            subKey: reader.GetString(reader.GetOrdinal(nameof(RegistryValueOriginator.SubKey))),
-                            name: reader.GetString(reader.GetOrdinal(nameof(RegistryValueOriginator.Name))),
-                            registry: registry
-                        ),
-                        memento: new RegistryValueMemento
+                        byte[] valueBytes;
+                        using (var valueStream = reader.GetNullableStream(nameof(RegistryValueMemento.Value)))
                         {
-                            Value = ConvertBytesToValue(valueBytes),
-                            Kind = (RegistryValueKind)reader.GetInt32(reader.GetOrdinal(nameof(RegistryValueMemento.Kind)))
+                            if (valueStream == null)
+                            {
+                                valueBytes = null;
+                            }
+                            else
+                            {
+                                using (var memoryStream = new MemoryStream())
+                                {
+                                    valueStream.CopyTo(memoryStream);
+                                    valueBytes = memoryStream.ToArray();
+                                }
+                            }
                         }
-                    );
-                    caretakers.Add(caretaker);
+                        var caretaker = new PersistentRegistryValueCaretaker(
+                            id: reader.GetString(reader.GetOrdinal(nameof(ID))),
+                            processID: reader.GetInt32(reader.GetOrdinal(nameof(ProcessID))),
+                            processStartTime: new DateTime(reader.GetInt64(reader.GetOrdinal(nameof(ProcessStartTime)))),
+                            originator: new RegistryValueOriginator(
+                                hive: (RegistryHive)reader.GetInt32(reader.GetOrdinal(nameof(RegistryValueOriginator.Hive))),
+                                view: (RegistryView)reader.GetInt32(reader.GetOrdinal(nameof(RegistryValueOriginator.View))),
+                                subKey: reader.GetString(reader.GetOrdinal(nameof(RegistryValueOriginator.SubKey))),
+                                name: reader.GetNullableString(nameof(RegistryValueOriginator.Name)),
+                                registry: registry
+                            ),
+                            memento: new RegistryValueMemento
+                            {
+                                Value = ConvertBytesToValue(valueBytes),
+                                Kind = (RegistryValueKind)reader.GetInt32(reader.GetOrdinal(nameof(RegistryValueMemento.Kind)))
+                            },
+                            connection: connection
+                        );
+                        caretakers.Add(caretaker);
+                    }
                 }
             }
 
@@ -128,6 +141,11 @@ namespace DevOptimal.SystemStateManager.Persistence.SQLite.Registry
 
         private static byte[] ConvertValueToBytes(object value)
         {
+            if (value == null)
+            {
+                return null;
+            }
+
             var result = new List<byte>();
             switch (value)
             {
@@ -162,7 +180,12 @@ namespace DevOptimal.SystemStateManager.Persistence.SQLite.Registry
         }
 
         private static object ConvertBytesToValue(byte[] bytes)
-        {;
+        {
+            if (bytes == null)
+            {
+                return null;
+            }
+
             switch (bytes[0])
             {
                 case 0x0:
