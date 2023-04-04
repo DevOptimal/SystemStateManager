@@ -154,7 +154,9 @@ namespace DevOptimal.SystemStateManager.Persistence.SQLite
 
             var connectionString = new SqliteConnectionStringBuilder
             {
-                DataSource = databaseFile.FullName
+                DataSource = databaseFile.FullName,
+                Cache = SqliteCacheMode.Shared,
+                Mode = SqliteOpenMode.ReadWriteCreate
             }.ToString();
             var connection = new SqliteConnection(connectionString);
             connection.Open();

@@ -42,7 +42,7 @@ namespace DevOptimal.SystemStateManager.Persistence.SQLite.FileSystem.Caching
         public void DownloadFile(string id, string destinationPath)
         {
             var destinationFile = new FileInfo(destinationPath);
-            using (var fileStream = File.Open(destinationFile.FullName, FileMode.OpenOrCreate, FileAccess.Write, FileShare.None))
+            using (var fileStream = FileSystem.OpenFile(destinationFile.FullName, FileMode.OpenOrCreate, FileAccess.Write, FileShare.None))
             {
                 fileStream.SetLength(0); // Delete existing file.
 
@@ -67,10 +67,10 @@ namespace DevOptimal.SystemStateManager.Persistence.SQLite.FileSystem.Caching
             var fileID = Guid.NewGuid().ToString();
             var file = new FileInfo(sourcePath);
 
-            using (var fileStream = File.Open(file.FullName, FileMode.Open, FileAccess.Read, FileShare.Read))
+            using (var fileStream = FileSystem.OpenFile(file.FullName, FileMode.Open, FileAccess.Read, FileShare.Read))
             {
                 var index = 0;
-                var remainingBytes = file.Length;
+                var remainingBytes = fileStream.Length;
                 while (remainingBytes > 0)
                 {
                     var chunkSize = Math.Min(maxChunkSize, remainingBytes);

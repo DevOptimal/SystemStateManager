@@ -1,5 +1,6 @@
 ﻿using Microsoft.Data.Sqlite;
 using System;
+using System.Data;
 using System.Diagnostics;
 
 namespace DevOptimal.SystemStateManager.Persistence.SQLite
@@ -33,24 +34,27 @@ namespace DevOptimal.SystemStateManager.Persistence.SQLite
 
             Initialize();
 
-            using (var transaction = this.connection.BeginTransaction())
+            lock (connection) // Sqlite connections are not thread safe: https://github.com/dotnet/efcore/issues/22664#issuecomment-696870423
             {
-                try
+                using (var transaction = this.connection.BeginTransaction())
                 {
-                    Persist();
-                    transaction.Commit();
-                    persisted = true;
-                }
-                catch (Exception ex)
-                {
-                    transaction.Rollback();
-
-                    if (ex is SqliteException sqliteEx && sqliteEx.SqliteErrorCode == 19 && sqliteEx.SqliteExtendedErrorCode == 1555)
+                    try
                     {
-                        throw new ResourceLockedException($"The resource '{ID}' is locked by another instance.", sqliteEx);
+                        Persist();
+                        transaction.Commit();
+                        persisted = true;
                     }
+                    catch (Exception ex)
+                    {
+                        transaction.Rollback();
 
-                    throw;
+                        if (ex is SqliteException sqliteEx && sqliteEx.SqliteErrorCode == 19 && sqliteEx.SqliteExtendedErrorCode == 1555)
+                        {
+                            throw new ResourceLockedException($"The resource '{ID}' is locked by another instance.", sqliteEx);
+                        }
+
+                        throw;
+                    }
                 }
             }
         }
@@ -87,17 +91,20 @@ namespace DevOptimal.SystemStateManager.Persistence.SQLite
                 {
                     if (disposing)
                     {
-                        using (var transaction = connection.BeginTransaction())
+                        lock (connection)
                         {
-                            try
+                            using (var transaction = connection.BeginTransaction())
                             {
-                                Unpersist();
-                                transaction.Commit();
-                            }
-                            catch
-                            {
-                                transaction.Rollback();
-                                throw;
+                                try
+                                {
+                                    Unpersist();
+                                    transaction.Commit();
+                                }
+                                catch
+                                {
+                                    transaction.Rollback();
+                                    throw;
+                                }
                             }
                         }
                     }

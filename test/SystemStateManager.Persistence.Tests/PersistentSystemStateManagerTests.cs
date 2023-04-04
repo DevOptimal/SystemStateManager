@@ -26,7 +26,7 @@ namespace DevOptimal.SystemStateManager.Persistence.Tests
         }
 
         [TestMethod]
-        public void RevertsSnapshotsConcurrently()
+        public void IsThreadSafe()
         {
             using var systemStateManager = new PersistentSystemStateManager(environment, fileSystem, registry);
 
