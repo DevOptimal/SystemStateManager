@@ -33,6 +33,8 @@ namespace DevOptimal.SystemStateManager.Persistence.Tests
             registry = new MockRegistry();
         }
 
+        protected PersistentSystemStateManager CreatePersistentSystemStateManager() => new(environment, fileSystem, registry);
+
         protected IDisposable CreateShimsContext()
         {
             var context = ShimsContext.Create();

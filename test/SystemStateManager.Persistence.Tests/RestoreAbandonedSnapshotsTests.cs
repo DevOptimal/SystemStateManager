@@ -2,6 +2,7 @@
 using Microsoft.Win32;
 using System;
 using System.IO;
+using System.Runtime.Versioning;
 using System.Text;
 
 namespace DevOptimal.SystemStateManager.Persistence.Tests
@@ -20,7 +21,7 @@ namespace DevOptimal.SystemStateManager.Persistence.Tests
 
             using (CreateShimsContext())
             {
-                var systemStateManager = new PersistentSystemStateManager(environment, fileSystem, registry);
+                var systemStateManager = CreatePersistentSystemStateManager();
                 systemStateManager.SnapshotEnvironmentVariable(environmentVariableName, environmentVariableTarget);
             }
 
@@ -39,7 +40,7 @@ namespace DevOptimal.SystemStateManager.Persistence.Tests
 
             using (CreateShimsContext())
             {
-                var systemStateManager = new PersistentSystemStateManager(environment, fileSystem, registry);
+                var systemStateManager = CreatePersistentSystemStateManager();
                 systemStateManager.SnapshotDirectory(directoryPath);
             }
 
@@ -62,7 +63,7 @@ namespace DevOptimal.SystemStateManager.Persistence.Tests
 
             using (CreateShimsContext())
             {
-                var systemStateManager = new PersistentSystemStateManager(environment, fileSystem, registry);
+                var systemStateManager = CreatePersistentSystemStateManager();
                 systemStateManager.SnapshotFile(filePath);
             }
 
@@ -79,6 +80,7 @@ namespace DevOptimal.SystemStateManager.Persistence.Tests
         }
 
         [TestMethod]
+        [SupportedOSPlatform("windows")]
         public void RestoresAbandonedRegistryKeySnapshots()
         {
             var registryHive = RegistryHive.LocalMachine;
@@ -88,7 +90,7 @@ namespace DevOptimal.SystemStateManager.Persistence.Tests
 
             using (CreateShimsContext())
             {
-                var systemStateManager = new PersistentSystemStateManager(environment, fileSystem, registry);
+                var systemStateManager = CreatePersistentSystemStateManager();
                 systemStateManager.SnapshotRegistryKey(registryHive, registryView, registrySubKey);
             }
 
@@ -100,6 +102,7 @@ namespace DevOptimal.SystemStateManager.Persistence.Tests
         }
 
         [TestMethod]
+        [SupportedOSPlatform("windows")]
         public void RestoresAbandonedRegistryValueSnapshots()
         {
             var registryHive = RegistryHive.LocalMachine;
@@ -107,6 +110,7 @@ namespace DevOptimal.SystemStateManager.Persistence.Tests
             var registrySubKey = @"SOFTWARE\Microsoft\StrongName\Verification";
             registry.CreateRegistryKey(registryHive, registryView, registrySubKey);
 
+            // Create a bunch of registry values
             var stringRegistryValueName = RegistryValueKind.String.ToString();
             var stringRegistryValueExpectedValue = "foo";
             var stringRegistryValueExpectedKind = RegistryValueKind.String;
@@ -132,9 +136,10 @@ namespace DevOptimal.SystemStateManager.Persistence.Tests
             var multiStringRegistryValueExpectedKind = RegistryValueKind.MultiString;
             registry.SetRegistryValue(registryHive, registryView, registrySubKey, multiStringRegistryValueName, multiStringRegistryValueExpectedValue, multiStringRegistryValueExpectedKind);
 
+            // Simulate taking snapshots of the registry values from another process
             using (CreateShimsContext())
             {
-                var systemStateManager = new PersistentSystemStateManager(environment, fileSystem, registry);
+                var systemStateManager = CreatePersistentSystemStateManager();
                 systemStateManager.SnapshotRegistryValue(registryHive, registryView, registrySubKey, stringRegistryValueName);
                 systemStateManager.SnapshotRegistryValue(registryHive, registryView, registrySubKey, expandStringRegistryValueName);
                 systemStateManager.SnapshotRegistryValue(registryHive, registryView, registrySubKey, binaryRegistryValueName);
@@ -143,35 +148,39 @@ namespace DevOptimal.SystemStateManager.Persistence.Tests
                 systemStateManager.SnapshotRegistryValue(registryHive, registryView, registrySubKey, multiStringRegistryValueName);
             }
 
+            // Delete the registry values
             registry.DeleteRegistryValue(registryHive, registryView, registrySubKey, stringRegistryValueName);
+            Assert.IsFalse(registry.RegistryValueExists(registryHive, registryView, registrySubKey, stringRegistryValueName));
             registry.DeleteRegistryValue(registryHive, registryView, registrySubKey, expandStringRegistryValueName);
+            Assert.IsFalse(registry.RegistryValueExists(registryHive, registryView, registrySubKey, expandStringRegistryValueName));
             registry.DeleteRegistryValue(registryHive, registryView, registrySubKey, binaryRegistryValueName);
+            Assert.IsFalse(registry.RegistryValueExists(registryHive, registryView, registrySubKey, binaryRegistryValueName));
             registry.DeleteRegistryValue(registryHive, registryView, registrySubKey, dwordRegistryValueName);
+            Assert.IsFalse(registry.RegistryValueExists(registryHive, registryView, registrySubKey, dwordRegistryValueName));
             registry.DeleteRegistryValue(registryHive, registryView, registrySubKey, qwordRegistryValueName);
+            Assert.IsFalse(registry.RegistryValueExists(registryHive, registryView, registrySubKey, qwordRegistryValueName));
             registry.DeleteRegistryValue(registryHive, registryView, registrySubKey, multiStringRegistryValueName);
+            Assert.IsFalse(registry.RegistryValueExists(registryHive, registryView, registrySubKey, multiStringRegistryValueName));
 
+            // Restore the snapshots
             PersistentSystemStateManager.RestoreAbandonedSnapshots(environment, fileSystem, registry);
 
+            // Verify that the registry values have been restored
             var (stringRegistryValueActualValue, stringRegistryValueActualKind) = registry.GetRegistryValue(registryHive, registryView, registrySubKey, stringRegistryValueName);
             Assert.AreEqual(stringRegistryValueExpectedValue, stringRegistryValueActualValue);
             Assert.AreEqual(stringRegistryValueExpectedKind, stringRegistryValueActualKind);
-
             var (expandStringRegistryValueActualValue, expandStringRegistryValueActualKind) = registry.GetRegistryValue(registryHive, registryView, registrySubKey, expandStringRegistryValueName);
             Assert.AreEqual(expandStringRegistryValueExpectedValue, expandStringRegistryValueActualValue);
             Assert.AreEqual(expandStringRegistryValueExpectedKind, expandStringRegistryValueActualKind);
-
             var (binaryRegistryValueActualValue, binaryRegistryValueActualKind) = registry.GetRegistryValue(registryHive, registryView, registrySubKey, binaryRegistryValueName);
             CollectionAssert.AreEqual(binaryRegistryValueExpectedValue, (byte[])binaryRegistryValueActualValue);
             Assert.AreEqual(binaryRegistryValueExpectedKind, binaryRegistryValueActualKind);
-
             var (dwordRegistryValueActualValue, dwordRegistryValueActualKind) = registry.GetRegistryValue(registryHive, registryView, registrySubKey, dwordRegistryValueName);
             Assert.AreEqual(dwordRegistryValueExpectedValue, dwordRegistryValueActualValue);
             Assert.AreEqual(dwordRegistryValueExpectedKind, dwordRegistryValueActualKind);
-
             var (qwordRegistryValueActualValue, qwordRegistryValueActualKind) = registry.GetRegistryValue(registryHive, registryView, registrySubKey, qwordRegistryValueName);
             Assert.AreEqual(qwordRegistryValueExpectedValue, qwordRegistryValueActualValue);
             Assert.AreEqual(qwordRegistryValueExpectedKind, qwordRegistryValueActualKind);
-
             var (multiStringRegistryValueActualValue, multiStringRegistryValueActualKind) = registry.GetRegistryValue(registryHive, registryView, registrySubKey, multiStringRegistryValueName);
             CollectionAssert.AreEqual(multiStringRegistryValueExpectedValue, (object[])multiStringRegistryValueActualValue);
             Assert.AreEqual(multiStringRegistryValueExpectedKind, multiStringRegistryValueActualKind);

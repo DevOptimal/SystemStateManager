@@ -13,10 +13,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SystemStateManager.Persiste
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{261360A6-F0E6-4982-945F-7CDE97F9946E}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SystemStateManager.Persistence.SQLite", "src\SystemStateManager.Persistence.SQLite\SystemStateManager.Persistence.SQLite.csproj", "{79BA8FC3-A70E-4684-A343-38B3E4B48CAE}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SystemStateManager.Persistence.SQLite.Tests", "test\SystemStateManager.Persistence.SQLite.Tests\SystemStateManager.Persistence.SQLite.Tests.csproj", "{47A2D36E-1CFC-45AB-A080-136A03225AD3}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -39,14 +35,6 @@ Global
 		{C6EEBFDD-E3A2-48F8-8968-44EDF7B159BB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C6EEBFDD-E3A2-48F8-8968-44EDF7B159BB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C6EEBFDD-E3A2-48F8-8968-44EDF7B159BB}.Release|Any CPU.Build.0 = Release|Any CPU
-		{79BA8FC3-A70E-4684-A343-38B3E4B48CAE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{79BA8FC3-A70E-4684-A343-38B3E4B48CAE}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{79BA8FC3-A70E-4684-A343-38B3E4B48CAE}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{79BA8FC3-A70E-4684-A343-38B3E4B48CAE}.Release|Any CPU.Build.0 = Release|Any CPU
-		{47A2D36E-1CFC-45AB-A080-136A03225AD3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{47A2D36E-1CFC-45AB-A080-136A03225AD3}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{47A2D36E-1CFC-45AB-A080-136A03225AD3}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{47A2D36E-1CFC-45AB-A080-136A03225AD3}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -54,7 +42,6 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{3CBCCF55-89F4-43AB-898D-99814BD8390E} = {261360A6-F0E6-4982-945F-7CDE97F9946E}
 		{C6EEBFDD-E3A2-48F8-8968-44EDF7B159BB} = {261360A6-F0E6-4982-945F-7CDE97F9946E}
-		{47A2D36E-1CFC-45AB-A080-136A03225AD3} = {261360A6-F0E6-4982-945F-7CDE97F9946E}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {6D5F83DF-0D61-4D02-8686-CF7B16311BDB}

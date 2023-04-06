@@ -1,8 +1,8 @@
-﻿using LiteDB;
+﻿using Microsoft.Data.Sqlite;
 using System;
 using System.Diagnostics;
 
-namespace DevOptimal.SystemStateManager.Persistence
+namespace DevOptimal.SystemStateManager.Persistence.SQLite
 {
     internal abstract class PersistentCaretaker<TOriginator, TMemento> : Caretaker<TOriginator, TMemento>, IPersistentSnapshot
         where TOriginator : IOriginator<TMemento>
@@ -11,6 +11,8 @@ namespace DevOptimal.SystemStateManager.Persistence
         public int ProcessID { get; }
 
         public DateTime ProcessStartTime { get; }
+
+        protected readonly SqliteConnection connection;
 
         private readonly bool persisted;
 
@@ -22,38 +24,36 @@ namespace DevOptimal.SystemStateManager.Persistence
         /// <param name="id">A string that uniquely identifies the resource represented by the caretaker.</param>
         /// <param name="originator">The caretaker's originator, used for getting and setting a memento from the resource.</param>
         /// <exception cref="Exception"></exception>
-        protected PersistentCaretaker(string id, TOriginator originator) : base(id, originator)
+        protected PersistentCaretaker(string id, TOriginator originator, SqliteConnection connection) : base(id, originator)
         {
+            this.connection = connection;
             var currentProcess = Process.GetCurrentProcess();
             ProcessID = currentProcess.Id;
             ProcessStartTime = currentProcess.StartTime;
 
-            using (var database = LiteDatabaseFactory.GetDatabase())
+            Initialize();
+
+            lock (connection) // Sqlite connections are not thread safe: https://github.com/dotnet/efcore/issues/22664#issuecomment-696870423
             {
-                if (database.BeginTrans())
+                using (var transaction = this.connection.BeginTransaction())
                 {
                     try
                     {
-                        var col = database.GetCollection<IPersistentSnapshot>();
-                        col.Insert(this);
-                        database.Commit();
+                        Persist();
+                        transaction.Commit();
                         persisted = true;
                     }
                     catch (Exception ex)
                     {
-                        database.Rollback();
+                        transaction.Rollback();
 
-                        if (ex is LiteException liteEx && liteEx.ErrorCode == LiteException.INDEX_DUPLICATE_KEY)
+                        if (ex is SqliteException sqliteEx && sqliteEx.SqliteErrorCode == 19 && sqliteEx.SqliteExtendedErrorCode == 1555)
                         {
-                            throw new ResourceLockedException($"The resource '{ID}' is locked by another instance.", liteEx);
+                            throw new ResourceLockedException($"The resource '{ID}' is locked by another instance.", sqliteEx);
                         }
 
                         throw;
                     }
-                }
-                else
-                {
-                    throw new InvalidOperationException("Cannot open a transaction.");
                 }
             }
         }
@@ -66,12 +66,19 @@ namespace DevOptimal.SystemStateManager.Persistence
         /// <param name="processStartTime">The start time of the process that created the caretaker. Process IDs are reused, so start time is required to identify a unique process.</param>
         /// <param name="originator">The caretaker's originator, used for getting and setting a memento from the resource.</param>
         /// <param name="memento">The caretaker's memento, which stores the current state of the resource.</param>
-        protected PersistentCaretaker(string id, int processID, DateTime processStartTime, TOriginator originator, TMemento memento) : base(id, originator, memento)
+        protected PersistentCaretaker(string id, int processID, DateTime processStartTime, TOriginator originator, TMemento memento, SqliteConnection connection) : base(id, originator, memento)
         {
+            this.connection = connection;
             ProcessID = processID;
             ProcessStartTime = processStartTime;
             persisted = true;
         }
+
+        protected abstract void Initialize();
+
+        protected abstract void Persist();
+
+        protected abstract void Unpersist();
 
         protected override void Dispose(bool disposing)
         {
@@ -83,25 +90,20 @@ namespace DevOptimal.SystemStateManager.Persistence
                 {
                     if (disposing)
                     {
-                        using (var database = LiteDatabaseFactory.GetDatabase())
+                        lock (connection)
                         {
-                            if (database.BeginTrans())
+                            using (var transaction = connection.BeginTransaction())
                             {
                                 try
                                 {
-                                    var col = database.GetCollection<IPersistentSnapshot>();
-                                    col.Delete(ID);
-                                    database.Commit();
+                                    Unpersist();
+                                    transaction.Commit();
                                 }
                                 catch
                                 {
-                                    database.Rollback();
+                                    transaction.Rollback();
                                     throw;
                                 }
-                            }
-                            else
-                            {
-                                throw new InvalidOperationException("Cannot open a transaction.");
                             }
                         }
                     }

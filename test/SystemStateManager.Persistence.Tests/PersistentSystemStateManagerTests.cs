@@ -15,7 +15,7 @@ namespace DevOptimal.SystemStateManager.Persistence.Tests
             var target = EnvironmentVariableTarget.Machine;
             var expectedValue = "bar";
 
-            using var systemStateManager = new PersistentSystemStateManager(environment, fileSystem, registry);
+            using var systemStateManager = CreatePersistentSystemStateManager();
 
             systemStateManager.SnapshotEnvironmentVariable(name, target);
 
@@ -26,9 +26,9 @@ namespace DevOptimal.SystemStateManager.Persistence.Tests
         }
 
         [TestMethod]
-        public void IsThreadSafe()
+        public void SnapshotIsThreadSafe()
         {
-            using var systemStateManager = new PersistentSystemStateManager(environment, fileSystem, registry);
+            using var systemStateManager = CreatePersistentSystemStateManager();
 
             var target = EnvironmentVariableTarget.Machine;
             var expectedValue = "bar";
@@ -50,6 +50,20 @@ namespace DevOptimal.SystemStateManager.Persistence.Tests
             }
 
             Task.WaitAll(tasks.ToArray());
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(ResourceLockedException))]
+        public void ThrowsWhenSnapshotLockedResource()
+        {
+            var name = "foo";
+            var target = EnvironmentVariableTarget.Machine;
+
+            using var systemStateManager1 = CreatePersistentSystemStateManager();
+            using var systemStateManager2 = CreatePersistentSystemStateManager();
+
+            systemStateManager1.SnapshotEnvironmentVariable(name, target);
+            systemStateManager2.SnapshotEnvironmentVariable(name, target);
         }
     }
 }

@@ -11,7 +11,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\SystemStateManager.Persistence.SQLite\SystemStateManager.Persistence.SQLite.csproj" />
+    <ProjectReference Include="..\..\src\SystemStateManager.Persistence\SystemStateManager.Persistence.csproj" />
   </ItemGroup>
 
   <ItemGroup>

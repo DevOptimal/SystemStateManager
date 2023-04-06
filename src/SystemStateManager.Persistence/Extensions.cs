@@ -8,13 +8,16 @@ namespace DevOptimal.SystemStateManager.Persistence.SQLite
     {
         public static SqliteParameter AddWithNullableValue(this SqliteParameterCollection parameters, string parameterName, object value)
         {
-            if (value == null)
-            {
-                value = DBNull.Value;
-            }
-
-            return parameters.AddWithValue(parameterName, value);
+            return parameters.AddWithValue(parameterName, value ?? DBNull.Value);
         }
+
+        public static bool GetBoolean(this SqliteDataReader reader, string name) => reader.GetBoolean(reader.GetOrdinal(name));
+
+        public static int GetInt32(this SqliteDataReader reader, string name) => reader.GetInt32(reader.GetOrdinal(name));
+
+        public static long GetInt64(this SqliteDataReader reader, string name) => reader.GetInt64(reader.GetOrdinal(name));
+
+        public static string GetString(this SqliteDataReader reader, string name) => reader.GetString(reader.GetOrdinal(name));
 
         public static string GetNullableString(this SqliteDataReader reader, string name) => reader.GetNullableString(reader.GetOrdinal(name));
 
