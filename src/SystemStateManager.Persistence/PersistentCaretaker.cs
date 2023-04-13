@@ -2,7 +2,7 @@
 using System;
 using System.Diagnostics;
 
-namespace DevOptimal.SystemStateManager.Persistence.SQLite
+namespace DevOptimal.SystemStateManager.Persistence
 {
     internal abstract class PersistentCaretaker<TOriginator, TMemento> : Caretaker<TOriginator, TMemento>, IPersistentSnapshot
         where TOriginator : IOriginator<TMemento>

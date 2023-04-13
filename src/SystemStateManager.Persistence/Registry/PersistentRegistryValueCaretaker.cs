@@ -8,7 +8,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 
-namespace DevOptimal.SystemStateManager.Persistence.SQLite.Registry
+namespace DevOptimal.SystemStateManager.Persistence.Registry
 {
     internal class PersistentRegistryValueCaretaker : PersistentCaretaker<RegistryValueOriginator, RegistryValueMemento>
     {

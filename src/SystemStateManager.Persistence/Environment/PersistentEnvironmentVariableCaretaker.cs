@@ -4,7 +4,7 @@ using Microsoft.Data.Sqlite;
 using System;
 using System.Collections.Generic;
 
-namespace DevOptimal.SystemStateManager.Persistence.SQLite.Environment
+namespace DevOptimal.SystemStateManager.Persistence.Environment
 {
     internal class PersistentEnvironmentVariableCaretaker : PersistentCaretaker<EnvironmentVariableOriginator, EnvironmentVariableMemento>
     {

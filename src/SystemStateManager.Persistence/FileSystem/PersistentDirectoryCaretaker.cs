@@ -4,7 +4,7 @@ using Microsoft.Data.Sqlite;
 using System;
 using System.Collections.Generic;
 
-namespace DevOptimal.SystemStateManager.Persistence.SQLite.FileSystem
+namespace DevOptimal.SystemStateManager.Persistence.FileSystem
 {
     internal class PersistentDirectoryCaretaker : PersistentCaretaker<DirectoryOriginator, DirectoryMemento>
     {

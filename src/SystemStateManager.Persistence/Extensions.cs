@@ -2,7 +2,7 @@
 using System;
 using System.IO;
 
-namespace DevOptimal.SystemStateManager.Persistence.SQLite
+namespace DevOptimal.SystemStateManager.Persistence
 {
     internal static class Extensions
     {

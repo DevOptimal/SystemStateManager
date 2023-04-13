@@ -1,9 +1,9 @@
 ﻿using DevOptimal.SystemStateManager.Environment;
 using DevOptimal.SystemStateManager.FileSystem;
-using DevOptimal.SystemStateManager.Persistence.SQLite.Environment;
-using DevOptimal.SystemStateManager.Persistence.SQLite.FileSystem;
-using DevOptimal.SystemStateManager.Persistence.SQLite.FileSystem.Caching;
-using DevOptimal.SystemStateManager.Persistence.SQLite.Registry;
+using DevOptimal.SystemStateManager.Persistence.Environment;
+using DevOptimal.SystemStateManager.Persistence.FileSystem;
+using DevOptimal.SystemStateManager.Persistence.FileSystem.Caching;
+using DevOptimal.SystemStateManager.Persistence.Registry;
 using DevOptimal.SystemStateManager.Registry;
 using DevOptimal.SystemUtilities.Environment;
 using DevOptimal.SystemUtilities.FileSystem;
@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 using System.Security.AccessControl;
 using System.Security.Principal;
 
-namespace DevOptimal.SystemStateManager.Persistence.SQLite
+namespace DevOptimal.SystemStateManager.Persistence
 {
     public class PersistentSystemStateManager : SystemStateManager
     {

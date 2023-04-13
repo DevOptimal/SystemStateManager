@@ -4,7 +4,7 @@ using Microsoft.Data.Sqlite;
 using System;
 using System.IO;
 
-namespace DevOptimal.SystemStateManager.Persistence.SQLite.FileSystem.Caching
+namespace DevOptimal.SystemStateManager.Persistence.FileSystem.Caching
 {
     internal class SQLiteFileCache : IFileCache
     {

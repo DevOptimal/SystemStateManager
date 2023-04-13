@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace DevOptimal.SystemStateManager.Persistence.SQLite
+namespace DevOptimal.SystemStateManager.Persistence
 {
     internal interface IPersistentSnapshot : ISnapshot
     {

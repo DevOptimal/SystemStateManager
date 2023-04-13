@@ -5,7 +5,7 @@ using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
 
-namespace DevOptimal.SystemStateManager.Persistence.SQLite.Registry
+namespace DevOptimal.SystemStateManager.Persistence.Registry
 {
     internal class PersistentRegistryKeyCaretaker : PersistentCaretaker<RegistryKeyOriginator, RegistryKeyMemento>
     {
