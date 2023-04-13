@@ -31,14 +31,13 @@ namespace DevOptimal.SystemStateManager.Persistence.SQLite
             ProcessID = currentProcess.Id;
             ProcessStartTime = currentProcess.StartTime;
 
-            Initialize();
-
             lock (connection) // Sqlite connections are not thread safe: https://github.com/dotnet/efcore/issues/22664#issuecomment-696870423
             {
                 using (var transaction = this.connection.BeginTransaction())
                 {
                     try
                     {
+                        Initialize();
                         Persist();
                         transaction.Commit();
                         persisted = true;
