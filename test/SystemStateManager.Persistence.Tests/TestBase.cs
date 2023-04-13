@@ -1,7 +1,7 @@
-﻿using DevOptimal.SystemUtilities.Environment;
+﻿using DevOptimal.SystemStateManager.Persistence;
+using DevOptimal.SystemUtilities.Environment;
 using DevOptimal.SystemUtilities.FileSystem;
 using DevOptimal.SystemUtilities.Registry;
-using LiteDB;
 using Microsoft.QualityTools.Testing.Fakes;
 using System;
 using System.Diagnostics.Fakes;
@@ -22,27 +22,18 @@ namespace DevOptimal.SystemStateManager.Persistence.Tests
         [AssemblyInitialize]
         public static void AssemblyInitialize(TestContext testContext)
         {
-            PersistentSystemStateManager.PersistenceURI = new Uri(Path.Combine(testContext.ResultsDirectory, "persistence.litedb"));
+            PersistentSystemStateManager.PersistenceURI = new Uri(Path.Combine(testContext.ResultsDirectory, "persistence.db"));
         }
 
         [TestInitialize]
         public void TestInitialize()
         {
             environment = new MockEnvironment();
-            LiteDatabaseFactory.Mapper.RegisterType(
-                serialize: value => BsonMapper.Global.ToDocument(value),//new BsonValue(value),
-                deserialize: bson => environment);
-
             fileSystem = new MockFileSystem();
-            LiteDatabaseFactory.Mapper.RegisterType(
-                serialize: value => BsonMapper.Global.ToDocument(value),//new BsonValue(value),
-                deserialize: bson => fileSystem);
-
             registry = new MockRegistry();
-            LiteDatabaseFactory.Mapper.RegisterType(
-                serialize: value => BsonMapper.Global.ToDocument(value),//new BsonValue(value),
-                deserialize: bson => registry);
         }
+
+        protected PersistentSystemStateManager CreatePersistentSystemStateManager() => new(environment, fileSystem, registry);
 
         protected IDisposable CreateShimsContext()
         {

@@ -38,17 +38,17 @@ namespace DevOptimal.SystemStateManager
         {
         }
 
-        internal SystemStateManager(IFileCache fileCache, IEnvironment environment, IFileSystem fileSystem, IRegistry registry)
+        protected SystemStateManager(IFileCache fileCache, IEnvironment environment, IFileSystem fileSystem, IRegistry registry)
             : this(new List<ISnapshot>(), fileCache, environment, fileSystem, registry)
         {
         }
 
-        internal SystemStateManager(List<ISnapshot> snapshots, IFileCache fileCache)
+        protected SystemStateManager(List<ISnapshot> snapshots, IFileCache fileCache)
             : this(snapshots, fileCache, new DefaultEnvironment(), new DefaultFileSystem(), new DefaultRegistry())
         {
         }
 
-        internal SystemStateManager(List<ISnapshot> snapshots, IFileCache fileCache, IEnvironment environment, IFileSystem fileSystem, IRegistry registry)
+        protected SystemStateManager(List<ISnapshot> snapshots, IFileCache fileCache, IEnvironment environment, IFileSystem fileSystem, IRegistry registry)
         {
             this.snapshots = snapshots;
             this.fileCache = fileCache;
