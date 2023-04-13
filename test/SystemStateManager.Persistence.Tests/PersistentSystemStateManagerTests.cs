@@ -1,4 +1,4 @@
-﻿using DevOptimal.SystemStateManager.Persistence.SQLite;
+﻿using DevOptimal.SystemStateManager.Persistence;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
