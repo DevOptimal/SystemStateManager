@@ -164,10 +164,19 @@ namespace DevOptimal.SystemStateManager.Persistence
             {
                 DataSource = databaseFile.FullName,
                 Cache = SqliteCacheMode.Shared,
-                Mode = SqliteOpenMode.ReadWriteCreate
+                Mode = SqliteOpenMode.ReadWriteCreate,
+                Pooling = false
             }.ToString();
             var connection = new SqliteConnection(connectionString);
             connection.Open();
+
+            // Enable write-ahead logging
+            var walCommand = connection.CreateCommand();
+            walCommand.CommandText =
+            @"
+                PRAGMA journal_mode = 'wal'
+            ";
+            walCommand.ExecuteNonQuery();
 
             return connection;
         }

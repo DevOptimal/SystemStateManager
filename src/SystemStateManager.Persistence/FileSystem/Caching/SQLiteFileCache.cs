@@ -8,7 +8,7 @@ namespace DevOptimal.SystemStateManager.Persistence.FileSystem.Caching
 {
     internal class SQLiteFileCache : IFileCache
     {
-        private const int maxChunkSize = 999999953; // Maximum BLOB size for SQLite database
+        private const int maxChunkSize = 10000;
 
         private class FileChunk
         {
@@ -53,7 +53,7 @@ namespace DevOptimal.SystemStateManager.Persistence.FileSystem.Caching
                 {
                     while (reader.Read())
                     {
-                        using (var blobStream = reader.GetStream(reader.GetOrdinal(nameof(FileChunk.Data))))
+                        using (var blobStream = reader.GetStream(nameof(FileChunk.Data)))
                         {
                             blobStream.CopyTo(fileStream);
                         }
@@ -73,10 +73,12 @@ namespace DevOptimal.SystemStateManager.Persistence.FileSystem.Caching
                 var remainingBytes = fileStream.Length;
                 while (remainingBytes > 0)
                 {
-                    var chunkSize = Math.Min(maxChunkSize, remainingBytes);
+                    var bufferSize = (int)Math.Min(maxChunkSize, remainingBytes);
+                    var buffer = new byte[bufferSize];
+                    remainingBytes -= fileStream.Read(buffer, 0, bufferSize);
 
-                    var insertCommand = connection.CreateCommand();
-                    insertCommand.CommandText =
+                    var command = connection.CreateCommand();
+                    command.CommandText =
                     $@"INSERT INTO {nameof(FileChunk)} (
                         {nameof(FileChunk.FileID)},
                         {nameof(FileChunk.ChunkIndex)},
@@ -84,25 +86,12 @@ namespace DevOptimal.SystemStateManager.Persistence.FileSystem.Caching
                     ) VALUES (
                         @{nameof(FileChunk.FileID)},
                         @{nameof(FileChunk.ChunkIndex)},
-                        zeroblob(@{nameof(chunkSize)})
-                    );
-                    SELECT last_insert_rowid();";
-                    insertCommand.Parameters.AddWithValue($"@{nameof(FileChunk.FileID)}", fileID);
-                    insertCommand.Parameters.AddWithValue($"@{nameof(FileChunk.ChunkIndex)}", index++);
-                    insertCommand.Parameters.AddWithValue($"@{nameof(chunkSize)}", chunkSize);
-                    var rowid = (long)insertCommand.ExecuteScalar();
-
-                    var bufferSize = 81920;
-                    using (var blobStream = new SqliteBlob(connection, nameof(FileChunk), nameof(FileChunk.Data), rowid))
-                    {
-                        for (var i = 0; i < chunkSize; i += bufferSize)
-                        {
-                            bufferSize = (int)Math.Min(bufferSize, chunkSize - i);
-                            var buffer = new byte[bufferSize];
-                            remainingBytes -= fileStream.Read(buffer, 0, bufferSize);
-                            blobStream.Write(buffer, 0, bufferSize);
-                        }
-                    }
+                        @{nameof(FileChunk.Data)}
+                    );";
+                    command.Parameters.AddWithValue($"@{nameof(FileChunk.FileID)}", fileID);
+                    command.Parameters.AddWithValue($"@{nameof(FileChunk.ChunkIndex)}", index++);
+                    command.Parameters.AddWithValue($"@{nameof(FileChunk.Data)}", buffer);
+                    command.ExecuteNonQuery();
                 }
             }
 

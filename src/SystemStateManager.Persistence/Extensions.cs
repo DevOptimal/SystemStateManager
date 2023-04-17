@@ -31,6 +31,8 @@ namespace DevOptimal.SystemStateManager.Persistence
             return reader.GetString(ordinal);
         }
 
+        public static Stream GetStream(this SqliteDataReader reader, string name) => reader.GetStream(reader.GetOrdinal(name));
+
         public static Stream GetNullableStream(this SqliteDataReader reader, string name) => reader.GetNullableStream(reader.GetOrdinal(name));
 
         public static Stream GetNullableStream(this SqliteDataReader reader, int ordinal)
