@@ -8,7 +8,7 @@ namespace DevOptimal.SystemStateManager.Persistence.FileSystem.Caching
 {
     internal class SQLiteFileCache : IFileCache
     {
-        private const int maxChunkSize = 10000;
+        private const int maxChunkSize = 1000000;
 
         private class FileChunk
         {
