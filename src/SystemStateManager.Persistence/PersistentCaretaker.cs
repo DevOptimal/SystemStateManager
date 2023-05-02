@@ -14,8 +14,6 @@ namespace DevOptimal.SystemStateManager.Persistence
 
         protected readonly SqliteConnection connection;
 
-        private readonly bool persisted;
-
         private bool disposedValue;
 
         /// <summary>
@@ -40,7 +38,6 @@ namespace DevOptimal.SystemStateManager.Persistence
                         Initialize();
                         Persist();
                         transaction.Commit();
-                        persisted = true;
                     }
                     catch (Exception ex)
                     {
@@ -70,7 +67,6 @@ namespace DevOptimal.SystemStateManager.Persistence
             this.connection = connection;
             ProcessID = processID;
             ProcessStartTime = processStartTime;
-            persisted = true;
         }
 
         protected abstract void Initialize();
@@ -81,36 +77,33 @@ namespace DevOptimal.SystemStateManager.Persistence
 
         protected override void Dispose(bool disposing)
         {
-            if (persisted)
-            {
-                base.Dispose(disposing);
+            base.Dispose(disposing);
 
-                if (!disposedValue)
+            if (!disposedValue)
+            {
+                if (disposing)
                 {
-                    if (disposing)
+                    lock (connection)
                     {
-                        lock (connection)
+                        using (var transaction = connection.BeginTransaction())
                         {
-                            using (var transaction = connection.BeginTransaction())
+                            try
                             {
-                                try
-                                {
-                                    Unpersist();
-                                    transaction.Commit();
-                                }
-                                catch
-                                {
-                                    transaction.Rollback();
-                                    throw;
-                                }
+                                Unpersist();
+                                transaction.Commit();
+                            }
+                            catch
+                            {
+                                transaction.Rollback();
+                                throw;
                             }
                         }
                     }
-
-                    // TODO: free unmanaged resources (unmanaged objects) and override finalizer
-                    // TODO: set large fields to null
-                    disposedValue = true;
                 }
+
+                // TODO: free unmanaged resources (unmanaged objects) and override finalizer
+                // TODO: set large fields to null
+                disposedValue = true;
             }
         }
     }

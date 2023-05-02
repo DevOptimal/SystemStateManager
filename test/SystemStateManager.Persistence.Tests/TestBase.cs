@@ -1,5 +1,4 @@
-﻿using DevOptimal.SystemStateManager.Persistence;
-using DevOptimal.SystemUtilities.Environment;
+﻿using DevOptimal.SystemUtilities.Environment;
 using DevOptimal.SystemUtilities.FileSystem;
 using DevOptimal.SystemUtilities.Registry;
 using Microsoft.QualityTools.Testing.Fakes;

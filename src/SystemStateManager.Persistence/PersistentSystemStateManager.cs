@@ -171,12 +171,12 @@ namespace DevOptimal.SystemStateManager.Persistence
             connection.Open();
 
             // Enable write-ahead logging
-            var walCommand = connection.CreateCommand();
-            walCommand.CommandText =
+            var command = connection.CreateCommand();
+            command.CommandText =
             @"
                 PRAGMA journal_mode = 'wal'
             ";
-            walCommand.ExecuteNonQuery();
+            command.ExecuteNonQuery();
 
             return connection;
         }

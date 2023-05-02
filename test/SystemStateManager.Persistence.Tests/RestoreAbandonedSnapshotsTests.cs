@@ -1,5 +1,4 @@
-﻿using DevOptimal.SystemStateManager.Persistence;
-using Microsoft.Win32;
+﻿using Microsoft.Win32;
 using System;
 using System.IO;
 using System.Runtime.Versioning;
@@ -8,7 +7,7 @@ using System.Text;
 namespace DevOptimal.SystemStateManager.Persistence.Tests
 {
     [TestClass]
-    //[TestCategory("OmitFromCI")] // Fakes require Visual Studio Enterprise, but agent machines only have Community installed.
+    [TestCategory("OmitFromCI")] // Fakes require Visual Studio Enterprise, but agent machines only have Community installed.
     public class RestoreAbandonedSnapshotsTests : TestBase
     {
         [TestMethod]
