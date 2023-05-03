@@ -1,5 +1,6 @@
 ﻿using DevOptimal.SystemStateManager.FileSystem;
 using DevOptimal.SystemUtilities.FileSystem;
+using Microsoft.Data.Sqlite;
 using System;
 using System.IO;
 
@@ -56,7 +57,7 @@ namespace DevOptimal.SystemStateManager.Persistence.FileSystem.Caching
                     {
                         while (reader.Read())
                         {
-                            using (var blobStream = reader.GetStream(nameof(FileChunk.Data)))
+                            using (var blobStream = reader.GetStream(reader.GetOrdinal(nameof(FileChunk.Data))))
                             {
                                 blobStream.CopyTo(fileStream);
                             }
@@ -88,25 +89,36 @@ namespace DevOptimal.SystemStateManager.Persistence.FileSystem.Caching
                     var remainingBytes = fileStream.Length;
                     while (remainingBytes > 0)
                     {
-                        var bufferSize = (int)Math.Min(maxChunkSize, remainingBytes);
-                        var buffer = new byte[bufferSize];
-                        remainingBytes -= fileStream.Read(buffer, 0, bufferSize);
+                        var chunkSize = Math.Min(maxChunkSize, remainingBytes);
 
-                        var command = connection.CreateCommand();
-                        command.CommandText =
+                        var insertCommand = connection.CreateCommand();
+                        insertCommand.CommandText =
                         $@"INSERT INTO {nameof(FileChunk)} (
-                        {nameof(FileChunk.FileID)},
-                        {nameof(FileChunk.ChunkIndex)},
-                        {nameof(FileChunk.Data)}
-                    ) VALUES (
-                        @{nameof(FileChunk.FileID)},
-                        @{nameof(FileChunk.ChunkIndex)},
-                        @{nameof(FileChunk.Data)}
-                    );";
-                        command.Parameters.AddWithValue($"@{nameof(FileChunk.FileID)}", fileID);
-                        command.Parameters.AddWithValue($"@{nameof(FileChunk.ChunkIndex)}", index++);
-                        command.Parameters.AddWithValue($"@{nameof(FileChunk.Data)}", buffer);
-                        command.ExecuteNonQuery();
+                            {nameof(FileChunk.FileID)},
+                            {nameof(FileChunk.ChunkIndex)},
+                            {nameof(FileChunk.Data)}
+                        ) VALUES (
+                            @{nameof(FileChunk.FileID)},
+                            @{nameof(FileChunk.ChunkIndex)},
+                            zeroblob(@{nameof(chunkSize)})
+                        );
+                        SELECT last_insert_rowid();";
+                        insertCommand.Parameters.AddWithValue($"@{nameof(FileChunk.FileID)}", fileID);
+                        insertCommand.Parameters.AddWithValue($"@{nameof(FileChunk.ChunkIndex)}", index++);
+                        insertCommand.Parameters.AddWithValue($"@{nameof(chunkSize)}", chunkSize);
+                        var rowid = (long)insertCommand.ExecuteScalar();
+
+                        var bufferSize = 81920;
+                        using (var blobStream = new SqliteBlob(connection, nameof(FileChunk), nameof(FileChunk.Data), rowid))
+                        {
+                            for (var i = 0; i < chunkSize; i += bufferSize)
+                            {
+                                bufferSize = (int)Math.Min(bufferSize, chunkSize - i);
+                                var buffer = new byte[bufferSize];
+                                remainingBytes -= fileStream.Read(buffer, 0, bufferSize);
+                                blobStream.Write(buffer, 0, bufferSize);
+                            }
+                        }
                     }
 
                     transaction.Commit();
