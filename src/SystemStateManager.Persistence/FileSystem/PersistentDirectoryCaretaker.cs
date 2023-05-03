@@ -8,18 +8,18 @@ namespace DevOptimal.SystemStateManager.Persistence.FileSystem
 {
     internal class PersistentDirectoryCaretaker : PersistentCaretaker<DirectoryOriginator, DirectoryMemento>
     {
-        public PersistentDirectoryCaretaker(string id, DirectoryOriginator originator, SqliteConnection connection)
-            : base(id, originator, connection)
+        public PersistentDirectoryCaretaker(string id, DirectoryOriginator originator)
+            : base(id, originator)
         {
         }
 
-        public PersistentDirectoryCaretaker(string id, int processID, DateTime processStartTime, DirectoryOriginator originator, DirectoryMemento memento, SqliteConnection connection)
-            : base(id, processID, processStartTime, originator, memento, connection)
+        public PersistentDirectoryCaretaker(string id, int processID, DateTime processStartTime, DirectoryOriginator originator, DirectoryMemento memento)
+            : base(id, processID, processStartTime, originator, memento)
         {
         }
 
 
-        protected override void Initialize()
+        protected override void Initialize(SqliteConnection connection)
         {
             var command = connection.CreateCommand();
             command.CommandText =
@@ -33,7 +33,7 @@ namespace DevOptimal.SystemStateManager.Persistence.FileSystem
             command.ExecuteNonQuery();
         }
 
-        protected override void Persist()
+        protected override void Persist(SqliteConnection connection)
         {
             var command = connection.CreateCommand();
             command.CommandText =
@@ -58,7 +58,7 @@ namespace DevOptimal.SystemStateManager.Persistence.FileSystem
             command.ExecuteNonQuery();
         }
 
-        protected override void Unpersist()
+        protected override void Unpersist(SqliteConnection connection)
         {
             var command = connection.CreateCommand();
             command.CommandText = $@"DELETE FROM {nameof(PersistentDirectoryCaretaker)} WHERE {nameof(ID)} = @{nameof(ID)};";
@@ -87,8 +87,7 @@ namespace DevOptimal.SystemStateManager.Persistence.FileSystem
                             memento: new DirectoryMemento
                             {
                                 Exists = reader.GetBoolean(nameof(DirectoryMemento.Exists))
-                            },
-                            connection: connection
+                            }
                         );
                         caretakers.Add(caretaker);
                     }

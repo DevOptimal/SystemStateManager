@@ -12,18 +12,18 @@ namespace DevOptimal.SystemStateManager.Persistence.Registry
 {
     internal class PersistentRegistryValueCaretaker : PersistentCaretaker<RegistryValueOriginator, RegistryValueMemento>
     {
-        public PersistentRegistryValueCaretaker(string id, RegistryValueOriginator originator, SqliteConnection connection)
-            : base(id, originator, connection)
+        public PersistentRegistryValueCaretaker(string id, RegistryValueOriginator originator)
+            : base(id, originator)
         {
         }
 
-        public PersistentRegistryValueCaretaker(string id, int processID, DateTime processStartTime, RegistryValueOriginator originator, RegistryValueMemento memento, SqliteConnection connection)
-            : base(id, processID, processStartTime, originator, memento, connection)
+        public PersistentRegistryValueCaretaker(string id, int processID, DateTime processStartTime, RegistryValueOriginator originator, RegistryValueMemento memento)
+            : base(id, processID, processStartTime, originator, memento)
         {
         }
 
 
-        protected override void Initialize()
+        protected override void Initialize(SqliteConnection connection)
         {
             var command = connection.CreateCommand();
             command.CommandText =
@@ -41,7 +41,7 @@ namespace DevOptimal.SystemStateManager.Persistence.Registry
             command.ExecuteNonQuery();
         }
 
-        protected override void Persist()
+        protected override void Persist(SqliteConnection connection)
         {
             var command = connection.CreateCommand();
             command.CommandText =
@@ -78,7 +78,7 @@ namespace DevOptimal.SystemStateManager.Persistence.Registry
             command.ExecuteNonQuery();
         }
 
-        protected override void Unpersist()
+        protected override void Unpersist(SqliteConnection connection)
         {
             var command = connection.CreateCommand();
             command.CommandText = $@"DELETE FROM {nameof(PersistentRegistryValueCaretaker)} WHERE {nameof(ID)} = @{nameof(ID)};";
@@ -127,8 +127,7 @@ namespace DevOptimal.SystemStateManager.Persistence.Registry
                             {
                                 Value = ConvertBytesToValue(valueBytes),
                                 Kind = (RegistryValueKind)reader.GetInt32(nameof(RegistryValueMemento.Kind))
-                            },
-                            connection: connection
+                            }
                         );
                         caretakers.Add(caretaker);
                     }
