@@ -8,18 +8,18 @@ namespace DevOptimal.SystemStateManager.Persistence.FileSystem
 {
     internal class PersistentFileCaretaker : PersistentCaretaker<FileOriginator, FileMemento>
     {
-        public PersistentFileCaretaker(string id, FileOriginator originator, SqliteConnection connection)
-            : base(id, originator, connection)
+        public PersistentFileCaretaker(string id, FileOriginator originator)
+            : base(id, originator)
         {
         }
 
-        public PersistentFileCaretaker(string id, int processID, DateTime processStartTime, FileOriginator originator, FileMemento memento, SqliteConnection connection)
-            : base(id, processID, processStartTime, originator, memento, connection)
+        public PersistentFileCaretaker(string id, int processID, DateTime processStartTime, FileOriginator originator, FileMemento memento)
+            : base(id, processID, processStartTime, originator, memento)
         {
         }
 
 
-        protected override void Initialize()
+        protected override void Initialize(SqliteConnection connection)
         {
             var command = connection.CreateCommand();
             command.CommandText =
@@ -33,7 +33,7 @@ namespace DevOptimal.SystemStateManager.Persistence.FileSystem
             command.ExecuteNonQuery();
         }
 
-        protected override void Persist()
+        protected override void Persist(SqliteConnection connection)
         {
             var command = connection.CreateCommand();
             command.CommandText =
@@ -58,7 +58,7 @@ namespace DevOptimal.SystemStateManager.Persistence.FileSystem
             command.ExecuteNonQuery();
         }
 
-        protected override void Unpersist()
+        protected override void Unpersist(SqliteConnection connection)
         {
             var command = connection.CreateCommand();
             command.CommandText = $@"DELETE FROM {nameof(PersistentFileCaretaker)} WHERE {nameof(ID)} = @{nameof(ID)};";
@@ -88,8 +88,7 @@ namespace DevOptimal.SystemStateManager.Persistence.FileSystem
                             memento: new FileMemento
                             {
                                 Hash = reader.GetNullableString(nameof(FileMemento.Hash))
-                            },
-                            connection: connection
+                            }
                         );
                         caretakers.Add(caretaker);
                     }

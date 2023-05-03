@@ -21,43 +21,55 @@ namespace DevOptimal.SystemStateManager.Persistence.FileSystem.Caching
 
         public IFileSystem FileSystem { get; }
 
-        private readonly SqliteConnection connection;
-
-        public SQLiteFileCache(IFileSystem fileSystem, SqliteConnection connection)
+        public SQLiteFileCache(IFileSystem fileSystem)
         {
             FileSystem = fileSystem;
-            this.connection = connection;
 
-            var createCommand = connection.CreateCommand();
-            createCommand.CommandText =
-            $@"CREATE TABLE IF NOT EXISTS {nameof(FileChunk)} (
-                {nameof(FileChunk.FileID)} INTEGER NOT NULL,
-                {nameof(FileChunk.ChunkIndex)} INTEGER NOT NULL,
-                {nameof(FileChunk.Data)} BLOB,
-                PRIMARY KEY ({nameof(FileChunk.FileID)}, {nameof(FileChunk.ChunkIndex)})
-            );";
-            createCommand.ExecuteNonQuery();
+            using (var connection = SqliteConnectionFactory.Create())
+            {
+                var createCommand = connection.CreateCommand();
+                createCommand.CommandText =
+                $@"CREATE TABLE IF NOT EXISTS {nameof(FileChunk)} (
+                    {nameof(FileChunk.FileID)} INTEGER NOT NULL,
+                    {nameof(FileChunk.ChunkIndex)} INTEGER NOT NULL,
+                    {nameof(FileChunk.Data)} BLOB,
+                    PRIMARY KEY ({nameof(FileChunk.FileID)}, {nameof(FileChunk.ChunkIndex)})
+                );";
+                createCommand.ExecuteNonQuery();
+            }
         }
 
         public void DownloadFile(string id, string destinationPath)
         {
             var destinationFile = new FileInfo(destinationPath);
             using (var fileStream = FileSystem.OpenFile(destinationFile.FullName, FileMode.OpenOrCreate, FileAccess.Write, FileShare.None))
+            using (var connection = SqliteConnectionFactory.Create())
+            using (var transaction = connection.BeginTransaction())
             {
-                fileStream.SetLength(0); // Delete existing file.
-
-                var selectCommand = connection.CreateCommand();
-                selectCommand.CommandText = $@"SELECT {nameof(FileChunk.Data)} FROM {nameof(FileChunk)} WHERE {nameof(FileChunk.FileID)} = @{nameof(FileChunk.FileID)} ORDER BY {nameof(FileChunk.ChunkIndex)} ASC";
-                selectCommand.Parameters.AddWithValue($"@{nameof(FileChunk.FileID)}", id);
-                using (var reader = selectCommand.ExecuteReader())
+                try
                 {
-                    while (reader.Read())
+                    fileStream.SetLength(0); // Delete existing file.
+
+                    var selectCommand = connection.CreateCommand();
+                    selectCommand.CommandText = $@"SELECT {nameof(FileChunk.Data)} FROM {nameof(FileChunk)} WHERE {nameof(FileChunk.FileID)} = @{nameof(FileChunk.FileID)} ORDER BY {nameof(FileChunk.ChunkIndex)} ASC";
+                    selectCommand.Parameters.AddWithValue($"@{nameof(FileChunk.FileID)}", id);
+                    using (var reader = selectCommand.ExecuteReader())
                     {
-                        using (var blobStream = reader.GetStream(reader.GetOrdinal(nameof(FileChunk.Data))))
+                        while (reader.Read())
                         {
-                            blobStream.CopyTo(fileStream);
+                            using (var blobStream = reader.GetStream(nameof(FileChunk.Data)))
+                            {
+                                blobStream.CopyTo(fileStream);
+                            }
                         }
                     }
+
+                    transaction.Commit();
+                }
+                catch
+                {
+                    transaction.Rollback();
+                    throw;
                 }
             }
         }
@@ -68,41 +80,53 @@ namespace DevOptimal.SystemStateManager.Persistence.FileSystem.Caching
             var file = new FileInfo(sourcePath);
 
             using (var fileStream = FileSystem.OpenFile(file.FullName, FileMode.Open, FileAccess.Read, FileShare.Read))
+            using (var connection = SqliteConnectionFactory.Create())
+            using (var transaction = connection.BeginTransaction())
             {
-                var index = 0;
-                var remainingBytes = fileStream.Length;
-                while (remainingBytes > 0)
+                try
                 {
-                    var chunkSize = Math.Min(maxChunkSize, remainingBytes);
-
-                    var insertCommand = connection.CreateCommand();
-                    insertCommand.CommandText =
-                    $@"INSERT INTO {nameof(FileChunk)} (
-                        {nameof(FileChunk.FileID)},
-                        {nameof(FileChunk.ChunkIndex)},
-                        {nameof(FileChunk.Data)}
-                    ) VALUES (
-                        @{nameof(FileChunk.FileID)},
-                        @{nameof(FileChunk.ChunkIndex)},
-                        zeroblob(@{nameof(chunkSize)})
-                    );
-                    SELECT last_insert_rowid();";
-                    insertCommand.Parameters.AddWithValue($"@{nameof(FileChunk.FileID)}", fileID);
-                    insertCommand.Parameters.AddWithValue($"@{nameof(FileChunk.ChunkIndex)}", index++);
-                    insertCommand.Parameters.AddWithValue($"@{nameof(chunkSize)}", chunkSize);
-                    var rowid = (long)insertCommand.ExecuteScalar();
-
-                    var bufferSize = 81920;
-                    using (var blobStream = new SqliteBlob(connection, nameof(FileChunk), nameof(FileChunk.Data), rowid))
+                    var index = 0;
+                    var remainingBytes = fileStream.Length;
+                    while (remainingBytes > 0)
                     {
-                        for (var i = 0; i < chunkSize; i += bufferSize)
+                        var chunkSize = Math.Min(maxChunkSize, remainingBytes);
+
+                        var insertCommand = connection.CreateCommand();
+                        insertCommand.CommandText =
+                        $@"INSERT INTO {nameof(FileChunk)} (
+                            {nameof(FileChunk.FileID)},
+                            {nameof(FileChunk.ChunkIndex)},
+                            {nameof(FileChunk.Data)}
+                        ) VALUES (
+                            @{nameof(FileChunk.FileID)},
+                            @{nameof(FileChunk.ChunkIndex)},
+                            zeroblob(@{nameof(chunkSize)})
+                        );
+                        SELECT last_insert_rowid();";
+                        insertCommand.Parameters.AddWithValue($"@{nameof(FileChunk.FileID)}", fileID);
+                        insertCommand.Parameters.AddWithValue($"@{nameof(FileChunk.ChunkIndex)}", index++);
+                        insertCommand.Parameters.AddWithValue($"@{nameof(chunkSize)}", chunkSize);
+                        var rowid = (long)insertCommand.ExecuteScalar();
+
+                        var bufferSize = 81920;
+                        using (var blobStream = new SqliteBlob(connection, nameof(FileChunk), nameof(FileChunk.Data), rowid))
                         {
-                            bufferSize = (int)Math.Min(bufferSize, chunkSize - i);
-                            var buffer = new byte[bufferSize];
-                            remainingBytes -= fileStream.Read(buffer, 0, bufferSize);
-                            blobStream.Write(buffer, 0, bufferSize);
+                            for (var i = 0; i < chunkSize; i += bufferSize)
+                            {
+                                bufferSize = (int)Math.Min(bufferSize, chunkSize - i);
+                                var buffer = new byte[bufferSize];
+                                remainingBytes -= fileStream.Read(buffer, 0, bufferSize);
+                                blobStream.Write(buffer, 0, bufferSize);
+                            }
                         }
                     }
+
+                    transaction.Commit();
+                }
+                catch
+                {
+                    transaction.Rollback();
+                    throw;
                 }
             }
 

@@ -9,18 +9,18 @@ namespace DevOptimal.SystemStateManager.Persistence.Registry
 {
     internal class PersistentRegistryKeyCaretaker : PersistentCaretaker<RegistryKeyOriginator, RegistryKeyMemento>
     {
-        public PersistentRegistryKeyCaretaker(string id, RegistryKeyOriginator originator, SqliteConnection connection)
-            : base(id, originator, connection)
+        public PersistentRegistryKeyCaretaker(string id, RegistryKeyOriginator originator)
+            : base(id, originator)
         {
         }
 
-        public PersistentRegistryKeyCaretaker(string id, int processID, DateTime processStartTime, RegistryKeyOriginator originator, RegistryKeyMemento memento, SqliteConnection connection)
-            : base(id, processID, processStartTime, originator, memento, connection)
+        public PersistentRegistryKeyCaretaker(string id, int processID, DateTime processStartTime, RegistryKeyOriginator originator, RegistryKeyMemento memento)
+            : base(id, processID, processStartTime, originator, memento)
         {
         }
 
 
-        protected override void Initialize()
+        protected override void Initialize(SqliteConnection connection)
         {
             var command = connection.CreateCommand();
             command.CommandText =
@@ -36,7 +36,7 @@ namespace DevOptimal.SystemStateManager.Persistence.Registry
             command.ExecuteNonQuery();
         }
 
-        protected override void Persist()
+        protected override void Persist(SqliteConnection connection)
         {
             var command = connection.CreateCommand();
             command.CommandText =
@@ -67,7 +67,7 @@ namespace DevOptimal.SystemStateManager.Persistence.Registry
             command.ExecuteNonQuery();
         }
 
-        protected override void Unpersist()
+        protected override void Unpersist(SqliteConnection connection)
         {
             var command = connection.CreateCommand();
             command.CommandText = $@"DELETE FROM {nameof(PersistentRegistryKeyCaretaker)} WHERE {nameof(ID)} = @{nameof(ID)};";
@@ -98,8 +98,7 @@ namespace DevOptimal.SystemStateManager.Persistence.Registry
                             memento: new RegistryKeyMemento
                             {
                                 Exists = reader.GetBoolean(nameof(RegistryKeyMemento.Exists))
-                            },
-                            connection: connection
+                            }
                         );
                         caretakers.Add(caretaker);
                     }

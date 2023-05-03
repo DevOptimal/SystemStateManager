@@ -8,17 +8,17 @@ namespace DevOptimal.SystemStateManager.Persistence.Environment
 {
     internal class PersistentEnvironmentVariableCaretaker : PersistentCaretaker<EnvironmentVariableOriginator, EnvironmentVariableMemento>
     {
-        public PersistentEnvironmentVariableCaretaker(string id, EnvironmentVariableOriginator originator, SqliteConnection connection)
-            : base(id, originator, connection)
+        public PersistentEnvironmentVariableCaretaker(string id, EnvironmentVariableOriginator originator)
+            : base(id, originator)
         {
         }
 
-        public PersistentEnvironmentVariableCaretaker(string id, long processID, DateTime processStartTime, EnvironmentVariableOriginator originator, EnvironmentVariableMemento memento, SqliteConnection connection)
-            : base(id, (int)processID, processStartTime, originator, memento, connection)
+        public PersistentEnvironmentVariableCaretaker(string id, long processID, DateTime processStartTime, EnvironmentVariableOriginator originator, EnvironmentVariableMemento memento)
+            : base(id, (int)processID, processStartTime, originator, memento)
         {
         }
 
-        protected override void Initialize()
+        protected override void Initialize(SqliteConnection connection)
         {
             var command = connection.CreateCommand();
             command.CommandText =
@@ -33,7 +33,7 @@ namespace DevOptimal.SystemStateManager.Persistence.Environment
             command.ExecuteNonQuery();
         }
 
-        protected override void Persist()
+        protected override void Persist(SqliteConnection connection)
         {
             var command = connection.CreateCommand();
             command.CommandText =
@@ -61,7 +61,7 @@ namespace DevOptimal.SystemStateManager.Persistence.Environment
             command.ExecuteNonQuery();
         }
 
-        protected override void Unpersist()
+        protected override void Unpersist(SqliteConnection connection)
         {
             var command = connection.CreateCommand();
             command.CommandText = $@"DELETE FROM {nameof(PersistentEnvironmentVariableCaretaker)} WHERE {nameof(ID)} = @{nameof(ID)};";
@@ -91,8 +91,7 @@ namespace DevOptimal.SystemStateManager.Persistence.Environment
                             memento: new EnvironmentVariableMemento
                             {
                                 Value = reader.GetNullableString(nameof(EnvironmentVariableMemento.Value))
-                            },
-                            connection: connection
+                            }
                         );
                         caretakers.Add(caretaker);
                     }

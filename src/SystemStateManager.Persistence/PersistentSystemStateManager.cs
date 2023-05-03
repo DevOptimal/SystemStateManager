@@ -8,7 +8,6 @@ using DevOptimal.SystemStateManager.Registry;
 using DevOptimal.SystemUtilities.Environment;
 using DevOptimal.SystemUtilities.FileSystem;
 using DevOptimal.SystemUtilities.Registry;
-using Microsoft.Data.Sqlite;
 using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
@@ -16,21 +15,24 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
-using System.Security.AccessControl;
-using System.Security.Principal;
 
 namespace DevOptimal.SystemStateManager.Persistence
 {
     public class PersistentSystemStateManager : SystemStateManager
     {
-        public static Uri PersistenceURI { get; set; } = new Uri(
-            Path.Combine(
-                System.Environment.GetFolderPath(System.Environment.SpecialFolder.CommonApplicationData),
-                nameof(SystemStateManager),
-                $"{nameof(Persistence)}.db"));
+        public static Uri PersistenceURI
+        {
+            get => new Uri(SqliteConnectionFactory.DatabaseFile.FullName);
+            set
+            {
+                if (!value.IsFile)
+                {
+                    throw new NotSupportedException($"{nameof(PersistenceURI)} is invalid. Only local file paths are supported.");
+                }
 
-        private readonly SqliteConnection connection;
+                SqliteConnectionFactory.DatabaseFile = new FileInfo(value.LocalPath);
+            }
+        }
 
         public PersistentSystemStateManager()
             : this(new DefaultEnvironment(), new DefaultFileSystem(), new DefaultRegistry())
@@ -38,50 +40,43 @@ namespace DevOptimal.SystemStateManager.Persistence
         }
 
         public PersistentSystemStateManager(IEnvironment environment, IFileSystem fileSystem, IRegistry registry)
-            : this(environment, fileSystem, registry, CreateConnection())
+            : base(new SQLiteFileCache(fileSystem), environment, fileSystem, registry)
         {
         }
 
-        private PersistentSystemStateManager(IEnvironment environment, IFileSystem fileSystem, IRegistry registry, SqliteConnection connection)
-            : base(new SQLiteFileCache(fileSystem, connection), environment, fileSystem, registry)
-        {
-            this.connection = connection;
-        }
-
-        private PersistentSystemStateManager(List<ISnapshot> snapshots, IFileCache fileCache, IEnvironment environment, IFileSystem fileSystem, IRegistry registry, SqliteConnection connection)
+        private PersistentSystemStateManager(List<ISnapshot> snapshots, IFileCache fileCache, IEnvironment environment, IFileSystem fileSystem, IRegistry registry)
             : base(snapshots, fileCache, environment, fileSystem, registry)
         {
-            this.connection = connection;
         }
 
         protected override ISnapshot CreateEnvironmentVariableSnapshot(string id, string name, EnvironmentVariableTarget target, IEnvironment environment)
         {
             var originator = new EnvironmentVariableOriginator(name, target, environment);
-            return new PersistentEnvironmentVariableCaretaker(id, originator, connection);
+            return new PersistentEnvironmentVariableCaretaker(id, originator);
         }
 
         protected override ISnapshot CreateDirectorySnapshot(string id, string path, IFileSystem fileSystem)
         {
             var originator = new DirectoryOriginator(path, fileSystem);
-            return new PersistentDirectoryCaretaker(id, originator, connection);
+            return new PersistentDirectoryCaretaker(id, originator);
         }
 
         protected override ISnapshot CreateFileSnapshot(string id, string path, IFileCache fileCache, IFileSystem fileSystem)
         {
             var originator = new FileOriginator(path, fileCache, fileSystem);
-            return new PersistentFileCaretaker(id, originator, connection);
+            return new PersistentFileCaretaker(id, originator);
         }
 
         protected override ISnapshot CreateRegistryKeySnapshot(string id, RegistryHive hive, RegistryView view, string subKey, IRegistry registry)
         {
             var originator = new RegistryKeyOriginator(hive, view, subKey, registry);
-            return new PersistentRegistryKeyCaretaker(id, originator, connection);
+            return new PersistentRegistryKeyCaretaker(id, originator);
         }
 
         protected override ISnapshot CreateRegistryValueSnapshot(string id, RegistryHive hive, RegistryView view, string subKey, string name, IRegistry registry)
         {
             var originator = new RegistryValueOriginator(hive, view, subKey, name, registry);
-            return new PersistentRegistryValueCaretaker(id, originator, connection);
+            return new PersistentRegistryValueCaretaker(id, originator);
         }
 
         /// <summary>
@@ -113,8 +108,8 @@ namespace DevOptimal.SystemStateManager.Persistence
                 catch (InvalidOperationException) { } // The process has already exited, so don't add it.
             }
 
-            var connection = CreateConnection();
-            var fileCache = new SQLiteFileCache(fileSystem, connection);
+            var connection = SqliteConnectionFactory.Create();
+            var fileCache = new SQLiteFileCache(fileSystem);
 
             var allSnapshots = PersistentEnvironmentVariableCaretaker.GetCaretakers(connection, environment)
                 .Concat(PersistentDirectoryCaretaker.GetCaretakers(connection, fileSystem))
@@ -127,55 +122,9 @@ namespace DevOptimal.SystemStateManager.Persistence
 
             if (abandonedSnapshots.Any())
             {
-                var systemStateManager = new PersistentSystemStateManager(abandonedSnapshots, fileCache, environment, fileSystem, registry, connection);
+                var systemStateManager = new PersistentSystemStateManager(abandonedSnapshots, fileCache, environment, fileSystem, registry);
                 systemStateManager.Dispose();
             }
-        }
-
-        private static SqliteConnection CreateConnection()
-        {
-            if (!PersistenceURI.IsFile)
-            {
-                throw new NotSupportedException($"{nameof(PersistenceURI)} is invalid. Only local file paths are supported.");
-            }
-
-            var databaseFile = new FileInfo(PersistenceURI.LocalPath);
-
-            var databaseDirectory = databaseFile.Directory;
-
-            if (!databaseDirectory.Exists)
-            {
-                databaseDirectory.Create();
-
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                {
-                    var directorySecurity = databaseDirectory.GetAccessControl();
-                    directorySecurity.AddAccessRule(new FileSystemAccessRule(
-                        identity: new SecurityIdentifier(WellKnownSidType.WorldSid, domainSid: null),
-                        fileSystemRights: FileSystemRights.FullControl,
-                        inheritanceFlags: InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit,
-                        propagationFlags: PropagationFlags.NoPropagateInherit,
-                        type: AccessControlType.Allow));
-                    databaseDirectory.SetAccessControl(directorySecurity);
-                }
-            }
-
-            var connectionString = new SqliteConnectionStringBuilder
-            {
-                DataSource = databaseFile.FullName,
-                Cache = SqliteCacheMode.Shared,
-                Mode = SqliteOpenMode.ReadWriteCreate
-            }.ToString();
-            var connection = new SqliteConnection(connectionString);
-            connection.Open();
-
-            return connection;
-        }
-
-        protected override void Dispose(bool disposing)
-        {
-            base.Dispose(disposing);
-            connection.Dispose();
         }
     }
 }

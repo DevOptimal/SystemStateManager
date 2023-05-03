@@ -12,10 +12,6 @@ namespace DevOptimal.SystemStateManager.Persistence
 
         public DateTime ProcessStartTime { get; }
 
-        protected readonly SqliteConnection connection;
-
-        private readonly bool persisted;
-
         private bool disposedValue;
 
         /// <summary>
@@ -24,23 +20,21 @@ namespace DevOptimal.SystemStateManager.Persistence
         /// <param name="id">A string that uniquely identifies the resource represented by the caretaker.</param>
         /// <param name="originator">The caretaker's originator, used for getting and setting a memento from the resource.</param>
         /// <exception cref="Exception"></exception>
-        protected PersistentCaretaker(string id, TOriginator originator, SqliteConnection connection) : base(id, originator)
+        protected PersistentCaretaker(string id, TOriginator originator) : base(id, originator)
         {
-            this.connection = connection;
             var currentProcess = Process.GetCurrentProcess();
             ProcessID = currentProcess.Id;
             ProcessStartTime = currentProcess.StartTime;
 
-            lock (connection) // Sqlite connections are not thread safe: https://github.com/dotnet/efcore/issues/22664#issuecomment-696870423
+            using (var connection = SqliteConnectionFactory.Create())
             {
-                using (var transaction = this.connection.BeginTransaction())
+                using (var transaction = connection.BeginTransaction())
                 {
                     try
                     {
-                        Initialize();
-                        Persist();
+                        Initialize(connection);
+                        Persist(connection);
                         transaction.Commit();
-                        persisted = true;
                     }
                     catch (Exception ex)
                     {
@@ -65,52 +59,47 @@ namespace DevOptimal.SystemStateManager.Persistence
         /// <param name="processStartTime">The start time of the process that created the caretaker. Process IDs are reused, so start time is required to identify a unique process.</param>
         /// <param name="originator">The caretaker's originator, used for getting and setting a memento from the resource.</param>
         /// <param name="memento">The caretaker's memento, which stores the current state of the resource.</param>
-        protected PersistentCaretaker(string id, int processID, DateTime processStartTime, TOriginator originator, TMemento memento, SqliteConnection connection) : base(id, originator, memento)
+        protected PersistentCaretaker(string id, int processID, DateTime processStartTime, TOriginator originator, TMemento memento) : base(id, originator, memento)
         {
-            this.connection = connection;
             ProcessID = processID;
             ProcessStartTime = processStartTime;
-            persisted = true;
         }
 
-        protected abstract void Initialize();
+        protected abstract void Initialize(SqliteConnection connection);
 
-        protected abstract void Persist();
+        protected abstract void Persist(SqliteConnection connection);
 
-        protected abstract void Unpersist();
+        protected abstract void Unpersist(SqliteConnection connection);
 
         protected override void Dispose(bool disposing)
         {
-            if (persisted)
-            {
-                base.Dispose(disposing);
+            base.Dispose(disposing);
 
-                if (!disposedValue)
+            if (!disposedValue)
+            {
+                if (disposing)
                 {
-                    if (disposing)
+                    using (var connection = SqliteConnectionFactory.Create())
                     {
-                        lock (connection)
+                        using (var transaction = connection.BeginTransaction())
                         {
-                            using (var transaction = connection.BeginTransaction())
+                            try
                             {
-                                try
-                                {
-                                    Unpersist();
-                                    transaction.Commit();
-                                }
-                                catch
-                                {
-                                    transaction.Rollback();
-                                    throw;
-                                }
+                                Unpersist(connection);
+                                transaction.Commit();
+                            }
+                            catch
+                            {
+                                transaction.Rollback();
+                                throw;
                             }
                         }
                     }
-
-                    // TODO: free unmanaged resources (unmanaged objects) and override finalizer
-                    // TODO: set large fields to null
-                    disposedValue = true;
                 }
+
+                // TODO: free unmanaged resources (unmanaged objects) and override finalizer
+                // TODO: set large fields to null
+                disposedValue = true;
             }
         }
     }

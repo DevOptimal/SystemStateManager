@@ -1,5 +1,4 @@
-﻿using DevOptimal.SystemStateManager.Persistence;
-using Microsoft.Win32;
+﻿using Microsoft.Win32;
 using System;
 using System.IO;
 using System.Runtime.Versioning;
