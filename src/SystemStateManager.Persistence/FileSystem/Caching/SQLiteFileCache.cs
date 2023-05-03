@@ -48,8 +48,10 @@ namespace DevOptimal.SystemStateManager.Persistence.FileSystem.Caching
             {
                 try
                 {
-                    fileStream.SetLength(0); // Delete existing file.
+                    // Delete existing file
+                    fileStream.SetLength(0);
 
+                    // Download the file content
                     var selectCommand = connection.CreateCommand();
                     selectCommand.CommandText = $@"SELECT {nameof(FileChunk.Data)} FROM {nameof(FileChunk)} WHERE {nameof(FileChunk.FileID)} = @{nameof(FileChunk.FileID)} ORDER BY {nameof(FileChunk.ChunkIndex)} ASC";
                     selectCommand.Parameters.AddWithValue($"@{nameof(FileChunk.FileID)}", id);
@@ -63,6 +65,12 @@ namespace DevOptimal.SystemStateManager.Persistence.FileSystem.Caching
                             }
                         }
                     }
+
+                    // Delete the file content from the cache
+                    var deleteCommand = connection.CreateCommand();
+                    deleteCommand.CommandText = $@"DELETE FROM {nameof(FileChunk)} WHERE {nameof(FileChunk.FileID)} = @{nameof(FileChunk.FileID)};";
+                    deleteCommand.Parameters.AddWithValue($"@{nameof(FileChunk.FileID)}", id);
+                    deleteCommand.ExecuteNonQuery();
 
                     transaction.Commit();
                 }

@@ -35,38 +35,46 @@ namespace DevOptimal.SystemStateManager.Persistence.Environment
 
         protected override void Persist(SqliteConnection connection)
         {
-            var command = connection.CreateCommand();
-            command.CommandText =
-            $@"INSERT INTO {nameof(PersistentEnvironmentVariableCaretaker)} (
-                '{nameof(ID)}',
-                '{nameof(ProcessID)}',
-                '{nameof(ProcessStartTime)}',
-                '{nameof(Originator.Name)}',
-                '{nameof(Originator.Target)}',
-                '{nameof(Memento.Value)}'
-            ) VALUES (
-                @{nameof(ID)},
-                @{nameof(ProcessID)},
-                @{nameof(ProcessStartTime)},
-                @{nameof(Originator.Name)},
-                @{nameof(Originator.Target)},
-                @{nameof(Memento.Value)}
-            );";
-            command.Parameters.AddWithValue($"@{nameof(ID)}", ID);
-            command.Parameters.AddWithValue($"@{nameof(ProcessID)}", ProcessID);
-            command.Parameters.AddWithValue($"@{nameof(ProcessStartTime)}", ProcessStartTime.Ticks);
-            command.Parameters.AddWithValue($"@{nameof(Originator.Name)}", Originator.Name);
-            command.Parameters.AddWithValue($"@{nameof(Originator.Target)}", Originator.Target);
-            command.Parameters.AddWithNullableValue($"@{nameof(Memento.Value)}", Memento.Value);
-            command.ExecuteNonQuery();
+            // Only persist state to disk if this impacts an environment variable outside of the current process
+            if (Originator.Target != EnvironmentVariableTarget.Process)
+            {
+                var command = connection.CreateCommand();
+                command.CommandText =
+                $@"INSERT INTO {nameof(PersistentEnvironmentVariableCaretaker)} (
+                    '{nameof(ID)}',
+                    '{nameof(ProcessID)}',
+                    '{nameof(ProcessStartTime)}',
+                    '{nameof(Originator.Name)}',
+                    '{nameof(Originator.Target)}',
+                    '{nameof(Memento.Value)}'
+                ) VALUES (
+                    @{nameof(ID)},
+                    @{nameof(ProcessID)},
+                    @{nameof(ProcessStartTime)},
+                    @{nameof(Originator.Name)},
+                    @{nameof(Originator.Target)},
+                    @{nameof(Memento.Value)}
+                );";
+                command.Parameters.AddWithValue($"@{nameof(ID)}", ID);
+                command.Parameters.AddWithValue($"@{nameof(ProcessID)}", ProcessID);
+                command.Parameters.AddWithValue($"@{nameof(ProcessStartTime)}", ProcessStartTime.Ticks);
+                command.Parameters.AddWithValue($"@{nameof(Originator.Name)}", Originator.Name);
+                command.Parameters.AddWithValue($"@{nameof(Originator.Target)}", Originator.Target);
+                command.Parameters.AddWithNullableValue($"@{nameof(Memento.Value)}", Memento.Value);
+                command.ExecuteNonQuery();
+            }
         }
 
         protected override void Unpersist(SqliteConnection connection)
         {
-            var command = connection.CreateCommand();
-            command.CommandText = $@"DELETE FROM {nameof(PersistentEnvironmentVariableCaretaker)} WHERE {nameof(ID)} = @{nameof(ID)};";
-            command.Parameters.AddWithValue($"@{nameof(ID)}", ID);
-            command.ExecuteNonQuery();
+            // Only unpersist state to disk if this impacts an environment variable outside of the current process
+            if (Originator.Target != EnvironmentVariableTarget.Process)
+            {
+                var command = connection.CreateCommand();
+                command.CommandText = $@"DELETE FROM {nameof(PersistentEnvironmentVariableCaretaker)} WHERE {nameof(ID)} = @{nameof(ID)};";
+                command.Parameters.AddWithValue($"@{nameof(ID)}", ID);
+                command.ExecuteNonQuery();
+            }
         }
 
         public static IEnumerable<IPersistentSnapshot> GetCaretakers(SqliteConnection connection, IEnvironment environment)
