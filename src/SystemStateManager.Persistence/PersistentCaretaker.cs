@@ -26,7 +26,7 @@ namespace DevOptimal.SystemStateManager.Persistence
             ProcessID = currentProcess.Id;
             ProcessStartTime = currentProcess.StartTime;
 
-            using (var connection = SqliteConnectionFactory.Create()) // Sqlite connections are not thread safe: https://github.com/dotnet/efcore/issues/22664#issuecomment-696870423
+            using (var connection = SqliteConnectionFactory.Create())
             {
                 using (var transaction = connection.BeginTransaction())
                 {
