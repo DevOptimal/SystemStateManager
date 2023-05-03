@@ -380,6 +380,33 @@ namespace DevOptimal.SystemStateManager.Persistence.Tests
             CollectionAssert.AreEqual(multiStringRegistryValueExpectedValue, (object[])multiStringRegistryValueActualValue);
             Assert.AreEqual(multiStringRegistryValueExpectedKind, multiStringRegistryValueActualKind);
         }
+
+        [TestMethod]
+        public void DoesNotRestoreProcessScopedEnvironmentVariableSnapshots()
+        {
+            var environmentVariableName = "foo";
+            var environmentVariableTarget = EnvironmentVariableTarget.Process;
+            var environmentVariableValue = "bar";
+
+            // Create the environment variable
+            environment.SetEnvironmentVariable(environmentVariableName, environmentVariableValue, environmentVariableTarget);
+
+            // Simulate taking a snapshot of the environment variable from another process
+            using (CreateShimsContext())
+            {
+                var systemStateManager = CreatePersistentSystemStateManager();
+                systemStateManager.SnapshotEnvironmentVariable(environmentVariableName, environmentVariableTarget);
+            }
+
+            // Delete the environment variable
+            environment.SetEnvironmentVariable(environmentVariableName, null, environmentVariableTarget);
+
+            // Restore the snapshot
+            PersistentSystemStateManager.RestoreAbandonedSnapshots(environment, fileSystem, registry);
+
+            // Verify that the environment variable has not been recreated
+            Assert.AreEqual(null, environment.GetEnvironmentVariable(environmentVariableName, environmentVariableTarget));
+        }
     }
 }
 

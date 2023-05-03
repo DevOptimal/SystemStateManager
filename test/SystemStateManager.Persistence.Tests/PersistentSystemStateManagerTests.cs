@@ -76,12 +76,12 @@ namespace DevOptimal.SystemStateManager.Persistence.Tests
                 var name = names[i];
                 var value = expectedValues[i];
                 using var manager = CreatePersistentSystemStateManager();
-                var caretaker = manager.SnapshotEnvironmentVariable(name, target);
+                using (var caretaker = manager.SnapshotEnvironmentVariable(name, target))
+                {
+                    environment.SetEnvironmentVariable(name, null, target);
+                    Assert.AreEqual(null, environment.GetEnvironmentVariable(name, target));
+                }
 
-                environment.SetEnvironmentVariable(name, null, target);
-                Assert.AreEqual(null, environment.GetEnvironmentVariable(name, target));
-
-                caretaker.Dispose();
                 Assert.AreEqual(expectedValues[i], environment.GetEnvironmentVariable(name, target));
             });
         }
@@ -110,12 +110,12 @@ namespace DevOptimal.SystemStateManager.Persistence.Tests
             {
                 var file = filePaths[i];
                 using var manager = CreatePersistentSystemStateManager();
-                var caretaker = manager.SnapshotFile(file);
+                using (var caretaker = manager.SnapshotFile(file))
+                {
+                    fileSystem.DeleteFile(file);
+                    Assert.IsFalse(fileSystem.FileExists(file));
+                }
 
-                fileSystem.DeleteFile(file);
-                Assert.IsFalse(fileSystem.FileExists(file));
-
-                caretaker.Dispose();
                 Assert.IsTrue(fileSystem.FileExists(file));
                 var content = expectedContent[i];
                 using var stream = fileSystem.OpenFile(file, FileMode.Open, FileAccess.Read, FileShare.None);
