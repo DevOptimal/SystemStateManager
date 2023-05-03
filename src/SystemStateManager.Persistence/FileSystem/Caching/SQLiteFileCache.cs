@@ -57,7 +57,7 @@ namespace DevOptimal.SystemStateManager.Persistence.FileSystem.Caching
                     {
                         while (reader.Read())
                         {
-                            using (var blobStream = reader.GetStream(reader.GetOrdinal(nameof(FileChunk.Data))))
+                            using (var blobStream = reader.GetStream(nameof(FileChunk.Data)))
                             {
                                 blobStream.CopyTo(fileStream);
                             }
