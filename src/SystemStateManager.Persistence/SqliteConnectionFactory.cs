@@ -35,10 +35,14 @@ namespace DevOptimal.SystemStateManager.Persistence
                 }
             }
 
+            // In some cases, we need to manually initialize the SQLitePCLRaw bundles before calling into Microsoft.Data.Sqlite
+            SQLitePCL.Batteries_V2.Init();
+
             var connectionString = new SqliteConnectionStringBuilder
             {
                 DataSource = DatabaseFile.FullName,
             }.ToString();
+
             var connection = new SqliteConnection(connectionString);
             connection.Open();
 
