@@ -30,6 +30,8 @@ namespace DevOptimal.SystemStateManager.FileSystem.Caching
             }
 
             FileSystem.CopyFile(blobPath, destinationPath, overwrite: true);
+
+            FileSystem.DeleteFile(blobPath);
         }
 
         public string UploadFile(string sourcePath)
