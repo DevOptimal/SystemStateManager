@@ -1,9 +1,17 @@
-﻿using Microsoft.Data.Sqlite;
+﻿using DevOptimal.SystemStateManager.Persistence.Environment;
+using DevOptimal.SystemStateManager.Persistence.FileSystem;
+using DevOptimal.SystemStateManager.Persistence.Registry;
 using System;
 using System.Diagnostics;
+using System.Text.Json.Serialization;
 
 namespace DevOptimal.SystemStateManager.Persistence
 {
+    [JsonDerivedType(typeof(PersistentEnvironmentVariableCaretaker), typeDiscriminator: nameof(PersistentEnvironmentVariableCaretaker))]
+    [JsonDerivedType(typeof(PersistentDirectoryCaretaker), typeDiscriminator: nameof(PersistentDirectoryCaretaker))]
+    [JsonDerivedType(typeof(PersistentFileCaretaker), typeDiscriminator: nameof(PersistentFileCaretaker))]
+    [JsonDerivedType(typeof(PersistentRegistryKeyCaretaker), typeDiscriminator: nameof(PersistentRegistryKeyCaretaker))]
+    [JsonDerivedType(typeof(PersistentRegistryValueCaretaker), typeDiscriminator: nameof(PersistentRegistryValueCaretaker))]
     internal abstract class PersistentCaretaker<TOriginator, TMemento> : Caretaker<TOriginator, TMemento>, IPersistentSnapshot
         where TOriginator : IOriginator<TMemento>
         where TMemento : IMemento
@@ -11,6 +19,8 @@ namespace DevOptimal.SystemStateManager.Persistence
         public int ProcessID { get; }
 
         public DateTime ProcessStartTime { get; }
+
+        private DatabaseConnection connection;
 
         private bool disposedValue;
 
@@ -25,6 +35,8 @@ namespace DevOptimal.SystemStateManager.Persistence
             var currentProcess = Process.GetCurrentProcess();
             ProcessID = currentProcess.Id;
             ProcessStartTime = currentProcess.StartTime;
+
+            connection.Persist(this);
 
             using (var connection = SqliteConnectionFactory.Create())
             {
