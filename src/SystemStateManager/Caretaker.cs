@@ -6,13 +6,17 @@ namespace DevOptimal.SystemStateManager
         where TOriginator : IOriginator<TMemento>
         where TMemento : IMemento
     {
-        public string ID { get; }
+        public string ID { get; protected set; }
 
-        public TOriginator Originator { get; }
+        public TOriginator Originator { get; protected set; }
 
-        public TMemento Memento { get; }
+        public TMemento Memento { get; protected set; }
 
         private bool disposedValue;
+
+        // For serialization
+        protected Caretaker()
+        { }
 
         public Caretaker(string id, TOriginator originator) : this(id, originator, originator.GetState())
         {

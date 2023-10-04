@@ -12,7 +12,7 @@
 
   <ItemGroup>
     <PackageReference Include="DevOptimal.SystemUtilities.Environment" Version="1.0.35" />
-    <PackageReference Include="DevOptimal.SystemUtilities.FileSystem" Version="1.0.35" />
+    <PackageReference Include="DevOptimal.SystemUtilities.FileSystem" Version="1.0.39" />
     <PackageReference Include="DevOptimal.SystemUtilities.Registry" Version="1.0.35" />
   </ItemGroup>
 

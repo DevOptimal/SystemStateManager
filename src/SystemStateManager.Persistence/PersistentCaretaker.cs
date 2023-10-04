@@ -1,28 +1,20 @@
-﻿using DevOptimal.SystemStateManager.Persistence.Environment;
-using DevOptimal.SystemStateManager.Persistence.FileSystem;
-using DevOptimal.SystemStateManager.Persistence.Registry;
-using System;
+﻿using System;
 using System.Diagnostics;
-using System.Text.Json.Serialization;
 
 namespace DevOptimal.SystemStateManager.Persistence
 {
-    [JsonDerivedType(typeof(PersistentEnvironmentVariableCaretaker), typeDiscriminator: nameof(PersistentEnvironmentVariableCaretaker))]
-    [JsonDerivedType(typeof(PersistentDirectoryCaretaker), typeDiscriminator: nameof(PersistentDirectoryCaretaker))]
-    [JsonDerivedType(typeof(PersistentFileCaretaker), typeDiscriminator: nameof(PersistentFileCaretaker))]
-    [JsonDerivedType(typeof(PersistentRegistryKeyCaretaker), typeDiscriminator: nameof(PersistentRegistryKeyCaretaker))]
-    [JsonDerivedType(typeof(PersistentRegistryValueCaretaker), typeDiscriminator: nameof(PersistentRegistryValueCaretaker))]
     internal abstract class PersistentCaretaker<TOriginator, TMemento> : Caretaker<TOriginator, TMemento>, IPersistentSnapshot
         where TOriginator : IOriginator<TMemento>
         where TMemento : IMemento
     {
-        public int ProcessID { get; }
+        public int ProcessID { get; protected set; }
 
-        public DateTime ProcessStartTime { get; }
-
-        private DatabaseConnection connection;
+        public DateTime ProcessStartTime { get; protected set; }
 
         private bool disposedValue;
+
+        protected PersistentCaretaker()
+        { }
 
         /// <summary>
         /// Creates a new caretaker.
@@ -36,30 +28,9 @@ namespace DevOptimal.SystemStateManager.Persistence
             ProcessID = currentProcess.Id;
             ProcessStartTime = currentProcess.StartTime;
 
-            connection.Persist(this);
-
-            using (var connection = SqliteConnectionFactory.Create())
+            using (var connection = new DatabaseConnection())
             {
-                using (var transaction = connection.BeginTransaction())
-                {
-                    try
-                    {
-                        Initialize(connection);
-                        Persist(connection);
-                        transaction.Commit();
-                    }
-                    catch (Exception ex)
-                    {
-                        transaction.Rollback();
-
-                        if (ex is SqliteException sqliteEx && sqliteEx.SqliteErrorCode == 19 && sqliteEx.SqliteExtendedErrorCode == 1555)
-                        {
-                            throw new ResourceLockedException($"The resource '{ID}' is locked by another instance.", sqliteEx);
-                        }
-
-                        throw;
-                    }
-                }
+                connection.Add(this);
             }
         }
 
@@ -77,12 +48,6 @@ namespace DevOptimal.SystemStateManager.Persistence
             ProcessStartTime = processStartTime;
         }
 
-        protected abstract void Initialize(SqliteConnection connection);
-
-        protected abstract void Persist(SqliteConnection connection);
-
-        protected abstract void Unpersist(SqliteConnection connection);
-
         protected override void Dispose(bool disposing)
         {
             base.Dispose(disposing);
@@ -91,21 +56,9 @@ namespace DevOptimal.SystemStateManager.Persistence
             {
                 if (disposing)
                 {
-                    using (var connection = SqliteConnectionFactory.Create())
+                    using (var connection = new DatabaseConnection())
                     {
-                        using (var transaction = connection.BeginTransaction())
-                        {
-                            try
-                            {
-                                Unpersist(connection);
-                                transaction.Commit();
-                            }
-                            catch
-                            {
-                                transaction.Rollback();
-                                throw;
-                            }
-                        }
+                        connection.Remove(this);
                     }
                 }
 

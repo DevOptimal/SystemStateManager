@@ -1,5 +1,6 @@
 ﻿using DevOptimal.SystemStateManager.Environment;
 using DevOptimal.SystemStateManager.FileSystem;
+using DevOptimal.SystemStateManager.FileSystem.Caching;
 using DevOptimal.SystemStateManager.Persistence.Environment;
 using DevOptimal.SystemStateManager.Persistence.FileSystem;
 using DevOptimal.SystemStateManager.Persistence.FileSystem.Caching;
@@ -7,6 +8,7 @@ using DevOptimal.SystemStateManager.Persistence.Registry;
 using DevOptimal.SystemStateManager.Registry;
 using DevOptimal.SystemUtilities.Environment;
 using DevOptimal.SystemUtilities.FileSystem;
+using DevOptimal.SystemUtilities.FileSystem.Extensions;
 using DevOptimal.SystemUtilities.Registry;
 using Microsoft.Win32;
 using System;
@@ -22,7 +24,7 @@ namespace DevOptimal.SystemStateManager.Persistence
     {
         public static Uri PersistenceURI
         {
-            get => new Uri(SqliteConnectionFactory.DatabaseFile.FullName);
+            get => new Uri(DatabaseConnection.DefaultDatabaseFile.FullName);
             set
             {
                 if (!value.IsFile)
@@ -30,7 +32,7 @@ namespace DevOptimal.SystemStateManager.Persistence
                     throw new NotSupportedException($"{nameof(PersistenceURI)} is invalid. Only local file paths are supported.");
                 }
 
-                SqliteConnectionFactory.DatabaseFile = new FileInfo(value.LocalPath);
+                DatabaseConnection.DefaultDatabaseFile = new FileInfo(value.LocalPath);
             }
         }
 
@@ -40,7 +42,7 @@ namespace DevOptimal.SystemStateManager.Persistence
         }
 
         public PersistentSystemStateManager(IEnvironment environment, IFileSystem fileSystem, IRegistry registry)
-            : base(new SQLiteFileCache(fileSystem), environment, fileSystem, registry)
+            : base(new LocalFileCache(DatabaseConnection.DefaultDatabaseFile.Directory.GetDirectory(nameof(LocalFileCache)), fileSystem), environment, fileSystem, registry)
         {
         }
 
@@ -108,7 +110,12 @@ namespace DevOptimal.SystemStateManager.Persistence
                 catch (InvalidOperationException) { } // The process has already exited, so don't add it.
             }
 
-            var connection = SqliteConnectionFactory.Create();
+            var abandonedSnapshots = new List<ISnapshot>(allSnapshots);
+            using (var connection = new DatabaseConnection(environment, fileSystem, registry))
+            {
+                abandonconnection.List().Where(c => !(processes.ContainsKey(c.ProcessID) && (processes[c.ProcessID] == c.ProcessStartTime || processes[c.ProcessID] == null)));
+            }
+
             var fileCache = new SQLiteFileCache(fileSystem);
 
             var allSnapshots = PersistentEnvironmentVariableCaretaker.GetCaretakers(connection, environment)

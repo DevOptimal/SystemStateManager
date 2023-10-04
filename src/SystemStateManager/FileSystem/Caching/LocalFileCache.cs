@@ -10,6 +10,10 @@ namespace DevOptimal.SystemStateManager.FileSystem.Caching
 
         public IFileSystem FileSystem { get; }
 
+        public LocalFileCache(DirectoryInfo rootDirectory, IFileSystem fileSystem)
+            : this(rootDirectory.FullName, fileSystem)
+        { }
+
         public LocalFileCache(string rootDirectoryPath, IFileSystem fileSystem)
         {
             FileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
