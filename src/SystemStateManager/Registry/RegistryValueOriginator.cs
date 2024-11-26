@@ -4,7 +4,7 @@ using System;
 
 namespace DevOptimal.SystemStateManager.Registry
 {
-    internal class RegistryValueOriginator : IOriginator<RegistryValueMemento>
+    public class RegistryValueOriginator : IOriginator<RegistryValueMemento>
     {
         public RegistryHive Hive { get; }
 

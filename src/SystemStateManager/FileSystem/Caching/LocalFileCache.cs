@@ -4,7 +4,7 @@ using System.IO;
 
 namespace DevOptimal.SystemStateManager.FileSystem.Caching
 {
-    internal class LocalFileCache : IFileCache
+    public class LocalFileCache : IFileCache
     {
         public string RootPath { get; }
 

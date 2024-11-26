@@ -3,7 +3,7 @@ using System;
 
 namespace DevOptimal.SystemStateManager.FileSystem
 {
-    internal class DirectoryOriginator : IOriginator<DirectoryMemento>
+    public class DirectoryOriginator : IOriginator<DirectoryMemento>
     {
         public string Path { get; }
 

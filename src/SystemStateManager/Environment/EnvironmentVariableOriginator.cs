@@ -3,7 +3,7 @@ using System;
 
 namespace DevOptimal.SystemStateManager.Environment
 {
-    internal class EnvironmentVariableOriginator : IOriginator<EnvironmentVariableMemento>
+    public class EnvironmentVariableOriginator : IOriginator<EnvironmentVariableMemento>
     {
         public string Name { get; }
 

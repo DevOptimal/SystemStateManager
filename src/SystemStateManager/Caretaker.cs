@@ -1,28 +1,38 @@
 ﻿using System;
+using System.Diagnostics;
 
 namespace DevOptimal.SystemStateManager
 {
-    internal class Caretaker<TOriginator, TMemento> : ISnapshot
+    public class Caretaker<TOriginator, TMemento> : ISnapshot
         where TOriginator : IOriginator<TMemento>
         where TMemento : IMemento
     {
-        public string ID { get; protected set; }
+        private static readonly Process currentProcess = Process.GetCurrentProcess();
 
-        public TOriginator Originator { get; protected set; }
+        public string ID { get; set; }
 
-        public TMemento Memento { get; protected set; }
+        public int ProcessID { get; set; }
+
+        public DateTime ProcessStartTime { get; set; }
+
+        public IDatabase Database { get; set; }
+
+        public TOriginator Originator { get; set; }
+
+        public TMemento Memento { get; set; }
 
         private bool disposedValue;
 
         // For serialization
-        protected Caretaker()
+        public Caretaker()
         { }
 
-        public Caretaker(string id, TOriginator originator) : this(id, originator, originator.GetState())
+        public Caretaker(string id, IDatabase database, TOriginator originator) : this(id, currentProcess.Id, currentProcess.StartTime, database, originator, originator.GetState())
         {
+            Database.AddSnapshot(this);
         }
 
-        protected Caretaker(string id, TOriginator originator, TMemento memento)
+        public Caretaker(string id, int processID, DateTime processStartTime, IDatabase database, TOriginator originator, TMemento memento)
         {
             if (originator == null)
             {
@@ -35,6 +45,9 @@ namespace DevOptimal.SystemStateManager
             }
 
             ID = id ?? throw new ArgumentNullException(nameof(id));
+            ProcessID = processID;
+            ProcessStartTime = processStartTime;
+            Database = database ?? throw new ArgumentNullException(nameof(database));
             Originator = originator;
             Memento = memento;
         }
@@ -46,6 +59,7 @@ namespace DevOptimal.SystemStateManager
                 if (disposing)
                 {
                     Originator.SetState(Memento);
+                    Database.RemoveSnapshot(this);
                 }
 
                 // TODO: free unmanaged resources (unmanaged objects) and override finalizer

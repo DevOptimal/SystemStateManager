@@ -8,6 +8,8 @@ using DevOptimal.SystemUtilities.Registry;
 using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -16,7 +18,7 @@ namespace DevOptimal.SystemStateManager
 {
     public class SystemStateManager : IDisposable
     {
-        private readonly List<ISnapshot> snapshots;
+        private readonly IDatabase database;
 
         private readonly IFileCache fileCache;
 
@@ -38,19 +40,29 @@ namespace DevOptimal.SystemStateManager
         {
         }
 
-        protected SystemStateManager(IFileCache fileCache, IEnvironment environment, IFileSystem fileSystem, IRegistry registry)
-            : this(new List<ISnapshot>(), fileCache, environment, fileSystem, registry)
+        public SystemStateManager(IFileCache fileCache, IEnvironment environment, IFileSystem fileSystem, IRegistry registry)
+            : this(new MemoryDatabase(), fileCache, environment, fileSystem, registry)
         {
         }
 
-        protected SystemStateManager(List<ISnapshot> snapshots, IFileCache fileCache)
-            : this(snapshots, fileCache, new DefaultEnvironment(), new DefaultFileSystem(), new DefaultRegistry())
+        public SystemStateManager(IDatabase database)
+            : this(database, new DefaultEnvironment(), new DefaultFileSystem(), new DefaultRegistry())
         {
         }
 
-        protected SystemStateManager(List<ISnapshot> snapshots, IFileCache fileCache, IEnvironment environment, IFileSystem fileSystem, IRegistry registry)
+        public SystemStateManager(IDatabase database, IEnvironment environment, IFileSystem fileSystem, IRegistry registry)
+            : this(database, new LocalFileCache(Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.CommonApplicationData), nameof(SystemStateManager), "FileCache"), fileSystem), environment, fileSystem, registry)
         {
-            this.snapshots = snapshots;
+        }
+
+        public SystemStateManager(IDatabase database, IFileCache fileCache)
+            : this(database, fileCache, new DefaultEnvironment(), new DefaultFileSystem(), new DefaultRegistry())
+        {
+        }
+
+        public SystemStateManager(IDatabase database, IFileCache fileCache, IEnvironment environment, IFileSystem fileSystem, IRegistry registry)
+        {
+            this.database = database;
             this.fileCache = fileCache;
 
             defaultEnvironment = environment;
@@ -80,7 +92,6 @@ namespace DevOptimal.SystemStateManager
             if (!TryGetSnapshot(id, out var snapshot))
             {
                 snapshot = CreateEnvironmentVariableSnapshot(id, name, target, environment);
-                snapshots.Add(snapshot);
             }
 
             return snapshot;
@@ -108,7 +119,6 @@ namespace DevOptimal.SystemStateManager
             if (!TryGetSnapshot(id, out var snapshot))
             {
                 snapshot = CreateDirectorySnapshot(id, path, fileSystem);
-                snapshots.Add(snapshot);
             }
 
             return snapshot;
@@ -136,7 +146,6 @@ namespace DevOptimal.SystemStateManager
             if (!TryGetSnapshot(id, out var snapshot))
             {
                 snapshot = CreateFileSnapshot(id, path, fileCache, fileSystem);
-                snapshots.Add(snapshot);
             }
 
             return snapshot;
@@ -154,7 +163,6 @@ namespace DevOptimal.SystemStateManager
             if (!TryGetSnapshot(id, out var snapshot))
             {
                 snapshot = CreateRegistryKeySnapshot(id, hive, view, subKey, registry);
-                snapshots.Add(snapshot);
             }
 
             return snapshot;
@@ -172,7 +180,6 @@ namespace DevOptimal.SystemStateManager
             if (!TryGetSnapshot(id, out var snapshot))
             {
                 snapshot = CreateRegistryValueSnapshot(id, hive, view, subKey, name, registry);
-                snapshots.Add(snapshot);
             }
 
             return snapshot;
@@ -180,38 +187,38 @@ namespace DevOptimal.SystemStateManager
 
         private bool TryGetSnapshot(string id, out ISnapshot snapshot)
         {
-            snapshot = snapshots.SingleOrDefault(c => c.ID.Equals(id));
+            snapshot = database.GetSnapshot(id);
             return snapshot != null;
         }
 
         protected virtual ISnapshot CreateEnvironmentVariableSnapshot(string id, string name, EnvironmentVariableTarget target, IEnvironment environment)
         {
             var originator = new EnvironmentVariableOriginator(name, target, environment);
-            return new Caretaker<EnvironmentVariableOriginator, EnvironmentVariableMemento>(id, originator);
+            return new Caretaker<EnvironmentVariableOriginator, EnvironmentVariableMemento>(id, database, originator);
         }
 
         protected virtual ISnapshot CreateDirectorySnapshot(string id, string path, IFileSystem fileSystem)
         {
             var originator = new DirectoryOriginator(path, fileSystem);
-            return new Caretaker<DirectoryOriginator, DirectoryMemento>(id, originator);
+            return new Caretaker<DirectoryOriginator, DirectoryMemento>(id, database, originator);
         }
 
         protected virtual ISnapshot CreateFileSnapshot(string id, string path, IFileCache fileCache, IFileSystem fileSystem)
         {
             var originator = new FileOriginator(path, fileCache, fileSystem);
-            return new Caretaker<FileOriginator, FileMemento>(id, originator);
+            return new Caretaker<FileOriginator, FileMemento>(id, database, originator);
         }
 
         protected virtual ISnapshot CreateRegistryKeySnapshot(string id, RegistryHive hive, RegistryView view, string subKey, IRegistry registry)
         {
             var originator = new RegistryKeyOriginator(hive, view, subKey, registry);
-            return new Caretaker<RegistryKeyOriginator, RegistryKeyMemento>(id, originator);
+            return new Caretaker<RegistryKeyOriginator, RegistryKeyMemento>(id, database, originator);
         }
 
         protected virtual ISnapshot CreateRegistryValueSnapshot(string id, RegistryHive hive, RegistryView view, string subKey, string name, IRegistry registry)
         {
             var originator = new RegistryValueOriginator(hive, view, subKey, name, registry);
-            return new Caretaker<RegistryValueOriginator, RegistryValueMemento>(id, originator);
+            return new Caretaker<RegistryValueOriginator, RegistryValueMemento>(id, database, originator);
         }
 
         protected virtual void Dispose(bool disposing)
@@ -221,7 +228,7 @@ namespace DevOptimal.SystemStateManager
                 if (disposing)
                 {
                     var exceptions = new List<Exception>();
-                    foreach (var snapshot in snapshots)
+                    foreach (var snapshot in database.GetSnapshots())
                     {
                         try
                         {
@@ -256,6 +263,27 @@ namespace DevOptimal.SystemStateManager
             // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
             Dispose(disposing: true);
             GC.SuppressFinalize(this);
+        }
+
+        public static void RestorAbandonedSnapshots(IDatabase database)
+        {
+            // Create a dictionary that maps process IDs to process start times, which will be used to uniquely identify a currently running process.
+            // A null value indicates that the current process does not have permission to the corresponding process - try rerunning in an elevated process.
+            var processes = new Dictionary<int, DateTime?>();
+            foreach (var process in Process.GetProcesses())
+            {
+                try
+                {
+                    processes[process.Id] = process.StartTime;
+                }
+                catch (Win32Exception)
+                {
+                    processes[process.Id] = null;
+                }
+                catch (InvalidOperationException) { } // The process has already exited, so don't add it.
+            }
+
+            database.GetSnapshots().Where(c => !(processes.ContainsKey(c.ProcessID) && (processes[c.ProcessID] == c.ProcessStartTime || processes[c.ProcessID] == null)));
         }
     }
 }
