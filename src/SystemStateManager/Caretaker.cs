@@ -3,12 +3,10 @@ using System.Diagnostics;
 
 namespace DevOptimal.SystemStateManager
 {
-    public class Caretaker<TOriginator, TMemento> : ISnapshot
+    internal class Caretaker<TOriginator, TMemento> : ISnapshot
         where TOriginator : IOriginator<TMemento>
         where TMemento : IMemento
     {
-        private static readonly Process currentProcess = Process.GetCurrentProcess();
-
         public string ID { get; set; }
 
         public int ProcessID { get; set; }
@@ -23,15 +21,12 @@ namespace DevOptimal.SystemStateManager
 
         private bool disposedValue;
 
-        // For serialization
-        public Caretaker()
-        { }
-
-        public Caretaker(string id, IDatabase database, TOriginator originator) : this(id, currentProcess.Id, currentProcess.StartTime, database, originator, originator.GetState())
+        public Caretaker(string id, int processID, DateTime processStartTime, IDatabase database, TOriginator originator) : this(id, processID, processStartTime, database, originator, originator.GetState())
         {
             Database.AddSnapshot(this);
         }
 
+        // For serialization
         public Caretaker(string id, int processID, DateTime processStartTime, IDatabase database, TOriginator originator, TMemento memento)
         {
             if (originator == null)

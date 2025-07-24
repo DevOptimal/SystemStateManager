@@ -1,6 +1,6 @@
 ﻿namespace DevOptimal.SystemStateManager.Registry
 {
-    public class RegistryKeyMemento : IMemento
+    internal class RegistryKeyMemento : IMemento
     {
         public bool Exists { get; set;  }
     }

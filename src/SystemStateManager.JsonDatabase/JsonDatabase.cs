@@ -1,79 +1,91 @@
-﻿using DevOptimal.SystemStateManager.JsonDatabase.Converters;
-using DevOptimal.SystemStateManager.JsonDatabase.Resolvers;
-using DevOptimal.SystemUtilities.Environment;
-using DevOptimal.SystemUtilities.FileSystem;
+﻿using DevOptimal.SystemStateManager.FileSystem;
+using DevOptimal.SystemStateManager.JsonDatabase.Serialization;
+using DevOptimal.SystemUtilities.Environment.Abstractions;
+using DevOptimal.SystemUtilities.FileSystem.Abstractions;
 using DevOptimal.SystemUtilities.FileSystem.Extensions;
-using DevOptimal.SystemUtilities.Registry;
+using DevOptimal.SystemUtilities.Registry.Abstractions;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text.Json;
+using System.Runtime.InteropServices;
+using System.Security.AccessControl;
+using System.Security.Principal;
 
 namespace DevOptimal.SystemStateManager.JsonDatabase
 {
     public class JsonDatabase : IDatabase
     {
-        private readonly FileInfo jsonFile;
+        private readonly IEnvironment environment;
+        private readonly IFileSystem fileSystem;
+        private readonly IRegistry registry;
+        private readonly IFileCache fileCache;
 
-        private readonly JsonSerializerOptions jsonSerializerOptions;
+        private readonly TimeSpan databaseLockTimeout = TimeSpan.FromMinutes(5);
 
-        public JsonDatabase(IEnvironment environment, IFileSystem fileSystem, IRegistry registry)
+        private static readonly DirectoryInfo databaseDirectory = new DirectoryInfo(
+            Path.Combine(
+                System.Environment.GetFolderPath(System.Environment.SpecialFolder.CommonApplicationData),
+                nameof(SystemStateManager),
+                nameof(JsonDatabase)));
+
+        private static readonly FileInfo databaseFile = databaseDirectory.GetFile("database.json");
+        private static readonly FileInfo transactionFile = databaseDirectory.GetFile("transaction.json");
+
+        public JsonDatabase(IEnvironment environment, IFileSystem fileSystem, IRegistry registry, IFileCache fileCache)
         {
-            jsonSerializerOptions = new JsonSerializerOptions
+            if (!databaseDirectory.Exists)
             {
-                TypeInfoResolver = new PolymorphicTypeResolver(),
-            };
-            jsonSerializerOptions.Converters.Add(new EnvironmentJsonConverter(environment));
-            jsonSerializerOptions.Converters.Add(new FileSystemJsonConverter(fileSystem));
-            jsonSerializerOptions.Converters.Add(new RegistryJsonConverter(registry));
-            jsonSerializerOptions.Converters.Add(new DatabaseJsonConverter(this));
-            jsonFile = new FileInfo(@"C:\temp\database.json");
-            if (!jsonFile.Exists)
-            {
-                jsonFile.WriteAllText("[]");
+                databaseDirectory.Create();
+
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    var directorySecurity = databaseDirectory.GetAccessControl();
+                    directorySecurity.AddAccessRule(new FileSystemAccessRule(
+                        identity: new SecurityIdentifier(WellKnownSidType.WorldSid, domainSid: null),
+                        fileSystemRights: FileSystemRights.FullControl,
+                        inheritanceFlags: InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit,
+                        propagationFlags: PropagationFlags.NoPropagateInherit,
+                        type: AccessControlType.Allow));
+                    databaseDirectory.SetAccessControl(directorySecurity);
+                }
             }
+
+            this.environment = environment;
+            this.fileSystem = fileSystem;
+            this.registry = registry;
+            this.fileCache = fileCache;
         }
 
         public void AddSnapshot(ISnapshot snapshot)
         {
-            using (var stream = jsonFile.Open(FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None))
+            using (new DatabaseLock(databaseFile, databaseLockTimeout))
             {
-                var snapshots = JsonSerializer.Deserialize<List<ISnapshot>>(stream, jsonSerializerOptions);
-                snapshots.Add(snapshot);
-                stream.Position = 0;
-                stream.SetLength(0);
-                JsonSerializer.Serialize(stream, snapshots, jsonSerializerOptions);
+                WriteSnapshots(ReadSnapshots().Concat(new[] { snapshot }));
             }
         }
 
         public ISnapshot GetSnapshot(string id)
         {
-            using (var stream = jsonFile.Open(FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None))
+            using (new DatabaseLock(databaseFile, databaseLockTimeout))
             {
-                var snapshots = JsonSerializer.Deserialize<List<ISnapshot>>(stream, jsonSerializerOptions);
-                return snapshots.FirstOrDefault(s => s.ID == id);
+                return ReadSnapshots().First(s => s.ID == id);
             }
         }
 
         public IEnumerable<ISnapshot> GetSnapshots()
         {
-            using (var stream = jsonFile.Open(FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None))
+            using (new DatabaseLock(databaseFile, databaseLockTimeout))
             {
-                return JsonSerializer.Deserialize<List<ISnapshot>>(stream, jsonSerializerOptions);
+                return ReadSnapshots();
             }
         }
 
         public void RemoveSnapshot(ISnapshot snapshot)
         {
-            using (var stream = jsonFile.Open(FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None))
+            using (new DatabaseLock(databaseFile, databaseLockTimeout))
             {
-                var snapshots = JsonSerializer.Deserialize<List<ISnapshot>>(stream, jsonSerializerOptions);
-                if (snapshots.Remove(snapshots?.SingleOrDefault(s => s.ID == snapshot.ID)))
-                {
-                    stream.Position = 0;
-                    stream.SetLength(0);
-                    JsonSerializer.Serialize(stream, snapshots, jsonSerializerOptions);
-                }
+                WriteSnapshots(ReadSnapshots().Except(new[] { snapshot }));
             }
         }
     }

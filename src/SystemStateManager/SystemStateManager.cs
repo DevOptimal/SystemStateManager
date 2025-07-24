@@ -2,9 +2,10 @@
 using DevOptimal.SystemStateManager.FileSystem;
 using DevOptimal.SystemStateManager.FileSystem.Caching;
 using DevOptimal.SystemStateManager.Registry;
-using DevOptimal.SystemUtilities.Environment;
-using DevOptimal.SystemUtilities.FileSystem;
+using DevOptimal.SystemUtilities.Environment.Abstractions;
+using DevOptimal.SystemUtilities.FileSystem.Abstractions;
 using DevOptimal.SystemUtilities.Registry;
+using DevOptimal.SystemUtilities.Registry.Abstractions;
 using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
@@ -18,6 +19,8 @@ namespace DevOptimal.SystemStateManager
 {
     public class SystemStateManager : IDisposable
     {
+        private static readonly Process currentProcess = Process.GetCurrentProcess();
+
         private readonly IDatabase database;
 
         private readonly IFileCache fileCache;
@@ -82,7 +85,7 @@ namespace DevOptimal.SystemStateManager
                 throw new ArgumentNullException(nameof(name));
             }
 
-            var id = $"[EnvironmentVariable]{target}\\{name}";
+            var id = $@"[EnvironmentVariable]{target}\{name}";
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
@@ -109,7 +112,7 @@ namespace DevOptimal.SystemStateManager
 
             path = Path.GetFullPath(path);
 
-            var id = $"[FileSystem]{path}";
+            var id = $@"[FileSystem]{path}";
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
@@ -136,7 +139,7 @@ namespace DevOptimal.SystemStateManager
 
             path = Path.GetFullPath(path);
 
-            var id = $"[FileSystem]{path}";
+            var id = $@"[FileSystem]{path}";
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
@@ -158,7 +161,7 @@ namespace DevOptimal.SystemStateManager
         {
             subKey = RegistryPath.GetFullPath(subKey);
 
-            var id = $"[Registry]{hive}\\{view}\\{subKey}".ToLower();
+            var id = $@"[Registry]{hive}\{view}\{subKey}".ToLower();
 
             if (!TryGetSnapshot(id, out var snapshot))
             {
@@ -175,7 +178,7 @@ namespace DevOptimal.SystemStateManager
         {
             subKey = RegistryPath.GetFullPath(subKey);
 
-            var id = $"[Registry]{hive}\\{view}\\{subKey}\\\\{name ?? "(Default)"}".ToLower();
+            var id = $@"[Registry]{hive}\{view}\{subKey}\\{name ?? "(Default)"}".ToLower();
 
             if (!TryGetSnapshot(id, out var snapshot))
             {
@@ -194,31 +197,31 @@ namespace DevOptimal.SystemStateManager
         protected virtual ISnapshot CreateEnvironmentVariableSnapshot(string id, string name, EnvironmentVariableTarget target, IEnvironment environment)
         {
             var originator = new EnvironmentVariableOriginator(name, target, environment);
-            return new Caretaker<EnvironmentVariableOriginator, EnvironmentVariableMemento>(id, database, originator);
+            return new Caretaker<EnvironmentVariableOriginator, EnvironmentVariableMemento>(id, currentProcess.Id, currentProcess.StartTime, database, originator);
         }
 
         protected virtual ISnapshot CreateDirectorySnapshot(string id, string path, IFileSystem fileSystem)
         {
             var originator = new DirectoryOriginator(path, fileSystem);
-            return new Caretaker<DirectoryOriginator, DirectoryMemento>(id, database, originator);
+            return new Caretaker<DirectoryOriginator, DirectoryMemento>(id, currentProcess.Id, currentProcess.StartTime, database, originator);
         }
 
         protected virtual ISnapshot CreateFileSnapshot(string id, string path, IFileCache fileCache, IFileSystem fileSystem)
         {
             var originator = new FileOriginator(path, fileCache, fileSystem);
-            return new Caretaker<FileOriginator, FileMemento>(id, database, originator);
+            return new Caretaker<FileOriginator, FileMemento>(id, currentProcess.Id, currentProcess.StartTime, database, originator);
         }
 
         protected virtual ISnapshot CreateRegistryKeySnapshot(string id, RegistryHive hive, RegistryView view, string subKey, IRegistry registry)
         {
             var originator = new RegistryKeyOriginator(hive, view, subKey, registry);
-            return new Caretaker<RegistryKeyOriginator, RegistryKeyMemento>(id, database, originator);
+            return new Caretaker<RegistryKeyOriginator, RegistryKeyMemento>(id, currentProcess.Id, currentProcess.StartTime, database, originator);
         }
 
         protected virtual ISnapshot CreateRegistryValueSnapshot(string id, RegistryHive hive, RegistryView view, string subKey, string name, IRegistry registry)
         {
             var originator = new RegistryValueOriginator(hive, view, subKey, name, registry);
-            return new Caretaker<RegistryValueOriginator, RegistryValueMemento>(id, database, originator);
+            return new Caretaker<RegistryValueOriginator, RegistryValueMemento>(id, currentProcess.Id, currentProcess.StartTime, database, originator);
         }
 
         protected virtual void Dispose(bool disposing)
@@ -228,7 +231,7 @@ namespace DevOptimal.SystemStateManager
                 if (disposing)
                 {
                     var exceptions = new List<Exception>();
-                    foreach (var snapshot in database.GetSnapshots())
+                    foreach (var snapshot in database.GetSnapshots().Where(c => (c.ProcessID == currentProcess.Id) && (c.ProcessStartTime == currentProcess.StartTime)))
                     {
                         try
                         {
@@ -265,7 +268,7 @@ namespace DevOptimal.SystemStateManager
             GC.SuppressFinalize(this);
         }
 
-        public static void RestorAbandonedSnapshots(IDatabase database)
+        public static void RestoreAbandonedSnapshots(IDatabase database)
         {
             // Create a dictionary that maps process IDs to process start times, which will be used to uniquely identify a currently running process.
             // A null value indicates that the current process does not have permission to the corresponding process - try rerunning in an elevated process.

@@ -1,6 +1,6 @@
 ﻿namespace DevOptimal.SystemStateManager
 {
-    public interface IMemento
+    internal interface IMemento
     {
     }
 }

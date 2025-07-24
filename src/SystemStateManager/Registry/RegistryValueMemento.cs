@@ -2,7 +2,7 @@
 
 namespace DevOptimal.SystemStateManager.Registry
 {
-    public class RegistryValueMemento : IMemento
+    internal class RegistryValueMemento : IMemento
     {
         public object Value { get; set; }
 

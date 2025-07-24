@@ -1,5 +1,2 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <ItemGroup>
-    <ProjectReference Include="..\..\src\SystemStateManager.JsonDatabase\SystemStateManager.JsonDatabase.csproj" />
-  </ItemGroup>
 </Project>

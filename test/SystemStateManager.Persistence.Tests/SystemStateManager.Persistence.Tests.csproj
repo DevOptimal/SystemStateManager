@@ -11,11 +11,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\SystemStateManager.Persistence\SystemStateManager.Persistence.csproj" />
+    <AdditionalDesignTimeBuildInput Remove="FakesAssemblies\**" />
   </ItemGroup>
 
   <ItemGroup>
-    <AdditionalDesignTimeBuildInput Remove="FakesAssemblies\**" />
+    <ProjectReference Include="..\..\src\SystemStateManager\SystemStateManager.csproj" />
   </ItemGroup>
 
 </Project>

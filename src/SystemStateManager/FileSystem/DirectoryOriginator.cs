@@ -1,9 +1,9 @@
-﻿using DevOptimal.SystemUtilities.FileSystem;
+﻿using DevOptimal.SystemUtilities.FileSystem.Abstractions;
 using System;
 
 namespace DevOptimal.SystemStateManager.FileSystem
 {
-    public class DirectoryOriginator : IOriginator<DirectoryMemento>
+    internal class DirectoryOriginator : IOriginator<DirectoryMemento>
     {
         public string Path { get; }
 

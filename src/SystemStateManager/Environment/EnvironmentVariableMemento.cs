@@ -1,6 +1,6 @@
 ﻿namespace DevOptimal.SystemStateManager.Environment
 {
-    public class EnvironmentVariableMemento : IMemento
+    internal class EnvironmentVariableMemento : IMemento
     {
         public string Value { get; set; }
     }

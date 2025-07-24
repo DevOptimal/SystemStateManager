@@ -1,4 +1,4 @@
-﻿using DevOptimal.SystemUtilities.FileSystem;
+﻿using DevOptimal.SystemUtilities.FileSystem.Abstractions;
 using System;
 using System.IO;
 

@@ -1,6 +1,6 @@
 ﻿namespace DevOptimal.SystemStateManager.FileSystem
 {
-    public class DirectoryMemento : IMemento
+    internal class DirectoryMemento : IMemento
     {
         public bool Exists { get; set; }
     }

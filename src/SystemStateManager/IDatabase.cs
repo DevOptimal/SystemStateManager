@@ -28,5 +28,11 @@ namespace DevOptimal.SystemStateManager
         /// </summary>
         /// <param name="snapshot">The snapshot to remove.</param>
         void RemoveSnapshot(ISnapshot snapshot);
+
+        void BeginTransaction();
+
+        void CommitTransaction();
+
+        void RollbackTransaction();
     }
 }

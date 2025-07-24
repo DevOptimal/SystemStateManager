@@ -1,9 +1,9 @@
-﻿using DevOptimal.SystemUtilities.Environment;
+﻿using DevOptimal.SystemUtilities.Environment.Abstractions;
 using System;
 
 namespace DevOptimal.SystemStateManager.Environment
 {
-    public class EnvironmentVariableOriginator : IOriginator<EnvironmentVariableMemento>
+    internal class EnvironmentVariableOriginator : IOriginator<EnvironmentVariableMemento>
     {
         public string Name { get; }
 

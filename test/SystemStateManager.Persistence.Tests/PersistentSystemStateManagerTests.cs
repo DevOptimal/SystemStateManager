@@ -22,7 +22,7 @@ namespace DevOptimal.SystemStateManager.Persistence.Tests
 
             environment.SetEnvironmentVariable(name, null, target);
 
-            PersistentSystemStateManager.RestoreAbandonedSnapshots(environment, fileSystem, registry);
+            SystemStateManager.RestoreAbandonedSnapshots(environment, fileSystem, registry);
             Assert.AreNotEqual(expectedValue, environment.GetEnvironmentVariable(name, target));
         }
 

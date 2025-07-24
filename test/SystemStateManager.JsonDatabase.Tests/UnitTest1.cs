@@ -1,67 +1,65 @@
-using DevOptimal.SystemStateManager.FileSystem.Caching;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
-using System.IO;
-using System.Text;
+using System.Threading;
 
 namespace DevOptimal.SystemStateManager.JsonDatabase.Tests
 {
     [TestClass]
-    public class UnitTest1 : TestBase
+    public class UnitTest1
     {
+        // Create a new Mutex. The creating thread does not own the
+        // Mutex.
+        private const int numIterations = 1;
+        private const int numThreads = 3;
+
         [TestMethod]
-        public void SystemStateManagerCorrectlyDisposes()
+        public void TestMutex()
         {
-            var name = "foo";
-            var target = EnvironmentVariableTarget.Machine;
-            var expectedValue = "bar";
-
-            environment.SetEnvironmentVariable(name, expectedValue, target);
-
-            using (var systemStateManager = CreateSystemStateManager())
+            // Create the threads that will use the protected resource.
+            for (int i = 0; i < numThreads; i++)
             {
-
-                systemStateManager.SnapshotEnvironmentVariable(name, target);
-
-                environment.SetEnvironmentVariable(name, null, target);
+                var myThread = new Thread(new ThreadStart(MyThreadProc))
+                {
+                    Name = string.Format("Thread{0}", i + 1)
+                };
+                myThread.Start();
             }
-
-            Assert.AreEqual(expectedValue, environment.GetEnvironmentVariable(name, target));
+            Thread.Sleep(10000);
+            // The main thread exits, but the application continues to
+            // run until all foreground threads have exited.
         }
 
-        [TestMethod]
-        public void StreamReaderTests()
+        private static void MyThreadProc()
         {
-            var stream = new MemoryStream(Encoding.UTF8.GetBytes("foobar"));
-            var reader = new StreamReader(stream);
-            char c;
-            while ((c = (char)reader.Read()) != 0)
+            for (int i = 0; i < numIterations; i++)
             {
-                Console.WriteLine(c);
+                UseResource();
             }
-
-            Assert.AreEqual('f', c);
         }
 
-        [TestMethod]
-        public void ParserTests()
+        // This method represents a resource that must be synchronized
+        // so that only one thread at a time can enter.
+        private static void UseResource()
         {
-            var json =
-@"[
-    {
-        ""Name"": ""Brad"",
-        ""Age"" : 39,
-        ""Weight"": 203.57,
-        ""Married"": true
-    },
-    ""Hello, world!""
-]";
-            var stream = new MemoryStream(Encoding.UTF8.GetBytes(json));
-            var parser = new MyJsonDatabase(stream, environment, fileSystem, registry, new LocalFileCache(@"C:\temp\cache", fileSystem));
-            var objects = parser.GetObjects();
-            foreach (var o in objects)
+            var mut = new Mutex(false, @"Global\foobar");
+
+            // Wait until it is safe to enter.
+            mut.WaitOne();
+            try
             {
-                Console.WriteLine(o.GetType().FullName);
+                Console.WriteLine("{0} has entered the protected area", Thread.CurrentThread.Name);
+
+                // Place code to access non-reentrant resources here.
+
+                // Simulate some work.
+                Thread.Sleep(500);
+
+                Console.WriteLine("{0} is leaving the protected area\r\n", Thread.CurrentThread.Name);
+            }
+            finally
+            {
+                // Release the Mutex.
+                mut.ReleaseMutex();
             }
         }
     }

@@ -1,10 +1,10 @@
-﻿using DevOptimal.SystemUtilities.Registry;
+﻿using DevOptimal.SystemUtilities.Registry.Abstractions;
 using Microsoft.Win32;
 using System;
 
 namespace DevOptimal.SystemStateManager.Registry
 {
-    public class RegistryKeyOriginator : IOriginator<RegistryKeyMemento>
+    internal class RegistryKeyOriginator : IOriginator<RegistryKeyMemento>
     {
         public RegistryHive Hive { get; }
 

@@ -21,7 +21,7 @@ namespace DevOptimal.SystemStateManager.Persistence.Tests
         [AssemblyInitialize]
         public static void AssemblyInitialize(TestContext testContext)
         {
-            PersistentSystemStateManager.PersistenceURI = new Uri(Path.Combine(testContext.ResultsDirectory, "persistence.db"));
+            SystemStateManager.PersistenceURI = new Uri(Path.Combine(testContext.ResultsDirectory, "persistence.db"));
         }
 
         [TestInitialize]
@@ -32,7 +32,7 @@ namespace DevOptimal.SystemStateManager.Persistence.Tests
             registry = new MockRegistry();
         }
 
-        protected PersistentSystemStateManager CreatePersistentSystemStateManager() => new(environment, fileSystem, registry);
+        protected SystemStateManager CreatePersistentSystemStateManager() => new(environment, fileSystem, registry);
 
         protected IDisposable CreateShimsContext()
         {

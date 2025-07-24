@@ -1,6 +1,6 @@
 ﻿namespace DevOptimal.SystemStateManager
 {
-    public interface IOriginator<TMemento>
+    internal interface IOriginator<TMemento>
         where TMemento : IMemento
     {
         TMemento GetState();
